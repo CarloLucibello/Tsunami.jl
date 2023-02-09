@@ -3,3 +3,5 @@ Manifest.toml
 *.bson
 logs/
 logs_*/
+flurry_logs/
+lighting_logs/
