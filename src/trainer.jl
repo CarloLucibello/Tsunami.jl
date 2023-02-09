@@ -174,6 +174,9 @@
 
 # Arguments
 
+- `accelerator`: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
+                 Default: `:auto`.
+
 - `check_val_every_n_epoch`: Perform a validation loop every after every N training epochs. 
                              TODO[If `nothing`, validation will be done solely based on the number of training batches, 
                              requiring `val_check_interval` to be an integer value.]
@@ -212,6 +215,7 @@
                          
 """
 @kwdef mutable struct Trainer
+    accelerator::Symbol = :auto
     check_val_every_n_epoch::Union{Int, Nothing} = 1
     default_root_dir::String = pwd()
     enable_checkpointing::Bool = true
@@ -241,6 +245,7 @@ function fit!(
     )
     
     checkpointer = trainer.enable_checkpointing ? Checkpointer(trainer.default_root_dir) : nothing 
+    device = select_device(trainer.accelerator)
     # @assert train_dataloader !== nothing "train_dataloaders must be specified"
     
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
@@ -257,12 +262,16 @@ function fit!(
         opt = configure_optimisers(model)
         start_epoch = 1
     end
+    model = model |> device
+    opt = opt |> device
 
     for epoch in start_epoch:max_epochs
         progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
             showspeed=true, enabled = trainer.progress_bar)
 		
         for (batch_idx, batch) in enumerate(train_dataloader)
+            batch = batch |> device
+            
             grads = Zygote.gradient(model) do model
                 training_step_out = training_step(model, batch, batch_idx)
                 loss, training_step_out = unwrap_loss(training_step_out)
@@ -315,6 +324,22 @@ function compute_max_steps_and_epochs(max_steps, max_epochs)
         max_epochs = nothing
     end
     return max_steps, max_epochs
+end
+
+function select_device(accelerator::Symbol)
+    if accelerator == :auto
+        if CUDA.functional()
+            return gpu
+        else
+            return cpu
+        end
+    elseif accelerator == :cpu
+        return cpu
+    elseif accelerator == :gpu
+        return gpu
+    else
+        throw(ArgumentError("accelerator must be one of :auto, :cpu, :gpu"))
+    end
 end
 
 function process_out_for_progress_bar(out::NamedTuple, s::Stats)
