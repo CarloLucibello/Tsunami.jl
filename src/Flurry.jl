@@ -1,26 +1,29 @@
 module Flurry
 
+using Base: @kwdef
+import BSON
+import ChainRulesCore
+using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
-import Optimisers
-using Random, Statistics
-using UnPack: @unpack
-import Zygote
-import ChainRulesCore
-using Base: @kwdef
+import Functors
+using Glob: glob
+using Dates
+import ImageMagick # for image logging
+using Logging
+using MLUtils
 using ProgressMeter
 import OnlineStats
-import BSON
-using Glob: glob
-import Functors
-using MLUtils
-using TensorBoardLogger: TBLogger
-using Logging
-import ImageMagick # for image logging
+import Optimisers
 @static if Sys.isapple()
     import QuartzImageIO # for image logging
 end
-using CUDA
+using Random
+using Statistics
+using TensorBoardLogger: TBLogger, tb_append
+using UnPack: @unpack
+import Zygote
+
 CUDA.allowscalar(false)
 
 include("utils.jl")

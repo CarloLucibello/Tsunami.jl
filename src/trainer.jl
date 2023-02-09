@@ -10,14 +10,10 @@
                  Default: `:auto`.
 
 - `check_val_every_n_epoch`: Perform a validation loop every after every N training epochs. 
-                             TODO[If `nothing`, validation will be done solely based on the number of training batches, 
-                             requiring `val_check_interval` to be an integer value.]
                              Default: `1`.
-            
+
 - `enable_checkpointing`: If `true`, enable checkpointing.
-        TODO[It will configure a default ModelCheckpoint callback if there is no user-defined ModelCheckpoint in
-        callbacks.]
-        Default: `true`.
+                         Default: `true`.
 
 - `default_root_dir`: Default path for logs and weights TODO[when no logger/ckpt_callback passed].
                       Default: `pwd()`.
@@ -43,13 +39,6 @@
 
 - `progress_bar`: It `true`, shows a progress bar during training. 
                   Default: `true`.
-
-- `val_check_interval`: TODO[How often to check the validation set. 
-                         Pass a float in the range [0.0, 1.0] to check after a fraction of the training epoch. 
-                         Pass an int to check after a fixed number of training batches. 
-                         An Int value can only be higher than the number of training batches when 
-                         `check_val_every_n_epoch=None`, which validates after every N training batches across epochs or during iteration-based training. 
-                         Default: `1.0`.]
 """
 @kwdef mutable struct Trainer
     accelerator::Symbol = :auto
@@ -84,10 +73,15 @@ function fit!(
     )
     
     check_fluxmodule(model)
-    checkpointer = trainer.enable_checkpointing ? Checkpointer(trainer.default_root_dir) : nothing 
+    input_model = model
+
+    flurry_dir = joinpath(trainer.default_root_dir, "flurry_logs")
+    run_dir = joinpath(flurry_dir, "run_$(now())")
+    checkpoints_dir = joinpath(run_dir, "checkpoints")
+
+    checkpointer = trainer.enable_checkpointing ? Checkpointer(checkpoints_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
-    # @assert train_dataloader !== nothing "train_dataloaders must be specified"
-    logger = trainer.logger ? TBLogger(joinpath(trainer.default_root_dir, "logs")) : nothing
+    logger = trainer.logger ? TBLogger(run_dir, tb_append) : nothing
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
     
     
@@ -97,7 +91,7 @@ function fit!(
     nsteps = 0
     if ckpt_path !== nothing
         ckpt = load_checkpoint(ckpt_path)
-        copy!(model, ckpt.model)
+        model = ckpt.model
         start_epoch = ckpt.epoch + 1
         opt = ckpt.opt
     else
@@ -134,7 +128,7 @@ function fit!(
         end
         training_epoch_out = training_epoch_end(model, training_step_outs)
         if checkpointer !== nothing
-            checkpointer(model, opt; epoch, nsteps)
+            checkpointer(model, opt; epoch, step=nsteps)
         end
         
         if  (val_dataloader !== nothing && 
@@ -162,6 +156,11 @@ function fit!(
          end
 
          (nsteps == max_steps || epoch == max_epochs) && break
+    end
+
+    model = model |> cpu
+    if model !== input_model
+        copy!(input_model, model)
     end
     return nothing
 end
@@ -203,7 +202,13 @@ end
 select_cuda_device(devices::Nothing) = gpu
 
 function select_cuda_device(devices::Int)
-    CUDA.device!(devices)
+    @assert devices == 1 "Only one device is supported"
+    return gpu
+end
+
+function select_cuda_device(devices::Union{Vector{Int}, Tuple})
+    @assert length(devices) == 1 "Only one device is supported"
+    CUDA.device!(devices[1])
     return gpu
 end
 

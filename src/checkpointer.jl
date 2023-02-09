@@ -14,10 +14,10 @@ mutable struct Checkpointer
     end
 end
 
-function (cp::Checkpointer)(model::FluxModule, opt; epoch, kws...)
-    filename = "ckpt_epoch=$(lpad(string(epoch), 4, '0')).bson"
+function (cp::Checkpointer)(model::FluxModule, opt; epoch, step, kws...)
+    filename = "ckpt_epoch=$(epoch)_step=$(step).bson"
     filepath = joinpath(cp.folder, filename)
-    BSON.@save filepath ckpt=(; model=cpu(model), opt=cpu(opt), epoch, kws...)
+    BSON.@save filepath ckpt=(; model=cpu(model), opt=cpu(opt), epoch, step, kws...)
     
     if cp.last_ckpt !== nothing
         rm(cp.last_ckpt)

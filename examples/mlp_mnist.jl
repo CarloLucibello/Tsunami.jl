@@ -35,7 +35,12 @@ test_loader = DataLoader(MNIST(:test), batchsize=128)
 
 # TRAIN FROM SCRATCH
 model = MLP()
-trainer = Trainer(max_epochs=10, default_root_dir=@__DIR__, accelerator=:cpu)
+trainer = Trainer(max_epochs=10, 
+                 default_root_dir=@__DIR__,
+                 accelerator=:cpu,
+                 enable_checkpointing=true,
+                 logger=true,
+                 )
 Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # RESUME TRAINING
