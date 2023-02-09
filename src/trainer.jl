@@ -330,17 +330,29 @@ end
 function select_device(accelerator::Symbol, devices)
     if accelerator == :auto
         if CUDA.functional()
-            return gpu
+            return select_cuda_device(devices)
         else
             return cpu
         end
     elseif accelerator == :cpu
         return cpu
     elseif accelerator == :gpu
-        return gpu
+        if !CUDA.functional()
+            @warn "CUDA is not available"
+            return cpu
+        else
+            return select_cuda_device(devices)
+        end
     else
         throw(ArgumentError("accelerator must be one of :auto, :cpu, :gpu"))
     end
+end
+
+select_cuda_device(devices::Nothing) = gpu
+
+function select_cuda_device(devices::Int)
+    CUDA.device!(devices)
+    return gpu
 end
 
 function process_out_for_progress_bar(out::NamedTuple, s::Stats)
