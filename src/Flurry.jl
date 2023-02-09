@@ -13,8 +13,14 @@ import OnlineStats
 import BSON
 using Glob: glob
 import Functors
-using CUDA
 using MLUtils
+using TensorBoardLogger: TBLogger
+using Logging
+import ImageMagick # for image logging
+@static if Sys.isapple()
+    import QuartzImageIO # for image logging
+end
+using CUDA
 CUDA.allowscalar(false)
 
 include("utils.jl")

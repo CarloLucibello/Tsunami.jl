@@ -1,6 +1,5 @@
 using Flux, Functors, Optimisers, Flurry, MLDatasets
-using Flux: DataLoader
-using MLUtils
+using Flux: DataLoader, flatten
 
 mutable struct MLP <: FluxModule
     net
@@ -8,7 +7,7 @@ end
 
 function MLP()
     net = Chain(
-        MLUtils.flatten,
+        flatten,
         Dense(28^2 => 256, relu), 
         Dense(256 => 10))
     return MLP(net)
@@ -36,7 +35,7 @@ test_loader = DataLoader(MNIST(:test), batchsize=128)
 
 # TRAIN FROM SCRATCH
 model = MLP()
-trainer = Trainer(max_epochs=2, default_root_dir=@__DIR__, accelerator=:cpu)
+trainer = Trainer(max_epochs=10, default_root_dir=@__DIR__, accelerator=:cpu)
 Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # RESUME TRAINING

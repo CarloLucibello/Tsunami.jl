@@ -1,6 +1,9 @@
 # Flurry.jl
 
-A high-level deep learning framework for the Julia language.
+A high-level deep learning framework for the Julia language 
+that helps you focus and organize the relevant part of your code
+while removing the boilerplate. 
+
 Flurry  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
 and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
 
@@ -15,10 +18,17 @@ Install Flurry with
 pkg> add https://github.com/CarloLucibello/Flurry.jl
 ```
 
+## Features
+
+- Use `fit!` instead of implementing a training loop.
+- Logging (tensorboard).
+- Checkpoints (save and resume training).
+- GPU movement.
+
 ## Usage Examples
 
 Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer`
-train the model on your dataset with `fit!`. Flurry will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...)
+train the model on your dataset with `fit!`. Flurry will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
 
 See the folder [examples/](https://github.com/CarloLucibello/Flurry.jl/tree/main/examples) for usage examples.
 

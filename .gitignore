@@ -1,3 +1,5 @@
 .vscode/
 Manifest.toml
 *.bson
+logs/
+logs_*/

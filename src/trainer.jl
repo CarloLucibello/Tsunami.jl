@@ -26,6 +26,9 @@
              based on the `accelerator` type.
              Default: `nothing`.
 
+- `logger`: If `true` use a TensorBoardLogger for logging.
+            Default: `true`.
+
 - `max_epochs`: Stop training once this number of epochs is reached. 
                 Disabled by default (`nothing`). 
                 If both `max_epochs` and `max_steps` are not specified, 
@@ -54,6 +57,7 @@
     default_root_dir::String = pwd()
     enable_checkpointing::Bool = true
     devices::Union{Int, Nothing} = nothing
+    logger::Bool = true
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
     progress_bar::Bool = true
@@ -83,8 +87,10 @@ function fit!(
     checkpointer = trainer.enable_checkpointing ? Checkpointer(trainer.default_root_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
     # @assert train_dataloader !== nothing "train_dataloaders must be specified"
-    
+    logger = trainer.logger ? TBLogger(joinpath(trainer.default_root_dir, "logs")) : nothing
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
+    
+    
     training_step_outs = NamedTuple[]
     training_step_out_avg = Stats()
 
@@ -146,6 +152,13 @@ function fit!(
             end
             validation_epoch_out = validation_epoch_end(model, validation_step_outs)
             print_validation_epoch_end(validation_epoch_out)
+         end
+
+         if logger !== nothing
+            with_logger(logger) do
+                @info "Training" training_epoch_out... log_step_increment=1
+                @info "Validation" validation_epoch_out... log_step_increment=0
+            end
          end
 
          (nsteps == max_steps || epoch == max_epochs) && break
