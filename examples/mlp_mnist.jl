@@ -1,21 +1,18 @@
 using Flux, Functors, Optimisers, Flurry, MLDatasets
 using Flux: DataLoader
+using MLUtils
 
 mutable struct MLP <: FluxModule
     net
 end
 
-@functor MLP
-
 function MLP()
     net = Chain(
-        flatten_input,
-        Dense(28^2 => 100, relu), 
-        Dense(100 => 10))
+        MLUtils.flatten,
+        Dense(28^2 => 256, relu), 
+        Dense(256 => 10))
     return MLP(net)
 end
-
-flatten_input(x) = reshape(x, :, size(x, ndims(x)))
 
 function (m::MLP)(x)
     m.net(x)
@@ -39,10 +36,11 @@ test_loader = DataLoader(MNIST(:test), batchsize=128)
 
 # TRAIN FROM SCRATCH
 model = MLP()
-trainer = Trainer(max_epochs=10, default_root_dir=@__DIR__)
+trainer = Trainer(max_epochs=2, default_root_dir=@__DIR__, accelerator=:cpu)
 Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # RESUME TRAINING
-trainer.max_epochs = 20
+trainer.max_epochs = 5
 Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader,
-    ckpt_path = joinpath(@__DIR__, "ckpt_epoch=0010.bson"))
+    ckpt_path = joinpath(@__DIR__, "ckpt_epoch=0002.bson"))
+    

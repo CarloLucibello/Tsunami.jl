@@ -173,6 +173,8 @@
 # Arguments
 
 - `accelerator`: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
+                `:auto` will automatically select a gpu if available.
+                See also the `devices` option.
                  Default: `:auto`.
 
 - `check_val_every_n_epoch`: Perform a validation loop every after every N training epochs. 
@@ -219,7 +221,7 @@
     check_val_every_n_epoch::Union{Int, Nothing} = 1
     default_root_dir::String = pwd()
     enable_checkpointing::Bool = true
-    devices = nothing,
+    devices::Union{Int, Nothing} = nothing
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
     progress_bar::Bool = true
@@ -245,6 +247,7 @@ function fit!(
         val_dataloader = nothing,
     )
     
+    check_fluxmodule(model)
     checkpointer = trainer.enable_checkpointing ? Checkpointer(trainer.default_root_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
     # @assert train_dataloader !== nothing "train_dataloaders must be specified"
@@ -282,7 +285,7 @@ function fit!(
                 end
                 return loss
             end
-            Optimisers.update!(opt, model, grads[1])
+            opt, model = Optimisers.update!(opt, model, grads[1])
 
             nsteps += 1
 			ProgressMeter.next!(progressbar,
@@ -292,7 +295,9 @@ function fit!(
             nsteps == max_steps && break
         end
         training_epoch_out = training_epoch_end(model, training_step_outs)
-        checkpointer(model, opt; epoch)
+        if checkpointer !== nothing
+            checkpointer(model, opt; epoch, nsteps)
+        end
         
         if  (val_dataloader !== nothing && 
             trainer.check_val_every_n_epoch !== nothing && 
@@ -302,6 +307,7 @@ function fit!(
 		
             validation_step_outs = NamedTuple[]
             for (batch_idx, batch) in enumerate(val_dataloader)
+                batch = batch |> device
                 validation_step_out = validation_step(model, batch, batch_idx)
                 push!(validation_step_outs, validation_step_out)
                 ProgressMeter.next!(valprogressbar)
@@ -312,6 +318,7 @@ function fit!(
 
          (nsteps == max_steps || epoch == max_epochs) && break
     end
+    return nothing
 end
 
 unwrap_loss(training_step_out::Number) = training_step_out, (; loss=training_step_out)

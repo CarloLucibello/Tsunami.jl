@@ -1,4 +1,29 @@
+"""
+    abstract type FluxModule end
+
+Type inheriting from `FluxModule` have to be mutable.
+A `FluxModule` comes with `functor` already implemented.
+You can change the trainables by implementing `Optimisers.trainables`.
+
+`FluxModule`'s subtypes need to implement the following methods:
+- `configure_optimisers(model)`
+- `training_step(model, batch, batch_idx)`
+
+Optionally also:
+- `validation_step(model, batch, batch_idx)`
+- `test_step(model, batch, batch_idx)`
+- `training_epoch_end(model, outs)`
+- `validation_epoch_end(model, outs)`
+- `test_epoch_end(model, outs)`
+
+"""
 abstract type FluxModule end
+
+function Functors.functor(::Type{<:FluxModule}, m::T) where T
+    childr = (; (f => getfield(m, f) for f in fieldnames(T))...)
+    re = x -> T(x...)
+    return childr, re
+end
 
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
 
@@ -75,4 +100,8 @@ function Base.copy!(dest::T, src::T) where T <: FluxModule
         setfield!(dest, f, getfield(src, f))
     end
     return dest
+end
+
+function check_fluxmodule(m::FluxModule)
+    @assert ismutable(m) "FluxModule has to be a `mutable struct`"
 end

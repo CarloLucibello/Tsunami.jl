@@ -14,10 +14,10 @@ mutable struct Checkpointer
     end
 end
 
-function (cp::Checkpointer)(model::FluxModule, opt; epoch)
+function (cp::Checkpointer)(model::FluxModule, opt; epoch, kws...)
     filename = "ckpt_epoch=$(lpad(string(epoch), 4, '0')).bson"
     filepath = joinpath(cp.folder, filename)
-    BSON.@save filepath model=cpu(model) opt=cpu(opt) epoch
+    BSON.@save filepath ckpt=(; model=cpu(model), opt=cpu(opt), epoch, kws...)
     
     if cp.last_ckpt !== nothing
         rm(cp.last_ckpt)
@@ -35,7 +35,7 @@ Returns a namedtuple of the model and the optimizer.
 See also: [`Checkpointer`](@ref).
 """
 function load_checkpoint(path)
-    BSON.@load path model opt epoch
-    return (; model, opt, epoch)
+    BSON.@load path ckpt
+    return ckpt
 end
 

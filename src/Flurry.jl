@@ -12,6 +12,10 @@ using ProgressMeter
 import OnlineStats
 import BSON
 using Glob: glob
+import Functors
+using CUDA
+using MLUtils
+CUDA.allowscalar(false)
 
 include("utils.jl")
 export accuracy
