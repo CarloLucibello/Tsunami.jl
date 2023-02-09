@@ -1,15 +1,5 @@
 abstract type FluxModule end
 
-# A FluxModule organizes your PyTorch code into 6 sections:
-# - Computations (init).
-# - Train Loop (training_step)
-# - Validation Loop (validation_step)
-# - Test Loop (test_step)
-# - Prediction Loop (predict_step)
-# - Optimizers and LR Schedulers (configure_optimizers)
-
-# The following methods are required to be implemented:
-
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
 
 """
@@ -74,3 +64,15 @@ validation_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple}) = training_e
 If not implemented, the default is to use [`validation_epoch_end`](@ref).
 """
 test_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple}) = validation_epoch_end(model, outs)
+
+"""
+    copy!(dest::FluxModule, src::FluxModule)
+
+Shallow copy of all fields of `src` to `dest`.
+"""
+function Base.copy!(dest::T, src::T) where T <: FluxModule
+    for f in fieldnames(T)
+        setfield!(dest, f, getfield(src, f))
+    end
+    return dest
+end

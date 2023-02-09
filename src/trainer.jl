@@ -211,7 +211,7 @@
 
                          
 """
-@kwdef struct Trainer
+@kwdef mutable struct Trainer
     check_val_every_n_epoch::Union{Int, Nothing} = 1
     default_root_dir::String = pwd()
     enable_checkpointing::Bool = true
@@ -248,9 +248,18 @@ function fit!(
     training_step_out_avg = Stats()
 
     nsteps = 0
-    opt = configure_optimisers(model)
-    for epoch in 1:max_epochs
-        progressbar = Progress(length(train_dataloader); desc="Epoch $epoch: ", 
+    if ckpt_path !== nothing
+        ckpt = load_checkpoint(ckpt_path)
+        copy!(model, ckpt.model)
+        start_epoch = ckpt.epoch + 1
+        opt = ckpt.opt
+    else
+        opt = configure_optimisers(model)
+        start_epoch = 1
+    end
+
+    for epoch in start_epoch:max_epochs
+        progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
             showspeed=true, enabled = trainer.progress_bar)
 		
         for (batch_idx, batch) in enumerate(train_dataloader)
@@ -268,7 +277,7 @@ function fit!(
             nsteps += 1
 			ProgressMeter.next!(progressbar,
                 showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
-                valuecolor=:red)
+                valuecolor=:green)
 
             nsteps == max_steps && break
         end
@@ -318,7 +327,3 @@ function print_validation_epoch_end(out::NamedTuple)
     @info "Validation: $(join([f(k, v) for (k, v) in pairs(out)], ", "))"
 end
 
-round4(x::Float64) = round(x, digits=4)
-round4(x::AbstractFloat) = round4(Float64(x))
-round4(x::Int) = x
-round4(x::NamedTuple) = map(round4, x)

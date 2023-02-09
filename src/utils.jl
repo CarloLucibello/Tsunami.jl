@@ -12,3 +12,8 @@ accuracy(ŷ::AbstractMatrix, y::AbstractVector) = mean(onecold(ŷ) .== y)
 accuracy(ŷ::AbstractMatrix, y::AbstractMatrix) = mean(onecold(ŷ) .== onecold(y))
 
 ChainRulesCore.@non_differentiable accuracy(::Any...)
+
+round4(x::Float64) = round(x, digits=4)
+round4(x::AbstractFloat) = round4(Float64(x))
+round4(x::Int) = x
+round4(x::NamedTuple) = map(round4, x)
