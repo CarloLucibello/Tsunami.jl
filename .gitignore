@@ -4,4 +4,4 @@ Manifest.toml
 logs/
 logs_*/
 flurry_logs/
-lighting_logs/
+lightning_logs/

@@ -69,19 +69,24 @@ test_step(model::FluxModule, batch, batch_idx) = validation_step(model::FluxModu
 """
     training_epoch_end(model, outs)
 
+If not implemented, do nothing. 
 """
 function training_epoch_end(::FluxModule, outs::Vector{<:NamedTuple})
-    names = keys(first(outs)) 
-    y =  (; (name => mean(x->x[name], outs) for name in names)...)
-    return y
+    return nothing
 end
 
 """
     validation_epoch_end(model::MyModule, outs)
 
-If not implemented, the default is to use [`training_epoch_end`](@ref).
+If not implemented, the default is to compute the mean of the 
+scalar outputs of [`validation_step`](@ref).
 """ 
-validation_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple}) = training_epoch_end(model, outs)
+function validation_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple})
+    ks = keys(outs[1])
+    ks = filter(k -> outs[1][k] isa Number, ks)
+    mean_out = (; (k => mean(x[k] for x in outs) for k in ks)...)
+    return mean_out
+end
 
 """
     test_epoch_end(model::MyModule, outs)

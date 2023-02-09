@@ -23,6 +23,7 @@
              Default: `nothing`.
 
 - `logger`: If `true` use a TensorBoardLogger for logging.
+            Every output of the `training_step` will be logged.
             Default: `true`.
 
 - `max_epochs`: Stop training once this number of epochs is reached. 
@@ -71,7 +72,7 @@ function fit!(
         train_dataloader::DataLoader,
         val_dataloader = nothing,
     )
-    
+
     check_fluxmodule(model)
     input_model = model
 
@@ -81,10 +82,10 @@ function fit!(
 
     checkpointer = trainer.enable_checkpointing ? Checkpointer(checkpoints_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
-    logger = trainer.logger ? TBLogger(run_dir, tb_append) : nothing
+    logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
+    logger_infotime = 50
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
-    
-    
+
     training_step_outs = NamedTuple[]
     training_step_out_avg = Stats()
 
@@ -123,6 +124,13 @@ function fit!(
 			ProgressMeter.next!(progressbar,
                 showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
                 valuecolor=:green)
+            
+            if logger !== nothing && nsteps % logger_infotime == 0
+                TensorBoardLogger.set_step!(logger, nsteps)
+                with_logger(logger) do
+                    @info "Training" epoch last(training_step_outs)...
+                end
+            end
 
             nsteps == max_steps && break
         end
@@ -149,9 +157,9 @@ function fit!(
          end
 
          if logger !== nothing
+            TensorBoardLogger.set_step!(logger, nsteps)
             with_logger(logger) do
-                @info "Training" training_epoch_out... log_step_increment=1
-                @info "Validation" validation_epoch_out... log_step_increment=0
+                @info "Validation" validation_epoch_out...
             end
          end
 

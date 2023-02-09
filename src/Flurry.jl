@@ -20,7 +20,7 @@ import Optimisers
 end
 using Random
 using Statistics
-using TensorBoardLogger: TBLogger, tb_append
+using TensorBoardLogger: TensorBoardLogger, TBLogger, tb_append
 using UnPack: @unpack
 import Zygote
 
