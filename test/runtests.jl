@@ -1,3 +1,10 @@
 using Test
+using Tsunami, Flux, Functors, Zygote
 
-# Include tests
+@testset "FluxModule" begin
+   include("fluxmodule.jl") 
+end
+
+@testset "Trainer" begin
+   include("trainer.jl") 
+end
