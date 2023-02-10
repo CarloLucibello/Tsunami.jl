@@ -1,11 +1,14 @@
 """
-    abstract type FluxModule end
+    FluxModule
 
-Type inheriting from `FluxModule` have to be mutable.
+An abstract type for Flux models.
+A `FluxModule` helps orgainising you code and provides a standard interface for training.
+
 A `FluxModule` comes with `functor` already implemented.
 You can change the trainables by implementing `Optimisers.trainables`.
 
-`FluxModule`'s subtypes need to implement the following methods:
+Types inheriting from `FluxModule` have to be mutable. They also
+have to implement the following methods in order to interact with a [`Trainer`](@ref):
 - `configure_optimisers(model)`
 - `training_step(model, batch, batch_idx)`
 
@@ -16,6 +19,45 @@ Optionally also:
 - `validation_epoch_end(model, outs)`
 - `test_epoch_end(model, outs)`
 
+# Examples
+
+```julia
+using Flux, Tsunami, Optimisers
+
+# Define a Multilayer Perceptron implementing the FluxModule interface
+
+mutable struct MLP <: FluxModule
+    net
+end
+
+function MLP()
+    net = Chain(Dense(4 => 32, relu), Dense(32 => 2))
+    return MLP(net)
+end
+
+function Tsunami.training_step(model::MLP, batch, batch_idx)
+    x, y = batch
+    y_hat = model(x)
+    loss = Flux.Losses.mse(y_hat, y)
+    return loss
+end
+
+function Tsunami.configure_optimisers(model::MLP)
+    return Optimisers.setup(Optimisers.Adam(1e-3), model)
+end
+
+# Prepare the dataset and the DataLoader
+
+X, Y = rand(4, 100), rand(2, 100)
+train_dataloader = Flux.DataLoader((x, y), batchsize=10)
+
+
+# Create and Train the model
+
+model = MLP()
+trainer = Trainer(max_epochs=10)
+Tsunami.fit!(model, trainer; train_dataloader)
+```
 """
 abstract type FluxModule end
 
@@ -30,6 +72,17 @@ not_implemented_error(name) = error("You need to implement the method `$(name)`"
 """
     configure_optimisers(model)
 
+Return an optimisers' state,  `Optimisers`
+
+# Examples
+
+```julia
+using Optimisers
+
+function configure_optimisers(model::MyFluxModule)
+    return Optimisers.setup(AdamW(1e-3), model)
+end
+```
 """
 function configure_optimisers(model::FluxModule)
     not_implemented_error("configure_optimisers")

@@ -10,5 +10,6 @@ end
 @testset "check_fluxmodule" begin
     struct Immut <: FluxModule end
     @test_throws AssertionError Tsunami.check_fluxmodule(Immut())
+    Tsunami.check_fluxmodule(TestModule1())
 end
 
