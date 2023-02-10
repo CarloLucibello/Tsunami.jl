@@ -95,6 +95,7 @@ function fit!(
         model = ckpt.model
         start_epoch = ckpt.epoch + 1
         opt = ckpt.opt
+        nsteps = ckpt.step
     else
         opt = configure_optimisers(model)
         start_epoch = 1
@@ -107,6 +108,7 @@ function fit!(
             showspeed=true, enabled = trainer.progress_bar)
 		
         for (batch_idx, batch) in enumerate(train_dataloader)
+            nsteps += 1
             batch = batch |> device
 
             grads = Zygote.gradient(model) do model
@@ -120,8 +122,7 @@ function fit!(
             end
             opt, model = Optimisers.update!(opt, model, grads[1])
 
-            nsteps += 1
-			ProgressMeter.next!(progressbar,
+            ProgressMeter.next!(progressbar,
                 showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
                 valuecolor=:green)
             

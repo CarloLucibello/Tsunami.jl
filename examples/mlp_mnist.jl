@@ -5,6 +5,7 @@ mutable struct MLP <: FluxModule
     net
 end
 
+
 function MLP()
     net = Chain(
         flatten,
@@ -44,7 +45,7 @@ trainer = Trainer(max_epochs=10,
 Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # RESUME TRAINING
-trainer.max_epochs = 5
+trainer.max_epochs = 20
 Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader,
     ckpt_path = joinpath(@__DIR__, "ckpt_epoch=0002.bson"))
     
