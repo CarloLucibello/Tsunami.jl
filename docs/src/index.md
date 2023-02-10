@@ -1,6 +1,6 @@
 # Tsunami.jl
 
-<img align="right" width="200px" src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/assets/the_great_wave.jpg">
+<img align="right" width="200px" src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg">
 
 A high-level deep learning framework for the Julia language 
 that helps you focus and organize the relevant part of your code
