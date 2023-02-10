@@ -12,7 +12,7 @@ makedocs(;
          modules = [Tsunami],
          doctest = true,
          clean = true,
-         format = Documenter.HTML(; mathengine, prettyurls, assets),
+         format = Documenter.HTML(; mathengine, prettyurls),
          sitename = "Tsunami.jl",
          pages = ["Home" => "index.md",
              "FluxModule" => "fluxmodule.md",
