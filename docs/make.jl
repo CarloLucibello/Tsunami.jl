@@ -7,12 +7,14 @@ DocMeta.setdocmeta!(Tsunami, :DocTestSetup,
 
 prettyurls = get(ENV, "CI", nothing) == "true"
 mathengine = MathJax3()
+sidebar_sitename = true
+assets = ["assets/flux.css"]
 
 makedocs(;
          modules = [Tsunami],
          doctest = true,
          clean = true,
-         format = Documenter.HTML(; mathengine, prettyurls),
+         format = Documenter.HTML(; mathengine, prettyurls, assets, sidebar_sitename),
          sitename = "Tsunami.jl",
          pages = ["Home" => "index.md",
              "FluxModule" => "fluxmodule.md",

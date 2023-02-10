@@ -11,52 +11,49 @@ A type storing the training options to be passed to [`fit!`](@ref).
                 See also the `devices` option.
                  Default: `:auto`.
 
-- **val\_every\_n\_epoch**: Perform a validation loop every after every N training epochs. 
-                       Default: `1`.
+- **checkpointer**: If `true`, enable checkpointing.
+                    Default: `true`.
 
-- **checkpointer**:   If `true`, enable checkpointing.
-                         Default: `true`.
-
-- **default\_root\_dir**: Default path for logs and weights.
+- **default\\_root\\_dir** : Default path for logs and weights.
                       Default: `pwd()`.
-
-- **devices**: Devices identificaiton number(s). 
-            Use an integer `n` to train on `n` devices, 
-            or a list to train on specific devices.
+                    
+- **devices**: Pass an integer `n` to train on `n` devices, 
+            or a list of devices ids to train on specific devices.
             If `nothing`, will use all available devices. 
             Default: `nothing`.
 
-- **fast\_dev\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
+- **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
 - **logger**: If `true` use tensorboard for logging.
             Every output of the `training_step` will be logged every 50 steps.
             Default: `true`.
 
-- **max\_epochs**: Stop training once this number of epochs is reached. 
+- **max\\_epochs**: Stop training once this number of epochs is reached. 
                 Disabled by default (`nothing`). 
                 If both `max_epochs` and `max_steps` are not specified, 
                 defaults to `max_epochs = 1000`. To enable infinite training, set `max_epochs` = -1.
                 Default: `nothing`.
 
-- **max\_steps**: Stop training after this number of steps. 
+- **max\\_steps**: Stop training after this number of steps. 
                Disabled by default (`-1`). 
                If `max_steps = -1` and `max_epochs = nothing`, will default to `max_epochs = 1000`. 
                To enable infinite training, set `max_epochs` to `-1`.
                Default: `-1`.
 
-- **progress\_bar**: It `true`, shows a progress bar during training. 
+- **progress\\_bar**: It `true`, shows a progress bar during training. 
                   Default: `true`.
 
+- **val\\_every\\_n\\_epoch**: Perform a validation loop every after every N training epochs. 
+                        Default: `1`.
+  
 # Examples
 
 ```julia
 trainer = Trainer(max_epochs = 10, 
-                  default_root_dir = @__DIR__,
                   accelerator = :cpu,
                   checkpointer = true,
-                  logger = true,
-                  )
+                  logger = true)
 
 Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
 ```
@@ -72,8 +69,13 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
     max_steps::Int = -1
     progress_bar::Bool = true
     val_every_n_epoch::Int = 1
+    fit_state::Dict{Symbol, Any} = Dict{Symbol, Any}()
 end
 
+function reset_state!(trainer)
+    trainer.fit_state = Dict{Symbol, Any}()
+    return trainer
+end
 
 """
     fit!(model::FluxModule, trainer::Trainer; train_dataloader, val_dataloader = nothing, ckpt_path = nothing)
@@ -85,9 +87,9 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
 - **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
-- **train\_dataloader**: A `DataLoader` used for training. Required dargument.
-- **val\_dataloader**: A `DataLoader` used for validation. Default: `nothing`.
-- **ckpt\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
+- **train\\_dataloader**: A `DataLoader` used for training. Required dargument.
+- **val\\_dataloader**: A `DataLoader` used for validation. Default: `nothing`.
+- **ckpt\\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
 
 # Examples
 
@@ -105,9 +107,11 @@ function fit!(
     )
 
     input_model = model
+    reset_state!(trainer)
 
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
+    trainer.fit_state[:run_dir] = run_dir
     checkpoints_dir = joinpath(run_dir, "checkpoints")
 
     checkpointer = trainer.checkpointer ? Checkpointer(checkpoints_dir) : nothing 
@@ -123,22 +127,23 @@ function fit!(
         val_every_n_epoch = 1
 
         check_fluxmodule(model)
-        check_forward(model, first(train_dataloader))
+        # check forwards on cpu
+        check_training_step(model, first(train_dataloader))
         if val_dataloader !== nothing
-            check_forward(model, first(val_dataloader))
+            check_validation_step(model, first(val_dataloader))
         end
     end
 
     training_step_outs = NamedTuple[]
     training_step_out_avg = Stats()
 
-    nsteps = 0
+    step = 0
     if ckpt_path !== nothing
         ckpt = load_checkpoint(ckpt_path)
         model = ckpt.model
         start_epoch = ckpt.epoch + 1
         opt = ckpt.opt
-        nsteps = ckpt.step
+        step = ckpt.step
     else
         opt = configure_optimisers(model)
         start_epoch = 1
@@ -147,12 +152,16 @@ function fit!(
     opt = opt |> device
 
     for epoch in start_epoch:max_epochs
+        trainer.fit_state[:epoch] = epoch
+
         progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
             showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 		
         # SINGLE EPOCH TRAINING LOOP
         for (batch_idx, batch) in enumerate(train_dataloader)
-            nsteps += 1
+            step += 1
+            trainer.fit_state[:step] = step
+
             batch = batch |> device
 
             grads = Zygote.gradient(model) do model
@@ -170,18 +179,18 @@ function fit!(
                 showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
                 valuecolor=:yellow)
             
-            if logger !== nothing && nsteps % logger_infotime == 0
-                TensorBoardLogger.set_step!(logger, nsteps)
+            if logger !== nothing && step % logger_infotime == 0
+                TensorBoardLogger.set_step!(logger, step)
                 with_logger(logger) do
                     @info "Training" epoch last(training_step_outs)...
                 end
             end
 
-            nsteps == max_steps && break
+            step == max_steps && break
         end
         training_epoch_out = training_epoch_end(model, training_step_outs)
         if checkpointer !== nothing
-            checkpointer(model, opt; epoch, step=nsteps)
+            checkpointer(model, opt; epoch, step)
         end
         
         # VALIDATION LOOP
@@ -198,17 +207,17 @@ function fit!(
                 ProgressMeter.next!(valprogressbar)
             end
             validation_epoch_out = validation_epoch_end(model, validation_step_outs)
-            log_validation(logger, nsteps, validation_epoch_out)
+            log_validation(logger, step, validation_epoch_out)
          end
 
-         (nsteps == max_steps || epoch == max_epochs) && break
+         (step == max_steps || epoch == max_epochs) && break
     end
 
     model = model |> cpu
     if model !== input_model
         copy!(input_model, model)
     end
-    return nothing
+    return trainer.fit_state
 end
 
 unwrap_loss(training_step_out::Number) = training_step_out, (; loss=training_step_out)

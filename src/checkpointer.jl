@@ -2,7 +2,18 @@
 """
     Checkpointer(folder)
 
-Saves a [`FluxModule`](@ref) to `folder` after every training epoch.
+An helper class for saving a [`FluxModule`](@ref) to `folder`.
+The checkpoint is saved as a BSON file with the name `ckpt_epoch=X_step=Y.bson`.
+A symbolic link to the last checkpoint is also created as `ckpt_last.bson`.
+
+See also: [`load_checkpoint`](@ref).
+
+# Examples
+
+```julia
+checkpointer = Checkpointer("checkpoints")
+checkpointer(model, opt; epoch=1, step=1, kws...)
+```
 """
 mutable struct Checkpointer
     folder::String
@@ -23,6 +34,11 @@ function (cp::Checkpointer)(model::FluxModule, opt; epoch, step, kws...)
         rm(cp.last_ckpt)
     end
     cp.last_ckpt = filepath
+
+    linklast = joinpath(cp.folder, "ckpt_last.bson") 
+    rm(linklast, force=true)
+    symlink(filepath, linklast)
+    
     return filepath
 end
 

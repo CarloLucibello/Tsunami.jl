@@ -37,18 +37,18 @@ test_loader = DataLoader(MNIST(:test), batchsize=128)
 
 model = MLP()
 
-trainer = Trainer(max_epochs = 10, 
+trainer = Trainer(max_epochs = 2, 
                  default_root_dir = @__DIR__,
                  accelerator = :cpu,
                  checkpointer = true,
                  logger = true,
                  )
 
-Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
+fit_state = Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # RESUME TRAINING
 
-trainer.max_epochs = 20
+trainer.max_epochs = 5
+ckpt_path = joinpath(fit_state[:run_dir], "checkpoints", "ckpt_last.bson")
 
-Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader,
-    ckpt_path = joinpath(@__DIR__, "ckpt_epoch=0002.bson"))
+Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)

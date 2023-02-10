@@ -31,6 +31,5 @@ function dir_with_version(dir)
         i += 1
 		outdir = dir * "_$i"
     end
-	mkpath(outdir)
     return outdir
 end

@@ -8,16 +8,20 @@ A `FluxModule` comes with `functor` already implemented.
 You can change the trainables by implementing `Optimisers.trainables`.
 
 Types inheriting from `FluxModule` have to be mutable. They also
-have to implement the following methods in order to interact with a [`Trainer`](@ref):
-- `configure_optimisers(model)`
-- `training_step(model, batch, batch_idx)`
+have to implement the following methods in order to interact with a [`Trainer`](@ref).
 
-Optionally also:
-- `validation_step(model, batch, batch_idx)`
-- `test_step(model, batch, batch_idx)`
-- `training_epoch_end(model, outs)`
-- `validation_epoch_end(model, outs)`
-- `test_epoch_end(model, outs)`
+# Required methods
+
+- [`configure_optimisers`](@ref)`(model)`
+- [`training_step`](@ref)`(model, batch, batch_idx)`
+
+# Optional Methods 
+
+- [`validation_step`](@ref)`(model, batch, batch_idx)`
+- [`test_step`](@ref)`(model, batch, batch_idx)`
+- [`training_epoch_end`](@ref)`(model, outs)`
+- [`validation_epoch_end`](@ref)`(model, outs)`
+- [`test_epoch_end`](@ref)`(model, outs)`
 
 # Examples
 
