@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+Tsunami = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
+
+

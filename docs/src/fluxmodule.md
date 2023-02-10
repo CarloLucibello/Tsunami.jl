@@ -1,0 +1,5 @@
+# FluxModule
+
+```@docs
+FluxModule
+```
