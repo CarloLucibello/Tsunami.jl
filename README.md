@@ -1,4 +1,12 @@
+<img align="right" width="300px" src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/master/docs/src/assets/the_great_wave.jpg">
+
 # Tsunami.jl
+
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://CarloLucibello.github.io/Tsunami.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://CarloLucibello.github.io/Tsunami.jl/dev)
+![](https://github.com/CarloLucibello/Tsunami.jl/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/CarloLucibello/Tsunami.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/CarloLucibello/Tsunami.jl)
+
 
 A high-level deep learning framework for the Julia language 
 that helps you focus and organize the relevant part of your code
