@@ -34,7 +34,7 @@ export Stats
 
 
 include("fluxmodule.jl")
-export FluxModule#,
+export FluxModule
         #  training_step,
         #  validation_step,
         #  test_step,
@@ -46,7 +46,7 @@ export FluxModule#,
         #  configure_optimizers
 
 include("checkpointer.jl")
-export Checkpointer
+export Checkpointer, load_checkpoint
 
 include("trainer.jl")
 export Trainer

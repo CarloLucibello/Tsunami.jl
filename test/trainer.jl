@@ -20,8 +20,13 @@ end
 
 @testset "checkpoint" begin
     model = TestModule1()
+
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
+    x, y = first(train_dataloader)
+    ŷ0 = model(x)
+    loss0 = Flux.Losses.mse(ŷ0, y)
+
     trainer = Trainer(max_epochs=2, logger=false, checkpointer=true, progress_bar=true, default_root_dir=@__DIR__)
     Tsunami.fit!(model, trainer; train_dataloader)
     runpath1 = joinpath(@__DIR__, "tsunami_logs", "run_1")
@@ -31,5 +36,16 @@ end
     runpath2 = joinpath(@__DIR__, "tsunami_logs", "run_2")
     bsonpath2 = joinpath(runpath2, "checkpoints", "ckpt_epoch=2_step=4.bson")
     @test isfile(bsonpath2)
+
+    ŷ = model(x)
+    loss = Flux.Losses.mse(ŷ, y)
+    @test loss < loss0
+
+    ckpt = Tsunami.load_checkpoint(bsonpath2)
+    @test ckpt.model isa TestModule1
+    @test ckpt.epoch == 2
+    @test ckpt.step == 4
+    @test ckpt.model(x) ≈ ŷ
+
     rm(joinpath(@__DIR__, "tsunami_logs/"), recursive=true)
 end
