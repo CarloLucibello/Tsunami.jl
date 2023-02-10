@@ -26,6 +26,9 @@ A type storing the training options to be passed to [`fit!`](@ref).
             If `nothing`, will use all available devices. 
             Default: `nothing`.
 
+- `fast_dev_run`: If set to `true` runs a single batch for train and validation to find any bugs. 
+             Default: `false`.
+
 - `logger`: If `true` use tensorboard for logging.
             Every output of the `training_step` will be logged every 50 steps.
             Default: `true`.
@@ -60,14 +63,15 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
 """
 @kwdef mutable struct Trainer
     accelerator::Symbol = :auto
-    val_every_n_epoch::Int = 1
     default_root_dir::String = pwd()
     checkpointer::Bool = true
     devices::Union{Int, Nothing} = nothing
+    fast_dev_run::Bool = false
     logger::Bool = true
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
     progress_bar::Bool = true
+    val_every_n_epoch::Int = 1
 end
 
 
@@ -90,7 +94,6 @@ function fit!(
         val_dataloader = nothing,
     )
 
-    check_fluxmodule(model)
     input_model = model
 
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
@@ -102,6 +105,19 @@ function fit!(
     logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
     logger_infotime = 50
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
+    val_every_n_epoch = trainer.val_every_n_epoch
+    
+    if trainer.fast_dev_run
+        max_epochs = 1
+        max_steps = 1
+        val_every_n_epoch = 1
+
+        check_fluxmodule(model)
+        check_forward(model, first(train_dataloader))
+        if val_dataloader !== nothing
+            check_forward(model, first(val_dataloader))
+        end
+    end
 
     training_step_outs = NamedTuple[]
     training_step_out_avg = Stats()
@@ -160,8 +176,8 @@ function fit!(
         
         # VALIDATION LOOP
         if  (val_dataloader !== nothing && 
-            trainer.val_every_n_epoch !== nothing && 
-            epoch % trainer.val_every_n_epoch == 0)
+            val_every_n_epoch !== nothing && 
+            epoch % val_every_n_epoch == 0)
 
             valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
             validation_step_outs = NamedTuple[]
@@ -237,7 +253,7 @@ function process_out_for_progress_bar(out::NamedTuple, s::Stats)
     return [(k, f(k, v)) for (k, v) in pairs(out)]
 end
 
-function log_validation(tblogger, nsteps::Int, out::NamedTuple)
+function log_validation(tblogger, nsteps::Int, validation_epoch_out::NamedTuple)
     if tblogger !== nothing
         TensorBoardLogger.set_step!(tblogger, nsteps)
         with_logger(tblogger) do
@@ -247,6 +263,5 @@ function log_validation(tblogger, nsteps::Int, out::NamedTuple)
 
     #TODO customize with https://github.com/JuliaLogging/MiniLoggers.jl
     f(k, v) = "$(k) = $(roundval(v))"
-    @info "Validation: $(join([f(k, v) for (k, v) in pairs(out)], ", "))"
+    @info "Validation: $(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))"
 end
-
