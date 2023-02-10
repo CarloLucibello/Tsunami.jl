@@ -1,6 +1,7 @@
 using Test
-using Tsunami, Flux, Functors, Zygote
+using Tsunami, Flux, Functors, Zygote, Optimisers
 
+include("test_utils.jl")
 include("test_modules.jl")
 
 @testset "FluxModule" begin

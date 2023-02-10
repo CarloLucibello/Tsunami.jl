@@ -35,6 +35,8 @@ function MLP()
     return MLP(net)
 end
 
+(model::MLP)(x) = model.net(x)
+
 function Tsunami.training_step(model::MLP, batch, batch_idx)
     x, y = batch
     y_hat = model(x)

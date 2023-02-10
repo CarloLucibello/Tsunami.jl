@@ -5,7 +5,6 @@ mutable struct MLP <: FluxModule
     net
 end
 
-
 function MLP()
     net = Chain(
         flatten,

@@ -2,6 +2,8 @@
 """
     Trainer(; kws...)
 
+A type storing the training options to be passed to [`fit!`](@ref).
+
 # Arguments
 
 - `accelerator`: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
@@ -9,21 +11,23 @@
                 See also the `devices` option.
                  Default: `:auto`.
 
-- `check_val_every_n_epoch`: Perform a validation loop every after every N training epochs. 
-                             Default: `1`.
+- `val_every_n_epoch`: Perform a validation loop every after every N training epochs. 
+                       Default: `1`.
 
-- `enable_checkpointing`: If `true`, enable checkpointing.
+- `checkpointer`:   If `true`, enable checkpointing.
                          Default: `true`.
 
-- `default_root_dir`: Default path for logs and weights TODO[when no logger/ckpt_callback passed].
+- `default_root_dir`: Default path for logs and weights.
                       Default: `pwd()`.
 
-- `devices`: Devices identificaiton number(s). Will be mapped to either `gpus`, `tpu_cores`, `num_processes` or `ipus`,
-             based on the `accelerator` type.
-             Default: `nothing`.
+- `devices`: Devices identificaiton number(s). 
+            Use an integer `n` to train on `n` devices, 
+            or a list to train on specific devices.
+            If `nothing`, will use all available devices. 
+            Default: `nothing`.
 
-- `logger`: If `true` use a TensorBoardLogger for logging.
-            Every output of the `training_step` will be logged.
+- `logger`: If `true` use tensorboard for logging.
+            Every output of the `training_step` will be logged every 50 steps.
             Default: `true`.
 
 - `max_epochs`: Stop training once this number of epochs is reached. 
@@ -40,12 +44,25 @@
 
 - `progress_bar`: It `true`, shows a progress bar during training. 
                   Default: `true`.
+
+# Examples
+
+```julia
+trainer = Trainer(max_epochs = 10, 
+                  default_root_dir = @__DIR__,
+                  accelerator = :cpu,
+                  checkpointer = true,
+                  logger = true,
+                  )
+
+Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
+```
 """
 @kwdef mutable struct Trainer
     accelerator::Symbol = :auto
-    check_val_every_n_epoch::Union{Int, Nothing} = 1
+    val_every_n_epoch::Int = 1
     default_root_dir::String = pwd()
-    enable_checkpointing::Bool = true
+    checkpointer::Bool = true
     devices::Union{Int, Nothing} = nothing
     logger::Bool = true
     max_epochs::Union{Int, Nothing} = nothing
@@ -77,10 +94,10 @@ function fit!(
     input_model = model
 
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
-    run_dir = joinpath(tsunami_dir, "run_$(now())")
+    run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
     checkpoints_dir = joinpath(run_dir, "checkpoints")
 
-    checkpointer = trainer.enable_checkpointing ? Checkpointer(checkpoints_dir) : nothing 
+    checkpointer = trainer.checkpointer ? Checkpointer(checkpoints_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
     logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
     logger_infotime = 50
@@ -105,8 +122,9 @@ function fit!(
 
     for epoch in start_epoch:max_epochs
         progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
-            showspeed=true, enabled = trainer.progress_bar)
+            showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 		
+        # SINGLE EPOCH TRAINING LOOP
         for (batch_idx, batch) in enumerate(train_dataloader)
             nsteps += 1
             batch = batch |> device
@@ -124,7 +142,7 @@ function fit!(
 
             ProgressMeter.next!(progressbar,
                 showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
-                valuecolor=:green)
+                valuecolor=:yellow)
             
             if logger !== nothing && nsteps % logger_infotime == 0
                 TensorBoardLogger.set_step!(logger, nsteps)
@@ -140,12 +158,12 @@ function fit!(
             checkpointer(model, opt; epoch, step=nsteps)
         end
         
+        # VALIDATION LOOP
         if  (val_dataloader !== nothing && 
-            trainer.check_val_every_n_epoch !== nothing && 
-            epoch % trainer.check_val_every_n_epoch == 0)
+            trainer.val_every_n_epoch !== nothing && 
+            epoch % trainer.val_every_n_epoch == 0)
 
-            valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled = false) # TODO doesn't work
-		
+            valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
             validation_step_outs = NamedTuple[]
             for (batch_idx, batch) in enumerate(val_dataloader)
                 batch = batch |> device
@@ -154,14 +172,7 @@ function fit!(
                 ProgressMeter.next!(valprogressbar)
             end
             validation_epoch_out = validation_epoch_end(model, validation_step_outs)
-            print_validation_epoch_end(validation_epoch_out)
-         end
-
-         if logger !== nothing
-            TensorBoardLogger.set_step!(logger, nsteps)
-            with_logger(logger) do
-                @info "Validation" validation_epoch_out...
-            end
+            log_validation(logger, nsteps, validation_epoch_out)
          end
 
          (nsteps == max_steps || epoch == max_epochs) && break
@@ -222,12 +233,20 @@ function select_cuda_device(devices::Union{Vector{Int}, Tuple})
 end
 
 function process_out_for_progress_bar(out::NamedTuple, s::Stats)
-    f(k, v) = "$(round4(v)) (last)  $(round4(OnlineStats.value(s[k]))) (expavg)"
+    f(k, v) = "$(roundval(v)) (last)  $(roundval(OnlineStats.value(s[k]))) (expavg)"
     return [(k, f(k, v)) for (k, v) in pairs(out)]
 end
 
-function print_validation_epoch_end(out::NamedTuple)
-    f(k, v) = "$(k) = $(round4(v))"
+function log_validation(tblogger, nsteps::Int, out::NamedTuple)
+    if tblogger !== nothing
+        TensorBoardLogger.set_step!(tblogger, nsteps)
+        with_logger(tblogger) do
+            @info "Validation" validation_epoch_out...
+        end
+    end
+
+    #TODO customize with https://github.com/JuliaLogging/MiniLoggers.jl
+    f(k, v) = "$(k) = $(roundval(v))"
     @info "Validation: $(join([f(k, v) for (k, v) in pairs(out)], ", "))"
 end
 

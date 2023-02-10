@@ -13,7 +13,24 @@ accuracy(ŷ::AbstractMatrix, y::AbstractMatrix) = mean(onecold(ŷ) .== onecold
 
 ChainRulesCore.@non_differentiable accuracy(::Any...)
 
-round4(x::Float64) = round(x, digits=4)
-round4(x::AbstractFloat) = round4(Float64(x))
-round4(x::Int) = x
-round4(x::NamedTuple) = map(round4, x)
+roundval(x::Float64) = round(x, sigdigits=3)
+roundval(x::AbstractFloat) = roundval(Float64(x))
+roundval(x::Int) = x
+roundval(x::NamedTuple) = map(roundval, x)
+
+
+"""
+    dir_with_version(dir::String)
+
+Append a version number to `dir`.
+"""
+function dir_with_version(dir)
+    i = 1
+    outdir = dir * "_$i"
+    while isdir(outdir)
+        i += 1
+		outdir = dir * "_$i"
+    end
+	mkpath(outdir)
+    return outdir
+end
