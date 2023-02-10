@@ -6,46 +6,46 @@ A type storing the training options to be passed to [`fit!`](@ref).
 
 # Arguments
 
-- `accelerator`: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
+- **accelerator**: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
                 `:auto` will automatically select a gpu if available.
                 See also the `devices` option.
                  Default: `:auto`.
 
-- `val_every_n_epoch`: Perform a validation loop every after every N training epochs. 
+- **val_every_n_epoch**: Perform a validation loop every after every N training epochs. 
                        Default: `1`.
 
-- `checkpointer`:   If `true`, enable checkpointing.
+- **checkpointer**:   If `true`, enable checkpointing.
                          Default: `true`.
 
-- `default_root_dir`: Default path for logs and weights.
+- **default_root_dir**: Default path for logs and weights.
                       Default: `pwd()`.
 
-- `devices`: Devices identificaiton number(s). 
+- **devices**: Devices identificaiton number(s). 
             Use an integer `n` to train on `n` devices, 
             or a list to train on specific devices.
             If `nothing`, will use all available devices. 
             Default: `nothing`.
 
-- `fast_dev_run`: If set to `true` runs a single batch for train and validation to find any bugs. 
+- **fast_dev_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
-- `logger`: If `true` use tensorboard for logging.
+- **logger**: If `true` use tensorboard for logging.
             Every output of the `training_step` will be logged every 50 steps.
             Default: `true`.
 
-- `max_epochs`: Stop training once this number of epochs is reached. 
+- **max_epochs**: Stop training once this number of epochs is reached. 
                 Disabled by default (`nothing`). 
                 If both `max_epochs` and `max_steps` are not specified, 
                 defaults to `max_epochs = 1000`. To enable infinite training, set `max_epochs` = -1.
                 Default: `nothing`.
 
-- `max_steps`: Stop training after this number of steps. 
+- **max_steps**: Stop training after this number of steps. 
                Disabled by default (`-1`). 
                If `max_steps = -1` and `max_epochs = nothing`, will default to `max_epochs = 1000`. 
                To enable infinite training, set `max_epochs` to `-1`.
                Default: `-1`.
 
-- `progress_bar`: It `true`, shows a progress bar during training. 
+- **progress_bar**: It `true`, shows a progress bar during training. 
                   Default: `true`.
 
 # Examples
@@ -76,15 +76,25 @@ end
 
 
 """
-    fit!(model::Trainer, trainer::FluxModule; train_dataloader = nothing, val_dataloader = nothing, ckpt_path = nothing)
+    fit!(model::FluxModule, trainer::Trainer; train_dataloader, val_dataloader = nothing, ckpt_path = nothing)
+
+Train a `model` using the [`Trainer`](@ref) configuration.
+If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 # Arguments
 
-- `model`: A `FluxModule` object.
-- `trainer`: A `Trainer` object.
-- `train_dataloader`: A `DataLoader` used for training. Require argument.
-- `val_dataloader`: A `DataLoader` used for validation. Default: `nothing`.
-- `ckpt_path`: Path of the checkpoint from which training is resumed. Default: `nothing`.
+- **model**: A Flux model subtyping [`FluxModule`](@ref).
+- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
+- **train_dataloader**: A `DataLoader` used for training. Required dargument.
+- **val_dataloader**: A `DataLoader` used for validation. Default: `nothing`.
+- **ckpt_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
+
+# Examples
+
+```julia
+trainer = Trainer(max_epochs = 10)
+Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
+```
 """
 function fit!(
         model::FluxModule,

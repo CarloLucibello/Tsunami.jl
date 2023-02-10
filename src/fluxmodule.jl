@@ -74,7 +74,7 @@ not_implemented_error(name) = error("You need to implement the method `$(name)`"
 """
     configure_optimisers(model)
 
-Return an optimisers' state,  `Optimisers`
+Return an optimisers' state initialazed for the `model`.
 
 # Examples
 
