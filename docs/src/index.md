@@ -1,6 +1,6 @@
 # Tsunami.jl
 
-![the_great_wave]("https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg")
+![the_great_wave](https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg)
 
 A high-level deep learning framework for the Julia language 
 that helps you focus and organize the relevant part of your code
