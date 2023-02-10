@@ -1,4 +1,4 @@
-<img align="right" width="300px" src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/master/docs/src/assets/the_great_wave.jpg">
+<img align="right" width="300px" src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg">
 
 # Tsunami.jl
 
