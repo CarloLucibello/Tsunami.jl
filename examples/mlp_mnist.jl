@@ -1,4 +1,4 @@
-using Flux, Functors, Optimisers, Flurry, MLDatasets
+using Flux, Functors, Optimisers, Tsunami, MLDatasets
 using Flux: DataLoader, flatten
 
 mutable struct MLP <: FluxModule
@@ -18,16 +18,16 @@ function (m::MLP)(x)
     m.net(x)
 end
 
-function Flurry.training_step(m::MLP, batch, batch_idx)
+function Tsunami.training_step(m::MLP, batch, batch_idx)
     x, y = batch
     y_hat = m(x)
     y = Flux.onehotbatch(y, 0:9)
     loss = Flux.Losses.logitcrossentropy(y_hat, y)
-    acc = Flurry.accuracy(y_hat, y)
+    acc = Tsunami.accuracy(y_hat, y)
     return (; loss, acc)
 end
 
-function Flurry.configure_optimisers(m::MLP)
+function Tsunami.configure_optimisers(m::MLP)
     return Optimisers.setup(Optimisers.AdamW(1e-3), m)
 end
 
@@ -42,10 +42,9 @@ trainer = Trainer(max_epochs=10,
                  enable_checkpointing=true,
                  logger=true,
                  )
-Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
+Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # RESUME TRAINING
 trainer.max_epochs = 20
-Flurry.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader,
+Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader,
     ckpt_path = joinpath(@__DIR__, "ckpt_epoch=0002.bson"))
-    

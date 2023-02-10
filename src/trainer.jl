@@ -76,8 +76,8 @@ function fit!(
     check_fluxmodule(model)
     input_model = model
 
-    flurry_dir = joinpath(trainer.default_root_dir, "flurry_logs")
-    run_dir = joinpath(flurry_dir, "run_$(now())")
+    tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
+    run_dir = joinpath(tsunami_dir, "run_$(now())")
     checkpoints_dir = joinpath(run_dir, "checkpoints")
 
     checkpointer = trainer.enable_checkpointing ? Checkpointer(checkpoints_dir) : nothing 

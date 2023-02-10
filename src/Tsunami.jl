@@ -1,4 +1,4 @@
-module Flurry
+module Tsunami
 
 using Base: @kwdef
 import BSON
