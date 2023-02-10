@@ -27,7 +27,7 @@ pkg> add https://github.com/CarloLucibello/Tsunami.jl
 
 ## Features
 
-- Use `fit!` instead of implementing a training loop.
+- Use `Tsunami.fit!` instead of implementing a training loop.
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
 - GPU movement.
@@ -35,7 +35,7 @@ pkg> add https://github.com/CarloLucibello/Tsunami.jl
 ## Usage Examples
 
 Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer`
-train the model on your dataset with `fit!`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
+train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
 
 See the folder [examples/](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) for usage examples.
 
