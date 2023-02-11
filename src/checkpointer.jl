@@ -20,16 +20,16 @@ mutable struct Checkpointer
     last_ckpt::Union{Nothing, String}
 
     function Checkpointer(folder::String)
-        mkpath(folder)
         return new(folder, nothing)
     end
 end
 
 function (cp::Checkpointer)(model::FluxModule, opt; epoch, step, kws...)
+    mkpath(cp.folder)
     filename = "ckpt_epoch=$(epoch)_step=$(step).bson"
     filepath = joinpath(cp.folder, filename)
     BSON.@save filepath ckpt=(; model=cpu(model), opt=cpu(opt), epoch, step, kws...)
-    
+
     if cp.last_ckpt !== nothing
         rm(cp.last_ckpt)
     end

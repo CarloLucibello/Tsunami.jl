@@ -1,4 +1,4 @@
-using Flux, Functors, Optimisers, Tsunami, MLDatasets
+using Flux, Optimisers, Tsunami, MLDatasets
 using Flux: DataLoader, flatten
 import ParameterSchedulers
 
@@ -38,9 +38,15 @@ end
 train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
 test_loader = DataLoader(MNIST(:test), batchsize=128)
 
-# TRAIN FROM SCRATCH
 
 model = MLP()
+
+# DRY RUN FOR DEBUGGING
+
+trainer = Trainer(fast_dev_run=true, accelerator=:cpu)
+Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
+
+# TRAIN FROM SCRATCH
 
 trainer = Trainer(max_epochs = 2, 
                  default_root_dir = @__DIR__,

@@ -129,6 +129,8 @@ function fit!(
         max_epochs = 1
         max_steps = 1
         val_every_n_epoch = 1
+        checkpointer = nothing
+        logger = nothing
 
         check_fluxmodule(model)
         # check forwards on cpu
@@ -156,6 +158,21 @@ function fit!(
         lr = lr_scheduler(0)
         Optimisers.adjust!(opt, lr)
     end
+
+    function validation_loop()
+        valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
+        validation_step_outs = NamedTuple[]
+        for (batch_idx, batch) in enumerate(val_dataloader)
+            batch = batch |> device
+            validation_step_out = validation_step(model, batch, batch_idx)
+            push!(validation_step_outs, validation_step_out)
+            ProgressMeter.next!(valprogressbar)
+        end
+        validation_epoch_out = validation_epoch_end(model, validation_step_outs)
+        log_validation(logger, step, validation_epoch_out)
+    end
+
+    val_dataloader !== nothing && validation_loop()
     for epoch in start_epoch:max_epochs
         trainer.fit_state[:epoch] = epoch
 
@@ -194,21 +211,9 @@ function fit!(
             checkpointer(model, opt; epoch, step, lr_scheduler)
         end
         
-        # VALIDATION LOOP
-        if  (val_dataloader !== nothing && 
-            val_every_n_epoch !== nothing && 
-            epoch % val_every_n_epoch == 0)
-
-            valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
-            validation_step_outs = NamedTuple[]
-            for (batch_idx, batch) in enumerate(val_dataloader)
-                batch = batch |> device
-                validation_step_out = validation_step(model, batch, batch_idx)
-                push!(validation_step_outs, validation_step_out)
-                ProgressMeter.next!(valprogressbar)
-            end
-            validation_epoch_out = validation_epoch_end(model, validation_step_outs)
-            log_validation(logger, step, validation_epoch_out)
+        if  (val_dataloader !== nothing &&  val_every_n_epoch !== nothing && 
+                                            epoch % val_every_n_epoch == 0)
+            validation_loop()
         end
 
         if lr_scheduler !== nothing
