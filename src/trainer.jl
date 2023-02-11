@@ -25,6 +25,9 @@ A type storing the training options to be passed to [`fit!`](@ref).
 - **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
+- **log\\_every\\_n\\_steps: How often to log within steps.
+             Default: `50`.
+
 - **logger**: If `true` use tensorboard for logging.
             Every output of the `training_step` will be logged every 50 steps.
             Default: `true`.
@@ -64,6 +67,7 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
     checkpointer::Bool = true
     devices::Union{Int, Nothing} = nothing
     fast_dev_run::Bool = false
+    log_every_n_steps::Int = 50
     logger::Bool = true
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
@@ -117,7 +121,6 @@ function fit!(
     checkpointer = trainer.checkpointer ? Checkpointer(checkpoints_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
     logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
-    logger_infotime = 50
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
     val_every_n_epoch = trainer.val_every_n_epoch
     
@@ -179,7 +182,7 @@ function fit!(
                 showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
                 valuecolor=:yellow)
             
-            if logger !== nothing && step % logger_infotime == 0
+            if (logger !== nothing) && (step % trainer.log_every_n_steps == 0)
                 TensorBoardLogger.set_step!(logger, step)
                 with_logger(logger) do
                     @info "Training" epoch last(training_step_outs)...
