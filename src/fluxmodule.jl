@@ -30,25 +30,25 @@ using Flux, Tsunami, Optimisers
 
 # Define a Multilayer Perceptron implementing the FluxModule interface
 
-mutable struct MLP <: FluxModule
+mutable struct Model <: FluxModule
     net
 end
 
-function MLP()
+function Model()
     net = Chain(Dense(4 => 32, relu), Dense(32 => 2))
-    return MLP(net)
+    return Model(net)
 end
 
-(model::MLP)(x) = model.net(x)
+(model::Model)(x) = model.net(x)
 
-function Tsunami.training_step(model::MLP, batch, batch_idx)
+function Tsunami.training_step(model::Model, batch, batch_idx)
     x, y = batch
     y_hat = model(x)
     loss = Flux.Losses.mse(y_hat, y)
     return loss
 end
 
-function Tsunami.configure_optimisers(model::MLP)
+function Tsunami.configure_optimisers(model::Model)
     return Optimisers.setup(Optimisers.Adam(1e-3), model)
 end
 
@@ -60,7 +60,7 @@ train_dataloader = Flux.DataLoader((x, y), batchsize=10)
 
 # Create and Train the model
 
-model = MLP()
+model = Model()
 trainer = Trainer(max_epochs=10)
 Tsunami.fit!(model, trainer; train_dataloader)
 ```
@@ -78,15 +78,46 @@ not_implemented_error(name) = error("You need to implement the method `$(name)`"
 """
     configure_optimisers(model)
 
-Return an optimisers' state initialazed for the `model`.
+Return an optimiser's state initialized for the `model`.
+It can also return a tuple of `(scheduler, optimiser)`,
+where `scheduler` is any callable object that takes 
+the current epoch as input and returns a scalar that will be 
+set as the learning rate for the next epoch.
 
 # Examples
 
 ```julia
-using Optimisers
+using Optimisers, ParameterScheduler
 
-function configure_optimisers(model::MyFluxModule)
+function Tsunami.configure_optimisers(model::Model)
     return Optimisers.setup(AdamW(1e-3), model)
+end
+
+# Now with a scheduler dropping the learning rate by a factor 10 
+# at epochs [50, 100, 200] starting from the initial value of 1e-2
+function Tsunami.configure_optimisers(model::Model)
+    
+    function lr_scheduler(epoch)
+        if epoch <= 50
+            return 1e-2
+        elseif epoch <= 100
+            return 1e-3
+        elseif epoch <= 200
+            return 1e-4
+        else
+            return 1e-5
+        end
+    end
+    
+    opt = Optimisers.setup(AdamW(), model)
+    return lr_scheduler, opt
+end
+
+# Same as above but using the ParameterScheduler package.
+function Tsunami.configure_optimisers(model::Model)
+    lr_scheduler = ParameterScheduler.Step(1e-2, 1/10, [50, 50, 100])
+    opt = Optimisers.setup(AdamW(), model)
+    return lr_scheduler, opt
 end
 ```
 """
@@ -135,7 +166,7 @@ function training_epoch_end(::FluxModule, outs::Vector{<:NamedTuple})
 end
 
 """
-    validation_epoch_end(model::MyModule, outs)
+    validation_epoch_end(model, outs)
 
 If not implemented, the default is to compute the mean of the 
 scalar outputs of [`validation_step`](@ref).
@@ -148,7 +179,7 @@ function validation_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple})
 end
 
 """
-    test_epoch_end(model::MyModule, outs)
+    test_epoch_end(model, outs)
 
 If not implemented, the default is to use [`validation_epoch_end`](@ref).
 """

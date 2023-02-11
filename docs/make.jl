@@ -19,6 +19,7 @@ makedocs(;
          pages = ["Home" => "index.md",
              "FluxModule" => "fluxmodule.md",
              "Trainer" => "trainer.md",
+             "Checkpoints" => "checkpoints.md",
          ])
 
 deploydocs(repo = "github.com/CarloLucibello/Tsunami.jl.git")

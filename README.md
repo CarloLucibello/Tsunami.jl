@@ -30,6 +30,7 @@ pkg> add https://github.com/CarloLucibello/Tsunami.jl
 - Use `Tsunami.fit!` instead of implementing a training loop.
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
+- Hyperparameters' schedulers.
 - GPU movement.
 
 ## Usage Examples

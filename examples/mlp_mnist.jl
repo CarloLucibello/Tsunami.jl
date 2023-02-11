@@ -1,5 +1,6 @@
 using Flux, Functors, Optimisers, Tsunami, MLDatasets
 using Flux: DataLoader, flatten
+import ParameterSchedulers
 
 mutable struct MLP <: FluxModule
     net
@@ -7,9 +8,10 @@ end
 
 function MLP()
     net = Chain(
-        flatten,
-        Dense(28^2 => 256, relu), 
-        Dense(256 => 10))
+            flatten,
+            Dense(28^2 => 256, relu), 
+            Dense(256 => 10))
+
     return MLP(net)
 end
 
@@ -27,7 +29,10 @@ function Tsunami.training_step(m::MLP, batch, batch_idx)
 end
 
 function Tsunami.configure_optimisers(m::MLP)
-    return Optimisers.setup(Optimisers.AdamW(1e-3), m)
+    # initial lr, decay factor, decay intervals (corresponding to epochs 2 and 4)
+    lr_scheduler = ParameterSchedulers.Step(1e-2, 1/10, [2, 2])
+    opt = Optimisers.setup(Optimisers.AdamW(), m)
+    return lr_scheduler, opt
 end
 
 train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
@@ -52,3 +57,7 @@ trainer.max_epochs = 5
 ckpt_path = joinpath(fit_state[:run_dir], "checkpoints", "ckpt_last.bson")
 
 Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)
+
+import ParameterSchedulers
+lr_scheduler = ParameterSchedulers.Step(1e-3, 1/10, [2, 2])
+lr_scheduler.(1:10)

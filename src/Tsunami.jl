@@ -15,6 +15,7 @@ using MLUtils
 using ProgressMeter
 import OnlineStats
 import Optimisers
+# import ParameterSchedulers
 # @static if Sys.isapple()
 #     import QuartzImageIO # for image logging
 # end

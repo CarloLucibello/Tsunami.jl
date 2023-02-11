@@ -140,17 +140,18 @@ function fit!(
     step = 0
     if ckpt_path !== nothing
         ckpt = load_checkpoint(ckpt_path)
-        model = ckpt.model
         start_epoch = ckpt.epoch + 1
-        opt = ckpt.opt
-        step = ckpt.step
+        (; model, opt, step, lr_scheduler) = ckpt
     else
-        opt = configure_optimisers(model)
+        lr_scheduler, opt = configure_optimisers(model) |> process_out_configure_optimisers
         start_epoch = 1
     end
     model = model |> device
     opt = opt |> device
-
+    if lr_scheduler !== nothing
+        lr = lr_scheduler(0)
+        Optimisers.adjust!(opt, lr)
+    end
     for epoch in start_epoch:max_epochs
         trainer.fit_state[:epoch] = epoch
 
@@ -165,8 +166,7 @@ function fit!(
             batch = batch |> device
 
             grads = Zygote.gradient(model) do model
-                training_step_out = training_step(model, batch, batch_idx)
-                loss, training_step_out = unwrap_loss(training_step_out)
+                loss, training_step_out = training_step(model, batch, batch_idx) |> process_out_training_step
                 Zygote.ignore_derivatives() do
                     push!(training_step_outs, training_step_out)
                     OnlineStats.fit!(training_step_out_avg, training_step_out)
@@ -190,7 +190,7 @@ function fit!(
         end
         training_epoch_out = training_epoch_end(model, training_step_outs)
         if checkpointer !== nothing
-            checkpointer(model, opt; epoch, step)
+            checkpointer(model, opt; epoch, step, lr_scheduler)
         end
         
         # VALIDATION LOOP
@@ -208,9 +208,14 @@ function fit!(
             end
             validation_epoch_out = validation_epoch_end(model, validation_step_outs)
             log_validation(logger, step, validation_epoch_out)
-         end
+        end
 
-         (step == max_steps || epoch == max_epochs) && break
+        if lr_scheduler !== nothing
+            lr = lr_scheduler(epoch)
+            Optimisers.adjust!(opt, lr)
+        end
+
+        (step == max_steps || epoch == max_epochs) && break
     end
 
     model = model |> cpu
@@ -220,8 +225,19 @@ function fit!(
     return trainer.fit_state
 end
 
-unwrap_loss(training_step_out::Number) = training_step_out, (; loss=training_step_out)
-unwrap_loss(training_step_out::NamedTuple) = training_step_out.loss, training_step_out
+process_out_training_step(training_step_out::Number) = training_step_out, (; loss=training_step_out)
+process_out_training_step(training_step_out::NamedTuple) = training_step_out.loss, training_step_out
+
+function process_out_configure_optimisers(out::Tuple)
+    lr_scheduler, opt = out
+    return lr_scheduler, opt
+end
+
+function process_out_configure_optimisers(out)
+    opt = out
+    lr_scheduler = nothing
+    return lr_scheduler, opt
+end
 
 function compute_max_steps_and_epochs(max_steps, max_epochs)
     if max_steps == -1 && max_epochs === nothing
