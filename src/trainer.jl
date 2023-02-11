@@ -129,6 +129,8 @@ function fit!(
         max_epochs = 1
         max_steps = 1
         val_every_n_epoch = 1
+        checkpointer = nothing
+        logger = nothing
 
         check_fluxmodule(model)
         # check forwards on cpu
