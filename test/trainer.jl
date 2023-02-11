@@ -59,3 +59,4 @@ end
     @test fit_state[:epoch] == 1
     @test fit_state[:step] == 1
 end
+
