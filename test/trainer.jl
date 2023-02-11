@@ -49,3 +49,13 @@ end
 
     rm(joinpath(@__DIR__, "tsunami_logs/"), recursive=true)
 end
+
+@testset "fast_dev_run" begin
+    model = TestModule1()
+    nx, ny = io_sizes(model)
+    train_dataloader = make_dataloader(nx, ny)
+    trainer = Trainer(max_epochs=2, logger=false, checkpointer=false, progress_bar=false, fast_dev_run=true)
+    fit_state = Tsunami.fit!(model, trainer; train_dataloader)
+    @test fit_state[:epoch] == 1
+    @test fit_state[:step] == 1
+end

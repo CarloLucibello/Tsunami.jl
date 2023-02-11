@@ -53,13 +53,10 @@ function Tsunami.configure_optimisers(model::Model)
 end
 
 # Prepare the dataset and the DataLoader
-
 X, Y = rand(4, 100), rand(2, 100)
 train_dataloader = Flux.DataLoader((x, y), batchsize=10)
 
-
 # Create and Train the model
-
 model = Model()
 trainer = Trainer(max_epochs=10)
 Tsunami.fit!(model, trainer; train_dataloader)
@@ -96,7 +93,7 @@ end
 # Now with a scheduler dropping the learning rate by a factor 10 
 # at epochs [50, 100, 200] starting from the initial value of 1e-2
 function Tsunami.configure_optimisers(model::Model)
-    
+
     function lr_scheduler(epoch)
         if epoch <= 50
             return 1e-2

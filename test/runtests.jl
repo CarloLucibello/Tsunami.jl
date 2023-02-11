@@ -1,6 +1,8 @@
 using Test
 using Tsunami, Flux, Functors, Zygote, Optimisers
 
+ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
+
 include("test_utils.jl")
 include("test_modules.jl")
 
