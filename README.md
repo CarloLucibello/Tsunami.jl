@@ -4,8 +4,7 @@
 
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://CarloLucibello.github.io/Tsunami.jl/dev)
 ![](https://github.com/CarloLucibello/Tsunami.jl/actions/workflows/ci.yml/badge.svg)
-[![codecov](https://codecov.io/gh/CarloLucibello/Tsunami.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/CarloLucibello/Tsunami.jl)
-
+[![codecov](https://codecov.io/gh/CarloLucibello/Tsunami.jl/branch/main/graph/badge.svg?token=UhgCzsHqhM)](https://codecov.io/gh/CarloLucibello/Tsunami.jl)
 
 A high-level deep learning framework for the Julia language 
 that helps you focus and organize the relevant part of your code
