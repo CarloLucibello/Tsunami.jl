@@ -125,7 +125,40 @@ end
 """
     training_step(model, batch, batch_idx)
 
-Should return either a scalar loss or a `NamedTuple` with a scalar 'loss' field.
+The method called at each training step during `Tsunami.fit!`.
+It should compute the forward pass of the model and return the loss 
+corresponding to the minibatch `batch`. 
+
+It is also possible to return multiple values by returning a `NamedTuple`.
+The values will be logged in the `Trainer`'s `progress_bar`, by the logger, and
+will be available in the `outs` argument of the `*_epoch_end` methods.
+
+The training loop in `Tsunami.fit!` approximately looks like this:
+```julia
+for epoch in 1:epochs
+    for (batch_idx, batch) in enumerate(train_dataloader)
+        grads = gradient(model) do m
+            out = training_step(m, batch, batch_idx)
+            # ...
+            return out.loss
+        end
+        Optimisers.update!(opt, model, grads[1])
+    end
+end
+```
+
+
+
+# Examples
+
+```julia
+function Tsunami.training_step(model::Model, batch, batch_idx)
+    x, y = batch
+    ŷ = model(x)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    accuracy = Tsunami.accuracy(ŷ, y)
+    return (; loss, accuracy)
+end
 """
 function training_step(model::FluxModule, batch, batch_idx)
     not_implemented_error("training_step")

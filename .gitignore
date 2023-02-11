@@ -6,3 +6,5 @@ logs_*/
 tsunami_logs/
 lightning_logs/
 .DS_Store
+.ipynb_checkpoints
+

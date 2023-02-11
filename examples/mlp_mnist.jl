@@ -21,10 +21,10 @@ end
 
 function Tsunami.training_step(m::MLP, batch, batch_idx)
     x, y = batch
-    y_hat = m(x)
+    ŷ = m(x)
     y = Flux.onehotbatch(y, 0:9)
-    loss = Flux.Losses.logitcrossentropy(y_hat, y)
-    acc = Tsunami.accuracy(y_hat, y)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    acc = Tsunami.accuracy(ŷ, y)
     return (; loss, acc)
 end
 
@@ -57,7 +57,3 @@ trainer.max_epochs = 5
 ckpt_path = joinpath(fit_state[:run_dir], "checkpoints", "ckpt_last.bson")
 
 Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)
-
-import ParameterSchedulers
-lr_scheduler = ParameterSchedulers.Step(1e-3, 1/10, [2, 2])
-lr_scheduler.(1:10)

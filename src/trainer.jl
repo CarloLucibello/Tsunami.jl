@@ -25,11 +25,12 @@ A type storing the training options to be passed to [`fit!`](@ref).
 - **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
-- **log\\_every\\_n\\_steps: How often to log within steps.
+- **log\\_every\\_n\\_steps: How often to log within steps. See also `logger`.
              Default: `50`.
 
 - **logger**: If `true` use tensorboard for logging.
             Every output of the `training_step` will be logged every 50 steps.
+            See also `log_every_n_steps`.
             Default: `true`.
 
 - **max\\_epochs**: Stop training once this number of epochs is reached. 
@@ -84,14 +85,14 @@ end
 """
     fit!(model::FluxModule, trainer::Trainer; train_dataloader, val_dataloader = nothing, ckpt_path = nothing)
 
-Train a `model` using the [`Trainer`](@ref) configuration.
+Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 # Arguments
 
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
 - **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
-- **train\\_dataloader**: A `DataLoader` used for training. Required dargument.
+- **train\\_dataloader**: A `DataLoader` used for training. Required argument.
 - **val\\_dataloader**: A `DataLoader` used for validation. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
 
@@ -183,10 +184,7 @@ function fit!(
                 valuecolor=:yellow)
             
             if (logger !== nothing) && (step % trainer.log_every_n_steps == 0)
-                TensorBoardLogger.set_step!(logger, step)
-                with_logger(logger) do
-                    @info "Training" epoch last(training_step_outs)...
-                end
+                log_training_step(logger, epoch, step, last(training_step_outs))
             end
 
             step == max_steps && break
@@ -302,4 +300,13 @@ function log_validation(tblogger, nsteps::Int, validation_epoch_out::NamedTuple)
     #TODO customize with https://github.com/JuliaLogging/MiniLoggers.jl
     f(k, v) = "$(k) = $(roundval(v))"
     @info "Validation: $(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))"
+end
+
+function log_training_step(tblogger, epoch, step, out::NamedTuple)
+    if tblogger !== nothing
+        TensorBoardLogger.set_step!(tblogger, step)
+        with_logger(tblogger) do
+            @info "Training" epoch out...
+        end
+    end
 end

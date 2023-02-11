@@ -28,10 +28,10 @@ import Zygote
 CUDA.allowscalar(false)
 
 include("utils.jl")
-export accuracy
+# export accuracy
 
 include("stats.jl")
-export Stats
+# export Stats
 
 
 include("fluxmodule.jl")
