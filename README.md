@@ -34,6 +34,8 @@ In the following script we train a Multilayer Perceptron on the FashionMNIST dat
 using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
 using Flux: DataLoader, flatten, mapobs # from MLUtils.jl
 
+## Define the model 
+
 mutable struct MLP <: FluxModule
     net
 end
@@ -53,14 +55,14 @@ end
 
 Tsunami.configure_optimisers(model::MLP) = Optimisers.setup(Optimisers.AdamW(1e-3), model)
 
+## Prepare the data
+
 function mnist_transform(batch)
     image = ImageCore.channelview.(batch["image"])
     image = Flux.batch(image) ./ 255f0
     label = Flux.onehotbatch(batch["label"], 0:9)
     return (; image, label)
 end
-
-# Prepare the data
 
 train_data = load_dataset("fashion_mnist", split="train").with_format("julia")
 train_data = mapobs(mnist_transform, train_data)[:]
@@ -70,7 +72,7 @@ test_data = load_dataset("fashion_mnist", split="test").with_format("julia")
 test_data = mapobs(mnist_transform, test_data)[:]
 test_loader = DataLoader(test_data, batchsize=128)
 
-# Create and train the model
+## Create and train the model
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
