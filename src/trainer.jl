@@ -25,7 +25,7 @@ A type storing the training options to be passed to [`fit!`](@ref).
 - **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
-- **log\\_every\\_n\\_steps: How often to log within steps. See also `logger`.
+- **log\\_every\\_n\\_steps**: How often to log within steps. See also `logger`.
              Default: `50`.
 
 - **logger**: If `true` use tensorboard for logging.
