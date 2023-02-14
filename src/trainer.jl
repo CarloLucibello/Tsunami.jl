@@ -1,4 +1,11 @@
 
+@kwdef mutable struct FitState
+    step::Int = 0
+    epoch::Int = 0
+    run_dir::String = ""
+end
+
+
 """
     Trainer(; kws...)
 
@@ -48,9 +55,9 @@ A type storing the training options to be passed to [`fit!`](@ref).
 - **progress\\_bar**: It `true`, shows a progress bar during training. 
                   Default: `true`.
 
-- **val\\_every\\_n\\_epoch**: Perform a validation loop every after every N training epochs. 
+- **val\\_every\\_n\\_epochs**: Perform a validation loop every after every N training epochs. 
                         Default: `1`.
-  
+
 # Examples
 
 ```julia
@@ -73,14 +80,10 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
     progress_bar::Bool = true
-    val_every_n_epoch::Int = 1
-    fit_state::Dict{Symbol, Any} = Dict{Symbol, Any}()
+    val_every_n_epochs::Int = 1
+    fit_state::FitState = FitState()
 end
 
-function reset_state!(trainer)
-    trainer.fit_state = Dict{Symbol, Any}()
-    return trainer
-end
 
 """
     fit!(model::FluxModule, trainer::Trainer; train_dataloader, val_dataloader = nothing, ckpt_path = nothing)
@@ -92,9 +95,9 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
 - **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
-- **train\\_dataloader**: A `DataLoader` used for training. Required argument.
-- **val\\_dataloader**: A `DataLoader` used for validation. Default: `nothing`.
-- **ckpt\\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
+- **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`. Required argument.
+- **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
+- **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
 
 # Examples
 
@@ -107,28 +110,29 @@ function fit!(
         model::FluxModule,
         trainer::Trainer;
         ckpt_path = nothing,
-        train_dataloader::DataLoader,
+        train_dataloader,
         val_dataloader = nothing,
     )
 
     input_model = model
-    reset_state!(trainer)
+    trainer.fit_state = FitState()
+    fit_state = trainer.fit_state
 
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
-    trainer.fit_state[:run_dir] = run_dir
+    fit_state.run_dir = run_dir
     checkpoints_dir = joinpath(run_dir, "checkpoints")
 
     checkpointer = trainer.checkpointer ? Checkpointer(checkpoints_dir) : nothing 
     device = select_device(trainer.accelerator, trainer.devices)
     logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
-    val_every_n_epoch = trainer.val_every_n_epoch
+    val_every_n_epochs = trainer.val_every_n_epochs
     
     if trainer.fast_dev_run
         max_epochs = 1
         max_steps = 1
-        val_every_n_epoch = 1
+        val_every_n_epochs = 1
         checkpointer = nothing
         logger = nothing
 
@@ -174,7 +178,7 @@ function fit!(
 
     val_dataloader !== nothing && validation_loop()
     for epoch in start_epoch:max_epochs
-        trainer.fit_state[:epoch] = epoch
+        fit_state.epoch = epoch
 
         progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
             showspeed=true, enabled = trainer.progress_bar, color=:yellow)
@@ -182,7 +186,7 @@ function fit!(
         # SINGLE EPOCH TRAINING LOOP
         for (batch_idx, batch) in enumerate(train_dataloader)
             step += 1
-            trainer.fit_state[:step] = step
+            fit_state.step = step
 
             batch = batch |> device
 
@@ -211,8 +215,8 @@ function fit!(
             checkpointer(model, opt; epoch, step, lr_scheduler)
         end
         
-        if  (val_dataloader !== nothing &&  val_every_n_epoch !== nothing && 
-                                            epoch % val_every_n_epoch == 0)
+        if  (val_dataloader !== nothing &&  val_every_n_epochs !== nothing && 
+                                            epoch % val_every_n_epochs == 0)
             validation_loop()
         end
 
@@ -228,7 +232,7 @@ function fit!(
     if model !== input_model
         copy!(input_model, model)
     end
-    return trainer.fit_state
+    return fit_state
 end
 
 process_out_training_step(training_step_out::Number) = training_step_out, (; loss=training_step_out)
