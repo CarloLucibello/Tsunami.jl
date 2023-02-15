@@ -233,16 +233,15 @@ end
 
 function check_training_step(m::FluxModule, batch)
     out = training_step(m, batch, 1)
-    errmsg = "The output of `training_step` has to be a scalar or a `NamedTuple` with a `loss` field."
+    losserrmsg = "The output of `training_step` has to be a scalar or a `NamedTuple` with a `loss` field."
     if out isa NamedTuple
-        @assert haskey(out, :loss) errmsg
+        @assert haskey(out, :loss) losserrmsg
     else
-        @assert out isa Number errmsg
+        @assert out isa Number losserrmsg
     end
 end
 
 function check_validation_step(m::FluxModule, batch)
     out = validation_step(m, batch, 1)
     @assert out isa NamedTuple "The output of `validation_step` has to be a `NamedTuple`."
-    @assert haskey(out, :loss) "The output of `validation_step` has to have a `loss` field."
 end
