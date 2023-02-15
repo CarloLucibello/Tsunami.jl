@@ -32,7 +32,7 @@ function Tsunami.configure_optimisers(m::MLP)
     # initial lr, decay factor, decay intervals (corresponding to epochs 2 and 4)
     lr_scheduler = ParameterSchedulers.Step(1e-2, 1/10, [2, 2])
     opt = Optimisers.setup(Optimisers.AdamW(), m)
-    return lr_scheduler, opt
+    return opt, lr_scheduler
 end
 
 train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
@@ -60,6 +60,6 @@ fit_state = Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_data
 # RESUME TRAINING
 
 trainer.max_epochs = 5
-ckpt_path = joinpath(fit_state[:run_dir], "checkpoints", "ckpt_last.bson")
+ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
 
 Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)

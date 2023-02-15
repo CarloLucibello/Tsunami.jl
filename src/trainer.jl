@@ -153,7 +153,7 @@ function fit!(
         start_epoch = ckpt.epoch + 1
         (; model, opt, step, lr_scheduler) = ckpt
     else
-        lr_scheduler, opt = configure_optimisers(model) |> process_out_configure_optimisers
+        opt, lr_scheduler = configure_optimisers(model) |> process_out_configure_optimisers
         start_epoch = 1
     end
     model = model |> device
@@ -239,14 +239,14 @@ process_out_training_step(training_step_out::Number) = training_step_out, (; los
 process_out_training_step(training_step_out::NamedTuple) = training_step_out.loss, training_step_out
 
 function process_out_configure_optimisers(out::Tuple)
-    lr_scheduler, opt = out
-    return lr_scheduler, opt
+    opt, lr_scheduler = out
+    return opt, lr_scheduler
 end
 
 function process_out_configure_optimisers(out)
     opt = out
     lr_scheduler = nothing
-    return lr_scheduler, opt
+    return opt, lr_scheduler
 end
 
 function compute_max_steps_and_epochs(max_steps, max_epochs)
