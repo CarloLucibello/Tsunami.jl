@@ -5,9 +5,10 @@ end
 ############ TestModule1 ############
 mutable struct TestModule1 <: FluxModule
     net
+    tuple_field::Tuple{Int, Int}
 end
 
-TestModule1() = TestModule1(Flux.Chain(Flux.Dense(4, 3, relu), Flux.Dense(3, 2)))
+TestModule1() = TestModule1(Flux.Chain(Flux.Dense(4, 3, relu), Flux.Dense(3, 2)), (1, 2))
 
 (m::TestModule1)(x) = m.net(x)
 

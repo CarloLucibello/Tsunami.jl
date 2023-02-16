@@ -33,6 +33,7 @@ include("utils.jl")
 include("stats.jl")
 # export Stats
 
+include("show.jl")
 
 include("fluxmodule.jl")
 export FluxModule
