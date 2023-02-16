@@ -4,7 +4,7 @@ end
 
 @testset "functor" begin
     m = TestModule1()
-    @test Functors.children(m) == (; net = m.net)
+    @test Functors.children(m) == (; net = m.net, tuple_field = m.tuple_field)
 end
 
 @testset "check_fluxmodule" begin
