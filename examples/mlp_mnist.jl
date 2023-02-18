@@ -1,5 +1,5 @@
 using Flux, Optimisers, Tsunami, MLDatasets
-using Flux: DataLoader, flatten
+using MLUtils: DataLoader, flatten
 import ParameterSchedulers
 
 mutable struct MLP <: FluxModule

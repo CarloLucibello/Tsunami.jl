@@ -356,7 +356,7 @@ function log_validation(tblogger, nsteps::Int, validation_epoch_out::NamedTuple)
 
     val_crayon = Crayon(foreground=:light_cyan, bold=true)
     print(val_crayon, "Validation: ")
-    println(Crayon(foreground=:white), "$(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))")
+    println(Crayon(foreground=:white, bold=false), "$(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))")
 end
 
 function log_training_step(tblogger, epoch, step, out::NamedTuple)
