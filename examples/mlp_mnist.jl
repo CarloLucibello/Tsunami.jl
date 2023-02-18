@@ -38,7 +38,6 @@ end
 train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
 test_loader = DataLoader(MNIST(:test), batchsize=128)
 
-
 model = MLP()
 
 # DRY RUN FOR DEBUGGING

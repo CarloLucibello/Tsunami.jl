@@ -5,6 +5,7 @@ logs/
 logs_*/
 tsunami_logs/
 lightning_logs/
+checkpoints
 .DS_Store
 .ipynb_checkpoints
 .CondaPkg

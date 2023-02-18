@@ -248,9 +248,9 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", m::T) where T <: FluxModule
     if get(io, :compact, false)
-        return print(io, T)
+        return print(io, "$T()")
     end
-    print(io, "$T")
+    print(io, "$T:")
     for f in sort(fieldnames(T) |> collect)
         startswith(string(f), "_") && continue
         v = getfield(m, f)

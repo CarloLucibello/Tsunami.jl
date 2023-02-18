@@ -1,8 +1,35 @@
+## TODO from PL ("train", "sanity_check", "validate", "test", "predict", "tune") 
+# abstract type AbstractStage end
+# struct TrainStage end 
+# struct ValidateStage end 
 
-@kwdef mutable struct FitState
-    step::Int = 0
+"""
+    FitState
+
+A type storing the state of execution during a call to [`fit!`](@ref). 
+
+A `FitState` object is part of a [`Trainer`](@ref) object.
+
+# Fields
+
+- `epoch`: current epoch.
+- `run_dir`
+- `stage`
+- `step`: current step.
+- `training_epoch_end`
+- `validation_epoch_out`
+"""
+@kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
     epoch::Int = 0
     run_dir::String = ""
+    stage::Symbol = :train # [:train, :validate]
+    step::Int = 0
+    training_epoch_out::Union{Nothing, NamedTuple} = nothing
+    validation_epoch_out::Union{Nothing, NamedTuple} = nothing
+end
+
+function Base.show(io::IO, ::MIME"text/plain", fit_state::FitState)
+    container_show(io, fit_state)
 end
 
 
@@ -11,13 +38,16 @@ end
 
 A type storing the training options to be passed to [`fit!`](@ref).
 
+A `Trainer` object also contains a field `fit_state` of type [`FitState`](@ref) mantaining updated information about 
+the fit state during the execution of `fit!`.
+
 # Arguments
 
 - **accelerator**: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
                 `:auto` will automatically select a gpu if available.
                 See also the `devices` option.
                  Default: `:auto`.
-
+- **callbacks**: Pass a single or a list of callbacks. Default `nothing`.
 - **checkpointer**: If `true`, enable checkpointing.
                     Default: `true`.
 
@@ -72,6 +102,7 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
 @kwdef mutable struct Trainer
     accelerator::Symbol = :auto
     default_root_dir::String = pwd()
+    callbacks = []
     checkpointer::Bool = true
     devices::Union{Int, Nothing} = nothing
     fast_dev_run::Bool = false
@@ -144,6 +175,8 @@ function fit!(
         end
     end
 
+    print_fit_initial_summary(model, trainer, device)
+
     training_step_outs = NamedTuple[]
     training_step_out_avg = Stats()
 
@@ -156,6 +189,7 @@ function fit!(
         opt, lr_scheduler = configure_optimisers(model) |> process_out_configure_optimisers
         start_epoch = 1
     end
+    
     model = model |> device
     opt = opt |> device
     if lr_scheduler !== nothing
@@ -164,6 +198,8 @@ function fit!(
     end
 
     function validation_loop()
+        oldstage = fit_state.stage
+        fit_state.stage = :validate
         valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
         validation_step_outs = NamedTuple[]
         for (batch_idx, batch) in enumerate(val_dataloader)
@@ -173,7 +209,12 @@ function fit!(
             ProgressMeter.next!(valprogressbar)
         end
         validation_epoch_out = validation_epoch_end(model, validation_step_outs)
+        fit_state.validation_epoch_out = validation_epoch_out
+        for cbk in trainer.callbacks
+            on_validation_epoch_end(cbk, trainer, model)
+        end
         log_validation(logger, step, validation_epoch_out)
+        fit_state.stage = oldstage
     end
 
     val_dataloader !== nothing && validation_loop()
@@ -211,6 +252,10 @@ function fit!(
             step == max_steps && break
         end
         training_epoch_out = training_epoch_end(model, training_step_outs)
+        fit_state.training_epoch_out = training_epoch_out
+        for cbk in trainer.callbacks
+            on_validation_epoch_end(cbk, trainer, model)
+        end
         if checkpointer !== nothing
             checkpointer(model, opt; epoch, step, lr_scheduler)
         end
@@ -308,7 +353,10 @@ function log_validation(tblogger, nsteps::Int, validation_epoch_out::NamedTuple)
 
     #TODO customize with https://github.com/JuliaLogging/MiniLoggers.jl
     f(k, v) = "$(k) = $(roundval(v))"
-    @info "Validation: $(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))"
+
+    val_crayon = Crayon(foreground=:light_cyan, bold=true)
+    print(val_crayon, "Validation: ")
+    println(Crayon(foreground=:white), "$(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))")
 end
 
 function log_training_step(tblogger, epoch, step, out::NamedTuple)
@@ -318,4 +366,14 @@ function log_training_step(tblogger, epoch, step, out::NamedTuple)
             @info "Training" epoch out...
         end
     end
+end
+ 
+function print_fit_initial_summary(model, trainer, device)
+    cuda_available = CUDA.functional()
+    use_cuda = cuda_available && device === gpu
+    str_gpuavail = cuda_available ? "true (CUDA)" : "false"
+    @info "GPU available: $(str_gpuavail), used: $use_cuda"
+    @info "Model Summary: $(typeof(model))"
+    show(stdout, MIME("text/plain"), model)
+    println()
 end

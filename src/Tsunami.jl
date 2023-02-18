@@ -24,6 +24,7 @@ using Statistics
 using TensorBoardLogger: TensorBoardLogger, TBLogger, tb_append
 using UnPack: @unpack
 import Zygote
+using Crayons
 
 CUDA.allowscalar(false)
 
@@ -52,5 +53,8 @@ export Checkpointer, load_checkpoint
 
 include("trainer.jl")
 export Trainer
+
+include("callbacks.jl")
+export AbstractCallback
 
 end # module
