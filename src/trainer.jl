@@ -16,7 +16,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 - `run_dir`
 - `stage`
 - `step`: current step.
-- `training_epoch_end`
+- `training_epoch_out`
 - `validation_epoch_out`
 """
 @kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
