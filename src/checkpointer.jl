@@ -8,6 +8,8 @@ A symbolic link to the last checkpoint is also created as `ckpt_last.bson`.
 
 A `Checkpointer` is automatically created when `checkpointer = true` is passed to [`fit!`](@ref).
 
+If `folder` is not specified, the checkpoints are saved in a folder named `checkpoints` in the run directory.
+
 See also: [`load_checkpoint`](@ref).
 
 # Examples
