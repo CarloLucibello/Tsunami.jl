@@ -7,11 +7,9 @@ using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
 import Functors
-using Glob: glob
 using Dates
 # import ImageMagick # for image logging
 using Logging
-using MLUtils
 using ProgressMeter
 import OnlineStats
 import Optimisers
@@ -24,6 +22,7 @@ using Statistics
 using TensorBoardLogger: TensorBoardLogger, TBLogger, tb_append
 using UnPack: @unpack
 import Zygote
+using Crayons
 
 CUDA.allowscalar(false)
 
@@ -41,16 +40,16 @@ export FluxModule
         #  validation_step,
         #  test_step,
         #  predict_step,
-        #  training_epoch_end,
-        #  validation_epoch_end,
-        #  test_epoch_end,
-        #  predict_epoch_end,
         #  configure_optimizers
 
-include("checkpointer.jl")
-export Checkpointer, load_checkpoint
 
 include("trainer.jl")
 export Trainer
+
+include("callbacks.jl")
+export AbstractCallback
+
+include("checkpointer.jl")
+export Checkpointer, load_checkpoint
 
 end # module

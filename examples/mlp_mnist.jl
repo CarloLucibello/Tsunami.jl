@@ -1,5 +1,5 @@
 using Flux, Optimisers, Tsunami, MLDatasets
-using Flux: DataLoader, flatten
+using MLUtils: DataLoader, flatten
 import ParameterSchedulers
 
 mutable struct MLP <: FluxModule
@@ -37,7 +37,6 @@ end
 
 train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
 test_loader = DataLoader(MNIST(:test), batchsize=128)
-
 
 model = MLP()
 

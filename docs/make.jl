@@ -19,6 +19,7 @@ makedocs(;
          pages = ["Home" => "index.md",
              "FluxModule" => "fluxmodule.md",
              "Trainer" => "trainer.md",
+             "Hooks" => "hooks.md",
              "Checkpoints" => "checkpoints.md",
              "Utils" => "utils.md",
          ])

@@ -1,41 +1,51 @@
 
 """
-    Checkpointer(folder)
+    Checkpointer(folder = nothing) <: AbstractCallback
 
-An helper class for saving a [`FluxModule`](@ref) to `folder`.
+An helper class for saving a [`FluxModule`](@ref) and the fit state.
 The checkpoint is saved as a BSON file with the name `ckpt_epoch=X_step=Y.bson`.
 A symbolic link to the last checkpoint is also created as `ckpt_last.bson`.
+
+A `Checkpointer` is automatically created when `checkpointer = true` is passed to [`fit!`](@ref).
+
+If `folder` is not specified, the checkpoints are saved in a folder named `checkpoints` in the run directory.
 
 See also: [`load_checkpoint`](@ref).
 
 # Examples
-
 ```julia
-checkpointer = Checkpointer("checkpoints")
-checkpointer(model, opt; epoch=1, step=1, kws...)
+checkpointer = Checkpointer()
+Tsunami.fit!(model, trainer, callbacks = [checkpointer])
 ```
 """
-mutable struct Checkpointer
-    folder::String
+mutable struct Checkpointer <: AbstractCallback
+    folder::Union{Nothing, String}
     last_ckpt::Union{Nothing, String}
 
-    function Checkpointer(folder::String)
+    function Checkpointer(folder = nothing)
         return new(folder, nothing)
     end
 end
 
-function (cp::Checkpointer)(model::FluxModule, opt; epoch, step, kws...)
-    mkpath(cp.folder)
+function on_training_epoch_end(cp::Checkpointer, model::FluxModule, trainer::Trainer)
+    @unpack fit_state = trainer
+    @unpack step, epoch, run_dir = fit_state
+   if cp.folder !== nothing
+        folder = cp.folder
+    else
+        folder = joinpath(run_dir, "checkpoints")
+    end
+    mkpath(folder)
     filename = "ckpt_epoch=$(epoch)_step=$(step).bson"
-    filepath = joinpath(cp.folder, filename)
-    BSON.@save filepath ckpt=(; model=cpu(model), opt=cpu(opt), epoch, step, kws...)
+    filepath = joinpath(folder, filename)
+    BSON.@save filepath ckpt=(; model=cpu(model), fit_state=cpu(fit_state))
 
     if cp.last_ckpt !== nothing
         rm(cp.last_ckpt)
     end
     cp.last_ckpt = filepath
 
-    linklast = joinpath(cp.folder, "ckpt_last.bson") 
+    linklast = joinpath(folder, "ckpt_last.bson") 
     rm(linklast, force=true)
     symlink(filepath, linklast)
     
