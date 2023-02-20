@@ -42,13 +42,14 @@ export FluxModule
         #  predict_step,
         #  configure_optimizers
 
-include("checkpointer.jl")
-export Checkpointer, load_checkpoint
 
 include("trainer.jl")
 export Trainer
 
 include("callbacks.jl")
 export AbstractCallback
+
+include("checkpointer.jl")
+export Checkpointer, load_checkpoint
 
 end # module

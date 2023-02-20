@@ -260,7 +260,7 @@ function Base.show(io::IO, ::MIME"text/plain", m::T) where T <: FluxModule
             tsunami_big_show(io, v, length(s))
         else
             print(io, "\n  $f = ")
-            show(IOContext(io, :compact=>true), v)
+            show(IOContext(io, :compact => true), v)
         end
     end
 end

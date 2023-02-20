@@ -43,8 +43,8 @@ end
 
     ckpt = Tsunami.load_checkpoint(bsonpath2)
     @test ckpt.model isa TestModule1
-    @test ckpt.epoch == 2
-    @test ckpt.step == 4
+    @test ckpt.fit_state.epoch == 2
+    @test ckpt.fit_state.step == 4
     @test ckpt.model(x) ≈ ŷ
 
     rm(runpath1, recursive=true)

@@ -26,7 +26,11 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
     step::Int = 0
     training_epoch_out::Union{Nothing, NamedTuple} = nothing
     validation_epoch_out::Union{Nothing, NamedTuple} = nothing
+    optimisers = nothing
+    schedulers = nothing
 end
+
+Functors.@functor FitState
 
 function Base.show(io::IO, ::MIME"text/plain", fit_state::FitState)
     container_show(io, fit_state)
@@ -152,9 +156,9 @@ function fit!(
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
     fit_state.run_dir = run_dir
-    checkpoints_dir = joinpath(run_dir, "checkpoints")
-
-    checkpointer = trainer.checkpointer ? Checkpointer(checkpoints_dir) : nothing 
+    if trainer.checkpointer && !any(x -> x isa Checkpointer, trainer.callbacks)
+        push!(trainer.callbacks, Checkpointer())
+    end
     device = select_device(trainer.accelerator, trainer.devices)
     logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
@@ -164,7 +168,6 @@ function fit!(
         max_epochs = 1
         max_steps = 1
         val_every_n_epochs = 1
-        checkpointer = nothing
         logger = nothing
 
         check_fluxmodule(model)
@@ -182,9 +185,11 @@ function fit!(
 
     step = 0
     if ckpt_path !== nothing
-        ckpt = load_checkpoint(ckpt_path)
-        start_epoch = ckpt.epoch + 1
-        (; model, opt, step, lr_scheduler) = ckpt
+        model, ckpt_fit_state = load_checkpoint(ckpt_path)
+        start_epoch = ckpt_fit_state.epoch + 1
+        opt = ckpt_fit_state.optimisers
+        lr_scheduler = ckpt_fit_state.schedulers
+        step = ckpt_fit_state.step
     else
         opt, lr_scheduler = configure_optimisers(model) |> process_out_configure_optimisers
         start_epoch = 1
@@ -192,6 +197,8 @@ function fit!(
     
     model = model |> device
     opt = opt |> device
+    fit_state.optimisers = opt
+    fit_state.schedulers = lr_scheduler
     if lr_scheduler !== nothing
         lr = lr_scheduler(0)
         Optimisers.adjust!(opt, lr)
@@ -254,10 +261,7 @@ function fit!(
         training_epoch_out = training_epoch_end(model, training_step_outs)
         fit_state.training_epoch_out = training_epoch_out
         for cbk in trainer.callbacks
-            on_validation_epoch_end(cbk, trainer, model)
-        end
-        if checkpointer !== nothing
-            checkpointer(model, opt; epoch, step, lr_scheduler)
+            on_training_epoch_end(cbk, model, trainer)
         end
         
         if  (val_dataloader !== nothing &&  val_every_n_epochs !== nothing && 
