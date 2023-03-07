@@ -377,7 +377,7 @@ function print_fit_initial_summary(model, trainer, device)
     use_cuda = cuda_available && device === gpu
     str_gpuavail = cuda_available ? "true (CUDA)" : "false"
     @info "GPU available: $(str_gpuavail), used: $use_cuda"
-    @info "Model Summary: $(typeof(model))"
+    @info "Model Summary:"
     show(stdout, MIME("text/plain"), model)
     println()
 end

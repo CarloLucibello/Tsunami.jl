@@ -246,7 +246,7 @@ function check_validation_step(m::FluxModule, batch)
     @assert out isa NamedTuple "The output of `validation_step` has to be a `NamedTuple`."
 end
 
-function Base.show(io::IO, ::MIME"text/plain", m::T) where T <: FluxModule
+function Base.show(io::IO, mime::MIME"text/plain", m::T) where T <: FluxModule
     if get(io, :compact, false)
         return print(io, "$T()")
     end
@@ -260,7 +260,7 @@ function Base.show(io::IO, ::MIME"text/plain", m::T) where T <: FluxModule
             tsunami_big_show(io, v, length(s))
         else
             print(io, "\n  $f = ")
-            show(IOContext(io, :compact => true), v)
+            compact_show(io, v)
         end
     end
 end

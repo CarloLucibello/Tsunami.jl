@@ -42,3 +42,7 @@ function container_show(io::IO, m::T) where T
         show(IOContext(io, :compact=>true), v)
     end
 end
+
+function compact_show(io::IO, x)
+    show(IOContext(stdout, :limit => true, :compact => true), x)
+end

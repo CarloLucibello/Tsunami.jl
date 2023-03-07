@@ -17,6 +17,10 @@ end
    include("trainer.jl") 
 end
 
+@testset "Linear Regression" begin
+   include("linear_regression.jl") 
+end
+
 @testset "Examples" begin
    include(joinpath(@__DIR__, "..", "examples/mlp_mnist.jl"))
 end
