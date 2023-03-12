@@ -46,6 +46,8 @@ export FluxModule
 include("trainer.jl")
 export Trainer
 
+include("logging.jl")
+
 include("callbacks.jl")
 export AbstractCallback
 
