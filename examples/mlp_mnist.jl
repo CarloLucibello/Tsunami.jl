@@ -19,7 +19,7 @@ function (m::MLP)(x)
     m.net(x)
 end
 
-function Tsunami.training_step(m::MLP, batch, batch_idx)
+function Tsunami.training_step(m::MLP, trainer, batch, batch_idx)
     x, y = batch
     ŷ = m(x)
     y = Flux.onehotbatch(y, 0:9)
@@ -28,7 +28,7 @@ function Tsunami.training_step(m::MLP, batch, batch_idx)
     return (; loss, acc)
 end
 
-function Tsunami.configure_optimisers(m::MLP)
+function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, decay intervals (corresponding to epochs 2 and 4)
     lr_scheduler = ParameterSchedulers.Step(1e-2, 1/10, [2, 2])
     opt = Optimisers.setup(Optimisers.AdamW(), m)

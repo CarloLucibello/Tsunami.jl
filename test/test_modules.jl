@@ -12,14 +12,14 @@ TestModule1() = TestModule1(Flux.Chain(Flux.Dense(4, 3, relu), Flux.Dense(3, 2))
 
 (m::TestModule1)(x) = m.net(x)
 
-function Tsunami.training_step(m::TestModule1, batch, batch_idx)
+function Tsunami.training_step(m::TestModule1, trainer, batch, batch_idx)
     x, y = batch
     y_hat = m(x)
     loss = Flux.mse(y_hat, y)
     return loss
 end
 
-function Tsunami.configure_optimisers(m::TestModule1)
+function Tsunami.configure_optimisers(m::TestModule1, trainer)
     return Optimisers.setup(Optimisers.Adam(1e-3), m)
 end
 
@@ -45,7 +45,7 @@ function (m::LinearModel)(x::AbstractMatrix)
     return (m.W .* m.mask) * x
 end
 
-function Tsunami.training_step(model::LinearModel, batch, batch_idx)
+function Tsunami.training_step(model::LinearModel, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss_data = Flux.mse(ŷ, y)
@@ -56,7 +56,7 @@ function Tsunami.training_step(model::LinearModel, batch, batch_idx)
     return loss_data + loss_reg
 end
 
-function Tsunami.configure_optimisers(model::LinearModel)
+function Tsunami.configure_optimisers(model::LinearModel, trainer)
     return Optimisers.setup(Optimisers.Adam(1e-1), model)
 end
 

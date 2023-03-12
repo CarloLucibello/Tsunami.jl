@@ -1,0 +1,7 @@
+# @deprecate configure_optimisers(model) configure_optimizers(model, nothing)
+# @deprecate training_step(model, batch, batch_idx) training_step(model, nothing, batch, batch_idx)
+# @deprecate validation_step(model, batch, batch_idx) validation_step(model, nothing, batch, batch_idx)
+# @deprecate test_step(model, batch, batch_idx) test_step(model, nothing, batch, batch_idx)
+# @deprecate training_epoch_end(model, outs) training_epoch_end(model, nothing, outs)
+# @deprecate validation_epoch_end(model, outs) validation_epoch_end(model, nothing, outs)
+# @deprecate test_epoch_end(model, outs) test_epoch_end(model, nothing, outs)

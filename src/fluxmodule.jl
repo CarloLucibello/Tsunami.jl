@@ -73,7 +73,7 @@ end
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
 
 """
-    configure_optimisers(model)
+    configure_optimisers(model, trainer)
 
 Return an optimiser's state initialized for the `model`.
 It can also return a tuple of `(scheduler, optimiser)`,
@@ -118,12 +118,12 @@ function Tsunami.configure_optimisers(model::Model)
 end
 ```
 """
-function configure_optimisers(model::FluxModule)
+function configure_optimisers(model::FluxModule, trainer)
     not_implemented_error("configure_optimisers")
 end
 
 """
-    training_step(model, batch, batch_idx)
+    training_step(model, trainer, batch, batch_idx)
 
 The method called at each training step during `Tsunami.fit!`.
 It should compute the forward pass of the model and return the loss 
@@ -138,7 +138,7 @@ The training loop in `Tsunami.fit!` approximately looks like this:
 for epoch in 1:epochs
     for (batch_idx, batch) in enumerate(train_dataloader)
         grads = gradient(model) do m
-            out = training_step(m, batch, batch_idx)
+            out = training_step(m, trainer, batch, batch_idx)
             # ...
             return out.loss
         end
@@ -147,12 +147,10 @@ for epoch in 1:epochs
 end
 ```
 
-
-
 # Examples
 
 ```julia
-function Tsunami.training_step(model::Model, batch, batch_idx)
+function Tsunami.training_step(model::Model, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
@@ -160,18 +158,18 @@ function Tsunami.training_step(model::Model, batch, batch_idx)
     return (; loss, accuracy)
 end
 """
-function training_step(model::FluxModule, batch, batch_idx)
+function training_step(model::FluxModule, trainer, batch, batch_idx)
     not_implemented_error("training_step")
 end
 
 """
-    validation_step(model, batch, batch_idx)
+    validation_step(model, trainer, batch, batch_idx)
 
 If not implemented, the default is to use [`training_step`](@ref).
 The return type has to be a `NamedTuple`.
 """
-function validation_step(model::FluxModule, batch, batch_idx)
-    out = training_step(model, batch, batch_idx)
+function validation_step(model::FluxModule, trainer, batch, batch_idx)
+    out = training_step(model, trainer, batch, batch_idx)
     if out isa NamedTuple
         return out
     else
@@ -180,28 +178,28 @@ function validation_step(model::FluxModule, batch, batch_idx)
 end
 
 """
-    test_step(model, batch, batch_idx)
+    test_step(model, trainer, batch, batch_idx)
 
 If not implemented, the default is to use [`validation_step`](@ref).
 """
-test_step(model::FluxModule, batch, batch_idx) = validation_step(model::FluxModule, batch, batch_idx)
+test_step(model::FluxModule, trainer, batch, batch_idx) = validation_step(model::FluxModule, trainer, batch, batch_idx)
 
 """
-    training_epoch_end(model, outs)
+    training_epoch_end(model, trainer, outs)
 
 If not implemented, do nothing. 
 """
-function training_epoch_end(::FluxModule, outs::Vector{<:NamedTuple})
+function training_epoch_end(::FluxModule, trainer, outs::Vector{<:NamedTuple})
     return nothing
 end
 
 """
-    validation_epoch_end(model, outs)
+    validation_epoch_end(model, trainer, outs)
 
 If not implemented, the default is to compute the mean of the 
 scalar outputs of [`validation_step`](@ref).
 """ 
-function validation_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple})
+function validation_epoch_end(model::FluxModule, trainer, outs::Vector{<:NamedTuple})
     ks = keys(outs[1])
     ks = filter(k -> outs[1][k] isa Number, ks)
     mean_out = (; (k => mean(x[k] for x in outs) for k in ks)...)
@@ -209,11 +207,11 @@ function validation_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple})
 end
 
 """
-    test_epoch_end(model, outs)
+    test_epoch_end(model, trainer, outs)
 
 If not implemented, the default is to use [`validation_epoch_end`](@ref).
 """
-test_epoch_end(model::FluxModule, outs::Vector{<:NamedTuple}) = validation_epoch_end(model, outs)
+test_epoch_end(model::FluxModule, trainer, outs::Vector{<:NamedTuple}) = validation_epoch_end(model, trainer, outs)
 
 """
     copy!(dest::FluxModule, src::FluxModule)
@@ -231,8 +229,8 @@ function check_fluxmodule(m::FluxModule)
     @assert ismutable(m) "FluxModule has to be a `mutable struct`."
 end
 
-function check_training_step(m::FluxModule, batch)
-    out = training_step(m, batch, 1)
+function check_training_step(m::FluxModule, trainer, batch)
+    out = training_step(m, trainer, batch, 1)
     losserrmsg = "The output of `training_step` has to be a scalar or a `NamedTuple` with a `loss` field."
     if out isa NamedTuple
         @assert haskey(out, :loss) losserrmsg
@@ -241,8 +239,8 @@ function check_training_step(m::FluxModule, batch)
     end
 end
 
-function check_validation_step(m::FluxModule, batch)
-    out = validation_step(m, batch, 1)
+function check_validation_step(m::FluxModule, trainer, batch)
+    out = validation_step(m, trainer, batch, 1)
     @assert out isa NamedTuple "The output of `validation_step` has to be a `NamedTuple`."
 end
 

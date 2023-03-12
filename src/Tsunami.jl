@@ -52,4 +52,6 @@ export AbstractCallback
 include("checkpointer.jl")
 export Checkpointer, load_checkpoint
 
+include("deprecated.jl")
+
 end # module

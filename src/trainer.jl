@@ -172,9 +172,9 @@ function fit!(
 
         check_fluxmodule(model)
         # check forwards on cpu
-        check_training_step(model, first(train_dataloader))
+        check_training_step(model, trainer, first(train_dataloader))
         if val_dataloader !== nothing
-            check_validation_step(model, first(val_dataloader))
+            check_validation_step(model, trainer, first(val_dataloader))
         end
     end
 
@@ -191,7 +191,7 @@ function fit!(
         lr_scheduler = ckpt_fit_state.schedulers
         step = ckpt_fit_state.step
     else
-        opt, lr_scheduler = configure_optimisers(model) |> process_out_configure_optimisers
+        opt, lr_scheduler = configure_optimisers(model, trainer) |> process_out_configure_optimisers
         start_epoch = 1
     end
     
@@ -211,14 +211,14 @@ function fit!(
         validation_step_outs = NamedTuple[]
         for (batch_idx, batch) in enumerate(val_dataloader)
             batch = batch |> device
-            validation_step_out = validation_step(model, batch, batch_idx)
+            validation_step_out = validation_step(model, trainer, batch, batch_idx)
             push!(validation_step_outs, validation_step_out)
             ProgressMeter.next!(valprogressbar)
         end
-        validation_epoch_out = validation_epoch_end(model, validation_step_outs)
+        validation_epoch_out = validation_epoch_end(model, trainer, validation_step_outs)
         fit_state.validation_epoch_out = validation_epoch_out
         for cbk in trainer.callbacks
-            on_validation_epoch_end(cbk, trainer, model)
+            on_validation_epoch_end(cbk, model, trainer)
         end
         log_validation(logger, step, validation_epoch_out)
         fit_state.stage = oldstage
@@ -239,7 +239,7 @@ function fit!(
             batch = batch |> device
 
             grads = Zygote.gradient(model) do model
-                loss, training_step_out = training_step(model, batch, batch_idx) |> process_out_training_step
+                loss, training_step_out = training_step(model, trainer, batch, batch_idx) |> process_out_training_step
                 Zygote.ignore_derivatives() do
                     push!(training_step_outs, training_step_out)
                     OnlineStats.fit!(training_step_out_avg, training_step_out)
@@ -258,7 +258,7 @@ function fit!(
 
             step == max_steps && break
         end
-        training_epoch_out = training_epoch_end(model, training_step_outs)
+        training_epoch_out = training_epoch_end(model, trainer, training_step_outs)
         fit_state.training_epoch_out = training_epoch_out
         for cbk in trainer.callbacks
             on_training_epoch_end(cbk, model, trainer)
