@@ -35,3 +35,8 @@ function clean_stats!(logger::TensorBoardLogger, stage)
         logger.validation_epoch_stats = Stats()
     end
 end
+
+function reset_run_dir!(logger::TensorBoardLogger, run_dir = logger.tblogger.logdir)
+    logger.tblogger.logdir = run_dir
+    TensorBoardLoggers.reset!(logger.tblogger)
+end

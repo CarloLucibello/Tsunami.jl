@@ -166,7 +166,7 @@ end
 
 function training_loop(model, trainer; train_dataloader, val_dataloader, device, max_steps)
     fit_state = trainer.fit_state
-    @unpack optimisers, schedulers, step, epoch = fit_state
+    @unpack optimisers, schedulers, epoch = fit_state
     oldstage = fit_state.stage
     lr_scheduler = schedulers
     opt = optimisers
@@ -177,9 +177,8 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
 
     # SINGLE EPOCH TRAINING LOOP
     for (batch_idx, batch) in enumerate(train_dataloader)
-        step += 1
-        fit_state.step = step
-
+        fit_state.step += 1
+        
         batch = batch |> device
 
         grads = Zygote.gradient(model) do model
@@ -192,7 +191,7 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
             # showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
             valuecolor=:yellow)
 
-        step == max_steps && break
+        fit_state.step == max_steps && break
     end
 
     fit_state.stage = :training_epoch_end
@@ -215,7 +214,8 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
 end
 
 """
-    fit!(model::FluxModule, trainer::Trainer; train_dataloader, val_dataloader = nothing, ckpt_path = nothing)
+    fit!(model::FluxModule, trainer::Trainer; 
+         train_dataloader, [val_dataloader, ckpt_path, resume_run])
 
 Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
@@ -227,6 +227,8 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`. Required argument.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
+- **resume\\_run**: If `true` and `ckpt_path` is given, continue the loggin of the run in the same
+                   directory instead of creating a new one. Default: `false`.
 
 # Examples
 
@@ -239,10 +241,11 @@ function fit!(
         model::FluxModule,
         trainer::Trainer;
         ckpt_path = nothing,
+        resume_run = false,
         train_dataloader,
         val_dataloader = nothing,
     )
-
+    @assert !resume_run "resume_run=true is not supported yet." # TODO
     input_model = model
     trainer.fit_state = FitState()
     fit_state = trainer.fit_state
@@ -250,13 +253,20 @@ function fit!(
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
     fit_state.run_dir = run_dir
+    
     if trainer.checkpointer && !any(x -> x isa Checkpointer, trainer.callbacks)
         push!(trainer.callbacks, Checkpointer())
     end
+
     device = select_device(trainer.accelerator, trainer.devices)
+    
     if trainer.logger && isempty(trainer.loggers)
         push!(trainer.loggers, TensorBoardLogger(run_dir))
     end
+    # for logger in trainer.loggers
+    #     reset_run_dir!(logger, run_dir)
+    # end
+    
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
     
     if trainer.fast_dev_run
@@ -275,13 +285,13 @@ function fit!(
 
     print_fit_initial_summary(model, trainer, device)
 
-    step = 0
+    fit_state.step = 0
     if ckpt_path !== nothing
         model, ckpt_fit_state = load_checkpoint(ckpt_path)
         start_epoch = ckpt_fit_state.epoch + 1
         opt = ckpt_fit_state.optimisers
         lr_scheduler = ckpt_fit_state.schedulers
-        step = ckpt_fit_state.step
+        fit_state.step = ckpt_fit_state.step
     else
         opt, lr_scheduler = configure_optimisers(model, trainer) |> process_out_configure_optimisers
         start_epoch = 1

@@ -61,10 +61,13 @@ function log_epoch(trainer::Trainer)
     end 
 end
 
-## LOGGER API 
+## LOGGER API ############
 function log_step end
 function log_epoch end
 function accumulate_epoch! end  
+function reset_run_dir! end
+function clean_stats! end
+##########################
 
 @non_differentiable log(::Any...)
 @non_differentiable log_epoch(::Any...)

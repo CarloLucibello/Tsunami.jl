@@ -53,12 +53,12 @@ model = MLP()
 
 # DRY RUN FOR DEBUGGING
 
-trainer = Trainer(fast_dev_run=true, accelerator=:cpu)
-Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
+# trainer = Trainer(fast_dev_run=true, accelerator=:cpu)
+# Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
 
 # TRAIN FROM SCRATCH
 
-trainer = Trainer(max_epochs = 2, 
+trainer = Trainer(max_epochs = 3, 
                  default_root_dir = @__DIR__,
                  accelerator = :cpu,
                  checkpointer = true,
@@ -66,10 +66,17 @@ trainer = Trainer(max_epochs = 2,
                  )
 
 fit_state = Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
+@assert fit_state.step == 1407
 
 # RESUME TRAINING
+trainer = Trainer(max_epochs = 5, 
+                 default_root_dir = @__DIR__,
+                 accelerator = :cpu,
+                 checkpointer = true,
+                 logger = true,
+                 )
 
-trainer.max_epochs = 5
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
 
 Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)
+@assert fit_state.step == 2345
