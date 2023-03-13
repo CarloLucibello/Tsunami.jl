@@ -1,5 +1,5 @@
 using Flux, Optimisers, Tsunami, MLDatasets
-using MLUtils: DataLoader, flatten
+using MLUtils: MLUtils, DataLoader, flatten
 import ParameterSchedulers
 
 mutable struct MLP <: FluxModule
@@ -24,9 +24,20 @@ function Tsunami.training_step(m::MLP, trainer, batch, batch_idx)
     ŷ = m(x)
     y = Flux.onehotbatch(y, 0:9)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
-    acc = Tsunami.accuracy(ŷ, y)
-    return (; loss, acc)
+    Tsunami.log(trainer, "loss/train", loss)
+    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y))
+    return loss
 end
+
+function Tsunami.validation_step(m::MLP, trainer, batch, batch_idx)
+    x, y = batch
+    ŷ = m(x)
+    y = Flux.onehotbatch(y, 0:9)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    Tsunami.log(trainer, "loss/val", loss)
+    Tsunami.log(trainer, "accuracy/val", Tsunami.accuracy(ŷ, y))
+end
+
 
 function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, decay intervals (corresponding to epochs 2 and 4)

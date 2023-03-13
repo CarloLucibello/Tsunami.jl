@@ -1,6 +1,6 @@
 abstract type AbstractCallback end
 
-function on_training_epoch_end(c::AbstractCallback, model::FluxModule, trainer::Trainer)
+function on_train_epoch_end(c::AbstractCallback, model::FluxModule, trainer::Trainer)
     return nothing
 end
 

@@ -2,7 +2,7 @@ module Tsunami
 
 using Base: @kwdef
 import BSON
-import ChainRulesCore
+using ChainRulesCore: ChainRulesCore, @non_differentiable
 using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
@@ -19,7 +19,8 @@ import Optimisers
 # end
 using Random
 using Statistics
-using TensorBoardLogger: TensorBoardLogger, TBLogger, tb_append
+using TensorBoardLogger: TBLogger, tb_append
+import TensorBoardLogger as TensorBoardLoggers
 using UnPack: @unpack
 import Zygote
 using Crayons
@@ -47,6 +48,7 @@ include("trainer.jl")
 export Trainer
 
 include("logging.jl")
+include("loggers/tensorboard.jl")
 
 include("callbacks.jl")
 export AbstractCallback

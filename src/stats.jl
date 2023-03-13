@@ -36,8 +36,8 @@ function OnlineStats._fit!(s::Stats, x::NamedTuple)
 end
 
 function init_stat!(s, x::NamedTuple)
-    stat() = OnlineStats.Mean(weight=OnlineStats.ExponentialWeight(0.1))
     # stat() = OnlineStats.Mean(weight=OnlineStats.ExponentialWeight(0.1))
+    stat() = OnlineStats.Mean()
     s._stats = map(x -> stat(), x)
     return s
 end
