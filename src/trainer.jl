@@ -166,12 +166,16 @@ end
 
 function training_loop(model, trainer; train_dataloader, val_dataloader, device, max_steps)
     fit_state = trainer.fit_state
-    @unpack optimisers, schedulers, epoch = fit_state
-    oldstage = fit_state.stage
-    lr_scheduler = schedulers
+    @unpack epoch, optimisers = fit_state
     opt = optimisers
+    oldstage = fit_state.stage
     fit_state.stage = :train
 
+    if fit_state.schedulers !== nothing
+        lr = fit_state.schedulers(epoch)
+        Optimisers.adjust!(opt, lr)
+    end
+    
     progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
                         showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 
@@ -206,10 +210,6 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
         validation_loop(model, trainer; val_dataloader, device)
     end
 
-    if lr_scheduler !== nothing
-        lr = lr_scheduler(epoch)
-        Optimisers.adjust!(opt, lr)
-    end
     fit_state.stage = oldstage
 end
 
@@ -301,11 +301,7 @@ function fit!(
     opt = opt |> device
     fit_state.optimisers = opt
     fit_state.schedulers = lr_scheduler
-    if lr_scheduler !== nothing
-        lr = lr_scheduler(0)
-        Optimisers.adjust!(opt, lr)
-    end
-
+ 
     validation_loop(model, trainer; val_dataloader, device)
 
     for epoch in start_epoch:max_epochs

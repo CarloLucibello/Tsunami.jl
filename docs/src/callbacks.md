@@ -14,4 +14,6 @@ Tsunami.load_checkpoint
 
 ## Writing Custom Callbacks
 
-See the 
+See the implementation of [`Checkpointer`](@ref) and the 
+Hooks section of the documentation for more information
+on how to write custom callbacks.
