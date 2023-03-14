@@ -82,10 +82,11 @@ mutable struct MetaLogger
     training_epoch_stats::Stats
     validation_epoch_stats::Stats 
     values_for_train_progressbar::Dict{String, Any}
+    last_step_last_epoch::Int
 end
 
 function MetaLogger(loggers)
-    return MetaLogger(loggers, Stats(), Stats(), Dict{String, Any}())
+    return MetaLogger(loggers, Stats(), Stats(), Dict{String, Any}(), 0)
 end
 
 function log_step(metalogger::MetaLogger, name::AbstractString, value, step)
@@ -106,9 +107,19 @@ function log_epoch(metalogger::MetaLogger, fit_state)
                                                      metalogger.validation_epoch_stats
     if stage ∈ (:train, :training_epoch_end)
         for logger in metalogger.loggers
-            log_scalar(logger, "epoch", epoch; step)
+            for s in metalogger.last_step_last_epoch+1:step
+                log_scalar(logger, "epoch", epoch; step=s)
+            end
+        end
+        metalogger.last_step_last_epoch = step
+    end
+    if epoch == 0 
+        @assert step == 0
+        for logger in metalogger.loggers
+            log_scalar(logger, "epoch", 0; step=0)
         end
     end
+
     for (name, value) in pairs(stats)
         for logger in metalogger.loggers
             log_scalar(logger, name, OnlineStats.value(value); step)

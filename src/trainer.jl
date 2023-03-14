@@ -274,9 +274,8 @@ function fit!(
         max_epochs = 1
         max_steps = 1
         trainer.val_every_n_epochs = 1
-        trainer.loggers = []
-        trainer.metalogger = nothing
-
+        empty!(trainer.loggers)
+        
         check_fluxmodule(model)
         # check forwards on cpu
         check_training_step(model, trainer, first(train_dataloader))
@@ -298,7 +297,8 @@ function fit!(
         opt, lr_scheduler = configure_optimisers(model, trainer) |> process_out_configure_optimisers
         start_epoch = 1
     end
-    
+    fit_state.epoch = start_epoch - 1
+
     model = model |> device
     opt = opt |> device
     fit_state.optimisers = opt
