@@ -4,9 +4,13 @@
     log(trainer::Trainer, name::AbstractString, value; 
         on_step = nothing, on_epoch = nothing, prog_bar = false)
 
-Log a value to the logger. 
+Log a value to the logger. Can be called from any function in the training loop
+or from a callback. Logs to the loggers specified in `trainer.loggers`.
+
+See the [Logging](TODO) docs for more details.
 
 # Arguments
+
 - `trainer::Trainer`: The trainer object.
 - `name::AbstractString`: The name of the value.
 - `value`: The value to log.
@@ -16,6 +20,16 @@ Log a value to the logger.
                     Defaults to `true` if `stage` is `:training_epoch_end` or `:validation_epoch_end`, 
                     `false` otherwise.
 - `prog_bar::Bool`: Whether to log the value to the progress bar. Defaults to `false`.
+
+# Examples
+
+```julia
+function validation_step(model::Model, trainer, batch, batch_idx)
+    # log the validation loss
+    ...
+    Tsunami.log(trainer, "val/loss", val_loss)
+end
+```
 """
 function log(trainer::Trainer, name::AbstractString, value; 
         on_step = nothing, 
@@ -24,50 +38,89 @@ function log(trainer::Trainer, name::AbstractString, value;
 
     fit_state  = trainer.fit_state
     @unpack stage, step, epoch = fit_state
-    loggers = trainer.loggers
-    isempty(loggers) && return
+    # loggers = trainer.loggers
+    # isempty(loggers) && return
 
     if on_step === nothing
-        if stage ∈ (:train, :validate)
+        if stage ∈ (:train,)
             on_step = true
         else
             on_step = false
         end
     end
     if on_epoch === nothing
-        if stage ∈ (:training_epoch_end, :validation_epoch_end)
+        if stage ∈ (:validate, :training_epoch_end, :validation_epoch_end)
             on_epoch = true
         else
             on_epoch = false
         end
     end
 
+    if on_step && on_epoch
+        name_step = "$(name)_step"
+        name_epoch = "$(name)_epoch"
+    else
+        name_step = name
+        name_epoch = name
+    end
+
     if on_step && (fit_state.step % trainer.log_every_n_steps == 0) 
         # TODO log_every_n_steps should apply to both train and validate?
-        for logger in loggers
-            log_step(logger, name, value, step)
-        end
+        log_step(trainer.metalogger, name_step, value, step)
     end
     if on_epoch
-        for logger in loggers
-            accumulate_epoch!(logger, name, value, stage)
-        end
+        accumulate_epoch!(trainer.metalogger, name_epoch, value, stage)
     end
 end
 
-function log_epoch(trainer::Trainer)
-    for logger in trainer.loggers
-        log_epoch(logger, trainer.fit_state.stage, trainer.fit_state.epoch)
-    end 
+### MetaLogger ###########################
+
+mutable struct MetaLogger
+    loggers::Vector
+    training_epoch_stats::Stats
+    validation_epoch_stats::Stats 
 end
 
-## LOGGER API ############
-function log_step end
-function log_epoch end
-function accumulate_epoch! end  
-function reset_run_dir! end
-function clean_stats! end
-##########################
+function MetaLogger(loggers)
+    return MetaLogger(loggers, Stats(), Stats())
+end
+
+function log_step(metalogger::MetaLogger, name::AbstractString, value, step)
+    for logger in metalogger.loggers
+        log_scalar(logger, name, value; step)
+    end
+end
+
+function accumulate_epoch!(metalogger::MetaLogger, name::AbstractString, value, stage)
+    stats = stage ∈ (:train, :training_epoch_end)  ? metalogger.training_epoch_stats : 
+                                                     metalogger.validation_epoch_stats
+    OnlineStats.fit!(stats, Dict(name => value))
+end
+
+function log_epoch(metalogger::MetaLogger, fit_state)
+    @unpack stage, step, epoch = fit_state
+    stats = stage ∈ (:train, :training_epoch_end)  ? metalogger.training_epoch_stats : 
+                                                     metalogger.validation_epoch_stats
+    if stage ∈ (:train, :training_epoch_end)
+        for logger in metalogger.loggers
+            log_scalar(logger, "epoch", epoch; step)
+        end
+    end
+    for (name, value) in pairs(stats)
+        for logger in metalogger.loggers
+            log_scalar(logger, name, OnlineStats.value(value); step)
+        end
+    end
+    clean_stats!(metalogger, stage)
+end
+
+function clean_stats!(metalogger::MetaLogger, stage)
+    if stage ∈ (:train, :training_epoch_end)
+        metalogger.training_epoch_stats = Stats()
+    else
+        metalogger.validation_epoch_stats = Stats()
+    end
+end
 
 @non_differentiable log(::Any...)
 @non_differentiable log_epoch(::Any...)

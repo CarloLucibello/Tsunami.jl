@@ -2,46 +2,55 @@
 """
     Stats() <: OnlineStat
 """
-mutable struct Stats <: OnlineStats.OnlineStat{NamedTuple}
-    _stats::NamedTuple
+mutable struct Stats <: OnlineStats.OnlineStat{AbstractDict}
+    _stats::Dict{String, OnlineStats.OnlineStat}
 end
 
-Stats() = Stats((;))
+Stats() = Stats(Dict{String, OnlineStats.OnlineStat}())
 
-Base.getindex(s::Stats, k::Symbol) = getindex(s._stats, k)
+Base.getindex(s::Stats, k::String) = getindex(s._stats, k)
 Base.keys(s::Stats) = keys(s._stats)
 Base.pairs(s::Stats) = pairs(s._stats)
-Base.setindex!(s::Stats, v, k::Symbol) = setindex!(s._stats, v, k)
-Base.haskey(s::Stats, k::Symbol) = haskey(s._stats, k)
+Base.setindex!(s::Stats, v, k::String) = setindex!(s._stats, v, k)
+Base.haskey(s::Stats, k::String) = haskey(s._stats, k)
 Base.length(s::Stats) = length(s._stats)
 Base.values(s::Stats) = values(s._stats)
 Base.isempty(s::Stats) = isempty(s._stats)
 
-function Base.getproperty(s::Stats, k::Symbol)
-    if hasfield(Stats, k)
-        return getfield(s, k)
-    else
-        x = getfield(s, :_stats)[k].stats
-        return OnlineStats.value(x)
-    end
-end
-
-function OnlineStats._fit!(s::Stats, x::NamedTuple)
-    if isempty(s)
-        init_stat!(s, x)
-    end
+function OnlineStats._fit!(s::Stats, x::AbstractDict)
     for (k, v) in pairs(x)
+        if !haskey(s, k)
+            init_stat!(s, k)
+        end
         OnlineStats.fit!(s[k], v)
     end
 end
 
-function init_stat!(s, x::NamedTuple)
+function init_stat!(s::Stats, k::String)
     # stat() = OnlineStats.Mean(weight=OnlineStats.ExponentialWeight(0.1))
-    stat() = OnlineStats.Mean()
-    s._stats = map(x -> stat(), x)
+    s[k] = OnlineStats.Mean()
     return s
 end
 
-OnlineStats.nobs(s::Stats) = length(s._stats) > 0 ? OnlineStats.nobs(first(s._stats)) : 0
+function OnlineStats.nobs(s::Stats)
+    if length(s) > 0 
+        ns = [OnlineStats.nobs(v) for v in values(s)]
+        if allequal(ns)
+            return ns[1]
+        else
+            return Dict(k => OnlineStats.nobs(v) for (k,v) in pairs(s))
+        end
+    else 
+        return 0
+    end
+end
 
-OnlineStats.value(s::Stats) = map(x -> OnlineStats.value(x), s._stats)
+OnlineStats.value(s::Stats) = Dict(k => OnlineStats.value(v) for (k, v) in pairs(s))
+
+# HAD TO OVERLOAD PRIVATE METHOD TO WORK WITH 
+# vector return from nobs
+function OnlineStats.OnlineStatsBase.nobs_string(o::Stats)
+    n = string(OnlineStats.nobs(o))
+    return n
+end
+

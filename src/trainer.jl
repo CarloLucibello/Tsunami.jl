@@ -112,6 +112,7 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
     log_every_n_steps::Int = 50
     logger::Bool = true
     loggers = []
+    metalogger = nothing
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
     progress_bar::Bool = true
@@ -140,9 +141,6 @@ end
 # end
 
 
-
-
-
 function validation_loop(model, trainer; val_dataloader, device)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
@@ -160,7 +158,7 @@ function validation_loop(model, trainer; val_dataloader, device)
     for cbk in trainer.callbacks
         on_validation_epoch_end(cbk, model, trainer)
     end
-    log_epoch(trainer)
+    log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = oldstage
 end
 
@@ -203,7 +201,7 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
     for cbk in trainer.callbacks
         on_train_epoch_end(cbk, model, trainer)
     end
-    log_epoch(trainer)
+    log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = :train
 
     if  (val_dataloader !== nothing && epoch % trainer.val_every_n_epochs == 0)
@@ -263,6 +261,8 @@ function fit!(
     if trainer.logger && isempty(trainer.loggers)
         push!(trainer.loggers, TensorBoardLogger(run_dir))
     end
+    trainer.metalogger = MetaLogger(trainer.loggers)
+
     # for logger in trainer.loggers
     #     reset_run_dir!(logger, run_dir)
     # end
@@ -274,6 +274,7 @@ function fit!(
         max_steps = 1
         trainer.val_every_n_epochs = 1
         trainer.loggers = []
+        trainer.metalogger = nothing
 
         check_fluxmodule(model)
         # check forwards on cpu

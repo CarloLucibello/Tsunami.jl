@@ -9,6 +9,10 @@ include("test_modules.jl")
 
 SilentTrainer = (args...; kws...) -> Trainer(args...; kws..., logger=false, checkpointer=false, progress_bar=false)
 
+@testset "Stats" begin
+   include("stats.jl")
+end
+
 @testset "FluxModule" begin
    include("fluxmodule.jl") 
 end
