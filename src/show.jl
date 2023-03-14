@@ -30,13 +30,14 @@ function tsunami_big_show(io::IO, obj, indent::Int=0, name=nothing)
     end
 end
 
-function container_show(io::IO, m::T) where T
+function container_show(io::IO, m::T; exclude=[]) where T
     if get(io, :compact, false)
         return print(io, "$T()")
     end
     print(io, "$T:")
     for f in sort(fieldnames(T) |> collect)
         startswith(string(f), "_") && continue
+        f in exclude && continue
         v = getfield(m, f)
         print(io, "\n  $f = ")
         show(IOContext(io, :compact=>true), v)

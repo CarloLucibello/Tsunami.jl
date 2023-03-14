@@ -31,8 +31,9 @@ end
 Functors.@functor FitState
 
 function Base.show(io::IO, ::MIME"text/plain", fit_state::FitState)
-    # TODO exclude optimisers from print, too verbose
-    container_show(io, fit_state)
+    container_show(io, fit_state, exclude = (:optimisers,))
+    # TODO print optimisers in some short form
+    print(io, "\n  optimisers = ...")
 end
 
 
@@ -190,8 +191,8 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
         opt, model = Optimisers.update!(opt, model, grads[1])
 
         ProgressMeter.next!(progressbar,
-            # showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
-            valuecolor=:yellow)
+            showvalues = values_for_train_progressbar(trainer.metalogger),
+            valuecolor = :yellow)
 
         fit_state.step == max_steps && break
     end
@@ -378,10 +379,6 @@ function select_cuda_device(devices::Union{Vector{Int}, Tuple})
     return gpu
 end
 
-function process_out_for_progress_bar(out::NamedTuple, s::Stats)
-    f(k, v) = "$(roundval(v)) (last)  $(roundval(OnlineStats.value(s[k]))) (expavg)"
-    return [(k, f(k, v)) for (k, v) in pairs(out)]
-end
  
 function print_fit_initial_summary(model, trainer, device)
     cuda_available = CUDA.functional()

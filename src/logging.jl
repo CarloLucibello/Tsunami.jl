@@ -36,11 +36,9 @@ function log(trainer::Trainer, name::AbstractString, value;
         on_epoch = nothing,
         prog_bar = false)
 
-    fit_state  = trainer.fit_state
+    @unpack fit_state, metalogger  = trainer
     @unpack stage, step, epoch = fit_state
-    # loggers = trainer.loggers
-    # isempty(loggers) && return
-
+    
     if on_step === nothing
         if stage ∈ (:train,)
             on_step = true
@@ -66,10 +64,14 @@ function log(trainer::Trainer, name::AbstractString, value;
 
     if on_step && (fit_state.step % trainer.log_every_n_steps == 0) 
         # TODO log_every_n_steps should apply to both train and validate?
-        log_step(trainer.metalogger, name_step, value, step)
+        log_step(metalogger, name_step, value, step)
     end
     if on_epoch
-        accumulate_epoch!(trainer.metalogger, name_epoch, value, stage)
+        accumulate_epoch!(metalogger, name_epoch, value, stage)
+    end
+
+    if prog_bar && stage ∈ (:train,)
+        store_for_prog_bar!(metalogger, name_step, value)
     end
 end
 
@@ -79,10 +81,11 @@ mutable struct MetaLogger
     loggers::Vector
     training_epoch_stats::Stats
     validation_epoch_stats::Stats 
+    values_for_train_progressbar::Dict{String, Any}
 end
 
 function MetaLogger(loggers)
-    return MetaLogger(loggers, Stats(), Stats())
+    return MetaLogger(loggers, Stats(), Stats(), Dict{String, Any}())
 end
 
 function log_step(metalogger::MetaLogger, name::AbstractString, value, step)
@@ -120,6 +123,14 @@ function clean_stats!(metalogger::MetaLogger, stage)
     else
         metalogger.validation_epoch_stats = Stats()
     end
+end
+
+function store_for_prog_bar!(metalogger::MetaLogger, name::AbstractString, value)
+    metalogger.values_for_train_progressbar[name] = value
+end
+
+function values_for_train_progressbar(metalogger::MetaLogger)
+    return [(k, roundval(v)) for (k, v) in pairs(metalogger.values_for_train_progressbar)]
 end
 
 @non_differentiable log(::Any...)
