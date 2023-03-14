@@ -10,7 +10,6 @@ import Functors
 using Dates
 # import ImageMagick # for image logging
 using Logging
-using ProgressMeter
 import OnlineStats
 import Optimisers
 # import ParameterSchedulers
@@ -26,6 +25,9 @@ import Zygote
 using Crayons
 
 CUDA.allowscalar(false)
+
+include("ProgressMeter/ProgressMeter.jl")
+using ProgressMeter
 
 include("utils.jl")
 # export accuracy

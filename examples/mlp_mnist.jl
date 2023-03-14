@@ -46,8 +46,8 @@ function Tsunami.configure_optimisers(m::MLP, trainer)
     return opt, lr_scheduler
 end
 
-train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
-test_loader = DataLoader(MNIST(:test), batchsize=128)
+train_loader = DataLoader(MNIST(:train), batchsize=16, shuffle=true)
+test_loader = DataLoader(MNIST(:test), batchsize=16)
 
 model = MLP()
 
@@ -69,7 +69,7 @@ fit_state = Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_data
 @assert fit_state.step == 1407
 
 # RESUME TRAINING
-trainer = Trainer(max_epochs = 5, 
+trainer = Trainer(max_epochs = 5,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu,
                  checkpointer = true,

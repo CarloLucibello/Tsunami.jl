@@ -62,16 +62,19 @@ function log(trainer::Trainer, name::AbstractString, value;
         name_epoch = name
     end
 
-    if on_step && (fit_state.step % trainer.log_every_n_steps == 0) 
+    if on_step && (step % trainer.log_every_n_steps == 0) 
         # TODO log_every_n_steps should apply to both train and validate?
-        log_step(metalogger, name_step, value, step)
+        log_step(metalogger, name_step, value, fit_state)
     end
     if on_epoch
         accumulate_epoch!(metalogger, name_epoch, value, stage)
     end
 
-    if prog_bar && stage ∈ (:train,)
-        store_for_prog_bar!(metalogger, name_step, value)
+    if prog_bar && stage ∈ (:train,) && on_step 
+        store_for_train_prog_bar!(metalogger, name_step, value)
+    end
+    if prog_bar && stage ∈ (:validate,) && on_epoch 
+        store_for_val_prog_bar!(metalogger, name_step, value)
     end
 end
 
@@ -80,18 +83,26 @@ end
 mutable struct MetaLogger
     loggers::Vector
     training_epoch_stats::Stats
-    validation_epoch_stats::Stats 
+    validation_epoch_stats::Stats
     values_for_train_progressbar::Dict{String, Any}
-    last_step_last_epoch::Int
+    values_for_val_progressbar::Dict{String, Any}
+    last_step_printed::Int
 end
 
 function MetaLogger(loggers)
-    return MetaLogger(loggers, Stats(), Stats(), Dict{String, Any}(), 0)
+    return MetaLogger(loggers, Stats(), Stats(), Dict{String, Any}(), Dict{String, Any}(), -1)
 end
 
-function log_step(metalogger::MetaLogger, name::AbstractString, value, step)
+function log_step(metalogger::MetaLogger, name::AbstractString, value, fit_state::FitState)
+    @unpack step, epoch = fit_state
     for logger in metalogger.loggers
         log_scalar(logger, name, value; step)
+    end
+    if step > metalogger.last_step_printed
+        metalogger.last_step_printed = step
+        for logger in metalogger.loggers
+            log_scalar(logger, "epoch", epoch; step)
+        end
     end
 end
 
@@ -105,20 +116,6 @@ function log_epoch(metalogger::MetaLogger, fit_state)
     @unpack stage, step, epoch = fit_state
     stats = stage ∈ (:train, :training_epoch_end)  ? metalogger.training_epoch_stats : 
                                                      metalogger.validation_epoch_stats
-    if stage ∈ (:train, :training_epoch_end)
-        for logger in metalogger.loggers
-            for s in metalogger.last_step_last_epoch+1:step
-                log_scalar(logger, "epoch", epoch; step=s)
-            end
-        end
-        metalogger.last_step_last_epoch = step
-    end
-    if epoch == 0 
-        @assert step == 0
-        for logger in metalogger.loggers
-            log_scalar(logger, "epoch", 0; step=0)
-        end
-    end
 
     for (name, value) in pairs(stats)
         for logger in metalogger.loggers
@@ -136,13 +133,26 @@ function clean_stats!(metalogger::MetaLogger, stage)
     end
 end
 
-function store_for_prog_bar!(metalogger::MetaLogger, name::AbstractString, value)
+function store_for_train_prog_bar!(metalogger::MetaLogger, name::AbstractString, value)
     metalogger.values_for_train_progressbar[name] = value
 end
 
-function values_for_train_progressbar(metalogger::MetaLogger)
-    return [(k, roundval(v)) for (k, v) in pairs(metalogger.values_for_train_progressbar)]
+function store_for_val_prog_bar!(metalogger::MetaLogger, name::AbstractString, value)
+    metalogger.values_for_val_progressbar[name] = value
 end
+
+function values_for_train_progressbar(metalogger::MetaLogger)
+    dict = metalogger.values_for_train_progressbar
+    ks = sort(collect(keys(dict)))
+    return [(k, roundval(dict[k])) for k in ks]
+end
+
+function values_for_val_progressbar(metalogger::MetaLogger)
+    stats = metalogger.validation_epoch_stats
+    ks = sort(collect(keys(stats)))
+    return [(k, roundval(OnlineStats.value(stats[k]))) for k in ks]
+end
+
 
 @non_differentiable log(::Any...)
 @non_differentiable log_epoch(::Any...)

@@ -147,12 +147,19 @@ function validation_loop(model, trainer; val_dataloader, device)
     fit_state = trainer.fit_state
     oldstage = fit_state.stage
     fit_state.stage = :validate
-    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
+
+    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
+        showspeed=true, enabled=true, color=:green)
     for (batch_idx, batch) in enumerate(val_dataloader)
+        # println("batch_idx: ", batch_idx)
         batch = batch |> device
         validation_step(model, trainer, batch, batch_idx)
-        ProgressMeter.next!(valprogressbar)
+        ProgressMeter.next!(valprogressbar, 
+                showvalues = values_for_val_progressbar(trainer.metalogger),
+                valuecolor = :green
+                )
     end
+    ProgressMeter.finish!(valprogressbar)
 
     fit_state.stage = :validation_epoch_end
     on_validation_epoch_end(model, trainer)
@@ -196,6 +203,7 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
 
         fit_state.step == max_steps && break
     end
+    ProgressMeter.finish!(progressbar)
 
     fit_state.stage = :training_epoch_end
     on_train_epoch_end(model, trainer)
@@ -275,7 +283,7 @@ function fit!(
         max_steps = 1
         trainer.val_every_n_epochs = 1
         empty!(trainer.loggers)
-        
+
         check_fluxmodule(model)
         # check forwards on cpu
         check_training_step(model, trainer, first(train_dataloader))
@@ -318,6 +326,7 @@ function fit!(
     if model !== input_model
         copy!(input_model, model)
     end
+
     return fit_state
 end
 
