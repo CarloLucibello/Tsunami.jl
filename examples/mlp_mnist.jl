@@ -78,5 +78,5 @@ trainer = Trainer(max_epochs = 5,
 
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
 
-Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)
+fit_state = Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader, ckpt_path)
 @assert fit_state.step == 2345
