@@ -74,9 +74,9 @@ end
 @testset "generic dataloader" begin
     model = TestModule1()
     nx, ny = io_sizes(model)
-    train_dataloader = [(rand(nx, 2), rand(ny, 2))]
-    val_dataloader = [(rand(nx, 2), rand(ny, 2))]
-    trainer = SilentTrainer(max_epochs=2)
+    train_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
+    val_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
+    trainer = SilentTrainer(max_epochs = 2)
     fit_state = Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
     @test fit_state.epoch == 2
 end

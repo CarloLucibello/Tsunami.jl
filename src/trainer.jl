@@ -22,18 +22,18 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 @kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
     epoch::Int = 0
     run_dir::String = ""
-    stage::Symbol = :train # [:train, :validate]
+    stage::Symbol = :train # [:train, :training_epoch_end, :validate, :validation_epoch_end]
     step::Int = 0
-    training_epoch_out::Union{Nothing, NamedTuple} = nothing
-    validation_epoch_out::Union{Nothing, NamedTuple} = nothing
-    optimisers = nothing
-    schedulers = nothing
+    optimisers = nothing  # TODO move to trainer?
+    schedulers = nothing  # TODO move to trainer? in that case the trainer should be part of the checkpoint
 end
 
 Functors.@functor FitState
 
 function Base.show(io::IO, ::MIME"text/plain", fit_state::FitState)
-    container_show(io, fit_state)
+    container_show(io, fit_state, exclude = (:optimisers,))
+    # TODO print optimisers in some short form
+    print(io, "\n  optimisers = ...")
 end
 
 
@@ -105,23 +105,124 @@ Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
 """
 @kwdef mutable struct Trainer
     accelerator::Symbol = :auto
-    default_root_dir::String = pwd()
     callbacks = []
     checkpointer::Bool = true
+    default_root_dir::String = pwd()
     devices::Union{Int, Nothing} = nothing
     fast_dev_run::Bool = false
     log_every_n_steps::Int = 50
     logger::Bool = true
+    loggers = []
+    metalogger = nothing
     max_epochs::Union{Int, Nothing} = nothing
     max_steps::Int = -1
     progress_bar::Bool = true
     val_every_n_epochs::Int = 1
+
     fit_state::FitState = FitState()
 end
 
+# function  Trainer(;
+#         accelerator::Symbol = :auto,
+#         callbacks = [],
+#         default_root_dir::String = pwd(),
+#         checkpointer::Bool = true,
+#         devices::Union{Int, Nothing} = nothing,
+#         fast_dev_run::Bool = false,
+#         log_every_n_steps::Int = 50,
+#         logger::Bool = true,
+#         max_epochs::Union{Int, Nothing} = nothing,
+#         max_steps::Int = -1,
+#         progress_bar::Bool = true,
+#         val_every_n_epochs::Int = 1,
+#         fit_state::FitState = FitState(),
+#     )
+
+#     Trainer(accelerator, default_root_dir, callbacks, checkpointer, devices, fast_dev_run, log_every_n_steps, logger, max_epochs, max_steps, progress_bar, val_every_n_epochs, fit_state)
+# end
+
+
+function validation_loop(model, trainer; val_dataloader, device)
+    val_dataloader === nothing && return
+    fit_state = trainer.fit_state
+    oldstage = fit_state.stage
+    fit_state.stage = :validate
+
+    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
+        showspeed=true, enabled=true, color=:green)
+    for (batch_idx, batch) in enumerate(val_dataloader)
+        # println("batch_idx: ", batch_idx)
+        batch = batch |> device
+        validation_step(model, trainer, batch, batch_idx)
+        ProgressMeter.next!(valprogressbar, 
+                showvalues = values_for_val_progressbar(trainer.metalogger),
+                valuecolor = :green
+                )
+    end
+    ProgressMeter.finish!(valprogressbar)
+
+    fit_state.stage = :validation_epoch_end
+    on_validation_epoch_end(model, trainer)
+    for cbk in trainer.callbacks
+        on_validation_epoch_end(cbk, model, trainer)
+    end
+    log_epoch(trainer.metalogger, fit_state)
+    fit_state.stage = oldstage
+end
+
+function training_loop(model, trainer; train_dataloader, val_dataloader, device, max_steps)
+    fit_state = trainer.fit_state
+    @unpack epoch, optimisers = fit_state
+    opt = optimisers
+    oldstage = fit_state.stage
+    fit_state.stage = :train
+
+    if fit_state.schedulers !== nothing
+        lr = fit_state.schedulers(epoch)
+        Optimisers.adjust!(opt, lr)
+    end
+    
+    progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
+                        showspeed=true, enabled = trainer.progress_bar, color=:yellow)
+
+    # SINGLE EPOCH TRAINING LOOP
+    for (batch_idx, batch) in enumerate(train_dataloader)
+        fit_state.step += 1
+        
+        batch = batch |> device
+
+        grads = Zygote.gradient(model) do model
+            loss = training_step(model, trainer, batch, batch_idx)
+            return loss
+        end
+        opt, model = Optimisers.update!(opt, model, grads[1])
+
+        ProgressMeter.next!(progressbar,
+            showvalues = values_for_train_progressbar(trainer.metalogger),
+            valuecolor = :yellow)
+
+        fit_state.step == max_steps && break
+    end
+    ProgressMeter.finish!(progressbar)
+
+    fit_state.stage = :training_epoch_end
+    on_train_epoch_end(model, trainer)
+    for cbk in trainer.callbacks
+        on_train_epoch_end(cbk, model, trainer)
+    end
+    log_epoch(trainer.metalogger, fit_state)
+    fit_state.stage = :train
+
+    if  (val_dataloader !== nothing && epoch % trainer.val_every_n_epochs == 0)
+        validation_loop(model, trainer; val_dataloader, device)
+    end
+
+    fit_state.stage = oldstage
+end
 
 """
-    fit!(model::FluxModule, trainer::Trainer; train_dataloader, val_dataloader = nothing, ckpt_path = nothing)
+    fit!(model::FluxModule, trainer::Trainer; 
+         train_dataloader, [val_dataloader, ckpt_path, resume_run])
 
 Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
@@ -133,6 +234,8 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`. Required argument.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
+- **resume\\_run**: If `true` and `ckpt_path` is given, continue the loggin of the run in the same
+                   directory instead of creating a new one. Default: `false`.
 
 # Examples
 
@@ -145,10 +248,11 @@ function fit!(
         model::FluxModule,
         trainer::Trainer;
         ckpt_path = nothing,
+        resume_run = false,
         train_dataloader,
         val_dataloader = nothing,
     )
-
+    @assert !resume_run "resume_run=true is not supported yet." # TODO
     input_model = model
     trainer.fit_state = FitState()
     fit_state = trainer.fit_state
@@ -156,136 +260,78 @@ function fit!(
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
     fit_state.run_dir = run_dir
+    
     if trainer.checkpointer && !any(x -> x isa Checkpointer, trainer.callbacks)
         push!(trainer.callbacks, Checkpointer())
     end
+
     device = select_device(trainer.accelerator, trainer.devices)
-    logger = trainer.logger ? TBLogger(run_dir, tb_append, step_increment=0) : nothing
+    
+    if trainer.logger && isempty(trainer.loggers)
+        push!(trainer.loggers, TensorBoardLogger(run_dir))
+    end
+    trainer.metalogger = MetaLogger(trainer.loggers)
+
+    # for logger in trainer.loggers
+    #     reset_run_dir!(logger, run_dir)
+    # end
+    
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
-    val_every_n_epochs = trainer.val_every_n_epochs
     
     if trainer.fast_dev_run
         max_epochs = 1
         max_steps = 1
-        val_every_n_epochs = 1
-        logger = nothing
+        trainer.val_every_n_epochs = 1
+        empty!(trainer.loggers)
 
         check_fluxmodule(model)
         # check forwards on cpu
-        check_training_step(model, first(train_dataloader))
+        check_training_step(model, trainer, first(train_dataloader))
         if val_dataloader !== nothing
-            check_validation_step(model, first(val_dataloader))
+            check_validation_step(model, trainer, first(val_dataloader))
         end
     end
 
     print_fit_initial_summary(model, trainer, device)
 
-    training_step_outs = NamedTuple[]
-    training_step_out_avg = Stats()
-
-    step = 0
+    fit_state.step = 0
     if ckpt_path !== nothing
         model, ckpt_fit_state = load_checkpoint(ckpt_path)
         start_epoch = ckpt_fit_state.epoch + 1
         opt = ckpt_fit_state.optimisers
         lr_scheduler = ckpt_fit_state.schedulers
-        step = ckpt_fit_state.step
+        fit_state.step = ckpt_fit_state.step
     else
-        opt, lr_scheduler = configure_optimisers(model) |> process_out_configure_optimisers
+        opt, lr_scheduler = configure_optimisers(model, trainer) |> process_out_configure_optimisers
         start_epoch = 1
     end
-    
+    fit_state.epoch = start_epoch - 1
+
     model = model |> device
     opt = opt |> device
     fit_state.optimisers = opt
     fit_state.schedulers = lr_scheduler
-    if lr_scheduler !== nothing
-        lr = lr_scheduler(0)
-        Optimisers.adjust!(opt, lr)
-    end
+ 
+    validation_loop(model, trainer; val_dataloader, device)
 
-    function validation_loop()
-        oldstage = fit_state.stage
-        fit_state.stage = :validate
-        valprogressbar = Progress(length(val_dataloader); desc="Validation: ", showspeed=true, enabled=false) # TODO doesn't work
-        validation_step_outs = NamedTuple[]
-        for (batch_idx, batch) in enumerate(val_dataloader)
-            batch = batch |> device
-            validation_step_out = validation_step(model, batch, batch_idx)
-            push!(validation_step_outs, validation_step_out)
-            ProgressMeter.next!(valprogressbar)
-        end
-        validation_epoch_out = validation_epoch_end(model, validation_step_outs)
-        fit_state.validation_epoch_out = validation_epoch_out
-        for cbk in trainer.callbacks
-            on_validation_epoch_end(cbk, trainer, model)
-        end
-        log_validation(logger, step, validation_epoch_out)
-        fit_state.stage = oldstage
-    end
-
-    val_dataloader !== nothing && validation_loop()
     for epoch in start_epoch:max_epochs
         fit_state.epoch = epoch
 
-        progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
-            showspeed=true, enabled = trainer.progress_bar, color=:yellow)
-		
-        # SINGLE EPOCH TRAINING LOOP
-        for (batch_idx, batch) in enumerate(train_dataloader)
-            step += 1
-            fit_state.step = step
+        training_loop(model, trainer; train_dataloader, val_dataloader, device, max_steps)
 
-            batch = batch |> device
-
-            grads = Zygote.gradient(model) do model
-                loss, training_step_out = training_step(model, batch, batch_idx) |> process_out_training_step
-                Zygote.ignore_derivatives() do
-                    push!(training_step_outs, training_step_out)
-                    OnlineStats.fit!(training_step_out_avg, training_step_out)
-                end
-                return loss
-            end
-            opt, model = Optimisers.update!(opt, model, grads[1])
-
-            ProgressMeter.next!(progressbar,
-                showvalues = process_out_for_progress_bar(last(training_step_outs), training_step_out_avg),
-                valuecolor=:yellow)
-            
-            if (logger !== nothing) && (step % trainer.log_every_n_steps == 0)
-                log_training_step(logger, epoch, step, last(training_step_outs))
-            end
-
-            step == max_steps && break
-        end
-        training_epoch_out = training_epoch_end(model, training_step_outs)
-        fit_state.training_epoch_out = training_epoch_out
-        for cbk in trainer.callbacks
-            on_training_epoch_end(cbk, model, trainer)
-        end
-        
-        if  (val_dataloader !== nothing &&  val_every_n_epochs !== nothing && 
-                                            epoch % val_every_n_epochs == 0)
-            validation_loop()
-        end
-
-        if lr_scheduler !== nothing
-            lr = lr_scheduler(epoch)
-            Optimisers.adjust!(opt, lr)
-        end
-
-        (step == max_steps || epoch == max_epochs) && break
+        (fit_state.step == max_steps || epoch == max_epochs) && break
     end
 
     model = model |> cpu
     if model !== input_model
         copy!(input_model, model)
     end
+
     return fit_state
 end
 
-process_out_training_step(training_step_out::Number) = training_step_out, (; loss=training_step_out)
-process_out_training_step(training_step_out::NamedTuple) = training_step_out.loss, training_step_out
+# process_out_training_step(training_step_out::Number) = training_step_out, (; loss=training_step_out)
+# process_out_training_step(training_step_out::NamedTuple) = training_step_out.loss, training_step_out
 
 function process_out_configure_optimisers(out::Tuple)
     opt, lr_scheduler = out
@@ -342,35 +388,6 @@ function select_cuda_device(devices::Union{Vector{Int}, Tuple})
     return gpu
 end
 
-function process_out_for_progress_bar(out::NamedTuple, s::Stats)
-    f(k, v) = "$(roundval(v)) (last)  $(roundval(OnlineStats.value(s[k]))) (expavg)"
-    return [(k, f(k, v)) for (k, v) in pairs(out)]
-end
-
-function log_validation(tblogger, nsteps::Int, validation_epoch_out::NamedTuple)
-    if tblogger !== nothing
-        TensorBoardLogger.set_step!(tblogger, nsteps)
-        with_logger(tblogger) do
-            @info "Validation" validation_epoch_out...
-        end
-    end
-
-    #TODO customize with https://github.com/JuliaLogging/MiniLoggers.jl
-    f(k, v) = "$(k) = $(roundval(v))"
-
-    val_crayon = Crayon(foreground=:light_cyan, bold=true)
-    print(val_crayon, "Validation: ")
-    println(Crayon(foreground=:white, bold=false), "$(join([f(k, v) for (k, v) in pairs(validation_epoch_out)], ", "))")
-end
-
-function log_training_step(tblogger, epoch, step, out::NamedTuple)
-    if tblogger !== nothing
-        TensorBoardLogger.set_step!(tblogger, step)
-        with_logger(tblogger) do
-            @info "Training" epoch out...
-        end
-    end
-end
  
 function print_fit_initial_summary(model, trainer, device)
     cuda_available = CUDA.functional()

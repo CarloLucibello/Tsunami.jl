@@ -41,19 +41,20 @@ mutable struct MLP <: FluxModule
 end
 
 MLP() = MLP(Chain(flatten,
-                Dense(28^2 => 256, relu), 
-                Dense(256 => 10)))
+                Dense(28^2 => 512, relu), 
+                Dense(512 => 10)))
 
 (model::MLP)(x) = model.net(x)
 
-function Tsunami.training_step(model::MLP, batch, batch_idx)
+function Tsunami.training_step(model::MLP, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)    
     return (loss = Flux.Losses.logitcrossentropy(ŷ, y), 
             accuracy = mean(Flux.onecold(ŷ) .== Flux.onecold(y)))
 end
 
-Tsunami.configure_optimisers(model::MLP) = Optimisers.setup(Optimisers.AdamW(1e-3), model)
+Tsunami.configure_optimisers(model::MLP, trainer) = 
+    Optimisers.setup(Optimisers.AdamW(1e-3), model)
 
 ## Prepare the data
 
@@ -82,29 +83,7 @@ Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_
 What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and
 and model checkpoints on disk.
 
-```
-[ Info: Validation: loss = 2.35, accuracy = 0.124
-Train Epoch 1: 100%|██████████████████████████████████████████████████████████████| Time: 0:00:01 ( 2.92 ms/it)
-  loss:      0.449 (last)  0.456 (expavg)
-  accuracy:  0.833 (last)  0.828 (expavg)
-[ Info: Validation: loss = 0.468, accuracy = 0.829
-Train Epoch 2: 100%|██████████████████████████████████████████████████████████████| Time: 0:00:01 ( 2.97 ms/it)
-  loss:      0.472 (last)  0.363 (expavg)
-  accuracy:  0.854 (last)  0.873 (expavg)
-[ Info: Validation: loss = 0.447, accuracy = 0.838
-Train Epoch 3: 100%|██████████████████████████████████████████████████████████████| Time: 0:00:01 ( 2.23 ms/it)
-  loss:      0.263 (last)  0.316 (expavg)
-  accuracy:  0.896 (last)  0.891 (expavg)
-[ Info: Validation: loss = 0.363, accuracy = 0.87
-Train Epoch 4: 100%|██████████████████████████████████████████████████████████████| Time: 0:00:01 ( 2.26 ms/it)
-  loss:      0.224 (last)  0.281 (expavg)
-  accuracy:  0.896 (last)  0.895 (expavg)
-[ Info: Validation: loss = 0.37, accuracy = 0.867
-Train Epoch 5: 100%|██████████████████████████████████████████████████████████████| Time: 0:00:01 ( 2.64 ms/it)
-  loss:      0.326 (last)  0.279 (expavg)
-  accuracy:  0.875 (last)  0.893 (expavg)
-[ Info: Validation: loss = 0.351, accuracy = 0.872
-```
+<img src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_output.png">
 
 See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and check the [examples](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) folder to learn more.
 

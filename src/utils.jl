@@ -20,7 +20,7 @@ accuracy(ŷ::AbstractMatrix, y::AbstractMatrix) = mean(onecold(ŷ) .== onecold
 # end
 
 
-ChainRulesCore.@non_differentiable accuracy(::Any...)
+@non_differentiable accuracy(::Any...)
 
 roundval(x::Float64) = round(x, sigdigits=3)
 roundval(x::AbstractFloat) = roundval(Float64(x))

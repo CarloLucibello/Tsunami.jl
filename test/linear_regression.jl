@@ -8,7 +8,7 @@ function test_teacher_student(;
     
     M = round(Int, N * α)
     teacher = LinearModel(N)
-    X = randn(N, M)
+    X = randn(Float32, N, M)
     y = teacher(X)
 
     model = LinearModel(N; λ=0)
