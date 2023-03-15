@@ -27,7 +27,7 @@ using Crayons
 CUDA.allowscalar(false)
 
 include("ProgressMeter/ProgressMeter.jl")
-using ProgressMeter
+using .ProgressMeter
 
 include("utils.jl")
 # export accuracy

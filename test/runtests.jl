@@ -1,6 +1,7 @@
 using Test
 using Tsunami, Flux
 using MLUtils, Functors, Zygote, Optimisers
+using OnlineStats
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
 
