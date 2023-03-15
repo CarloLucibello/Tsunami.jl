@@ -72,6 +72,7 @@ end
 ## Hooks API
 
 ```@docs
+Tsunami.on_test_epoch_end
 Tsunami.on_train_epoch_end
 Tsunami.on_validation_epoch_end
 ```

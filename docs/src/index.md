@@ -29,7 +29,71 @@ pkg> add https://github.com/CarloLucibello/Tsunami.jl
 ## Usage Examples
 
 Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer`
-train the model on your dataset with `fit!`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
+train the model on your dataset with `fit!`. Tsunami will handle all of the boilerplate (training loop, logging, gpu movement, validation, ...).
+
+```julia
+using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
+using Flux: DataLoader, flatten, mapobs
+
+## Define the model 
+
+mutable struct MLP <: FluxModule
+    net
+end
+
+MLP() = MLP(Chain(flatten,
+                Dense(28^2 => 512, relu), 
+                Dense(512 => 10)))
+
+(model::MLP)(x) = model.net(x)
+
+function Tsunami.training_step(model::MLP, trainer, batch, batch_idx)
+    x, y = batch
+    ŷ = model(x)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
+    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y), prog_bar=true)
+    return loss
+end
+
+
+function Tsunami.validation_step(model::MLP, trainer, batch, batch_idx)
+    x, y = batch
+    ŷ = model(x)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    Tsunami.log(trainer, "loss/val", loss)
+    Tsunami.log(trainer, "accuracy/val", Tsunami.accuracy(ŷ, y))
+    return loss
+end
+
+Tsunami.configure_optimisers(model::MLP, trainer) = 
+    Optimisers.setup(Optimisers.AdamW(1e-3), model)
+
+## Prepare the data
+
+function mnist_transform(batch)
+    image = ImageCore.channelview.(batch["image"])
+    image = Flux.batch(image) ./ 255f0
+    label = Flux.onehotbatch(batch["label"], 0:9)
+    return (; image, label)
+end
+
+train_data = load_dataset("fashion_mnist", split="train").with_format("julia")
+train_data = mapobs(mnist_transform, train_data)[:]
+train_loader = DataLoader(train_data, batchsize=128, shuffle=true)
+
+test_data = load_dataset("fashion_mnist", split="test").with_format("julia")
+test_data = mapobs(mnist_transform, test_data)[:]
+test_loader = DataLoader(test_data, batchsize=128)
+
+## Create and train the model
+
+model = MLP()
+trainer = Trainer(max_epochs=5)
+Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader);
+```
+
+<img src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_output.png">
 
 See the folder [examples/](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) for usage examples.
 

@@ -16,12 +16,20 @@ makedocs(;
          clean = true,
          format = Documenter.HTML(; mathengine, prettyurls, assets, sidebar_sitename),
          sitename = "Tsunami.jl",
-         pages = ["Home" => "index.md",
-             "FluxModule" => "fluxmodule.md",
-             "Trainer" => "trainer.md",
-             "Hooks" => "hooks.md",
-             "Checkpoints" => "checkpoints.md",
-             "Utils" => "utils.md",
+         pages = ["Get Started" => "index.md",
+                # "Guides" => [] # TODO
+                 "API Reference" => [
+                    # This essentially collects docstrings, with a bit of introduction.
+                    "Callbacks" => "callbacks.md",
+                    "Checkpoints" => "checkpoints.md",
+                    "FluxModule" => "fluxmodule.md",
+                    "Hooks" => "hooks.md",
+                    "Logging" => "logging.md",
+                    "Trainer" => "trainer.md",
+                    "Utils" => "utils.md",
+                ],
+                # "Tutorials" => [] # TODO These walk you through various tasks. It's fine if they overlap quite a lot.
+             
          ])
 
 deploydocs(repo = "github.com/CarloLucibello/Tsunami.jl.git")

@@ -32,7 +32,7 @@ train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of 
 In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
-using Flux: DataLoader, flatten, mapobs # from MLUtils.jl
+using Flux: DataLoader, flatten, mapobs
 
 ## Define the model 
 
@@ -48,9 +48,21 @@ MLP() = MLP(Chain(flatten,
 
 function Tsunami.training_step(model::MLP, trainer, batch, batch_idx)
     x, y = batch
-    ŷ = model(x)    
-    return (loss = Flux.Losses.logitcrossentropy(ŷ, y), 
-            accuracy = mean(Flux.onecold(ŷ) .== Flux.onecold(y)))
+    ŷ = model(x)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
+    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y), prog_bar=true)
+    return loss
+end
+
+
+function Tsunami.validation_step(model::MLP, trainer, batch, batch_idx)
+    x, y = batch
+    ŷ = model(x)
+    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    Tsunami.log(trainer, "loss/val", loss)
+    Tsunami.log(trainer, "accuracy/val", Tsunami.accuracy(ŷ, y))
+    return loss
 end
 
 Tsunami.configure_optimisers(model::MLP, trainer) = 
@@ -77,7 +89,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader)
+Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader);
 ```
 
 What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and

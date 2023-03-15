@@ -1,0 +1,5 @@
+# Logging 
+
+```@docs
+Tsunami.log
+```

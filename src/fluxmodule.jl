@@ -127,7 +127,7 @@ end
 
 The method called at each training step during `Tsunami.fit!`.
 It should compute the forward pass of the model and return the loss 
-corresponding to the minibatch `batch`. 
+(a scalar) corresponding to the minibatch `batch`. 
 
 The training loop in `Tsunami.fit!` approximately looks like this:
 ```julia
@@ -149,9 +149,8 @@ function Tsunami.training_step(model::Model, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
-    accuracy = Tsunami.accuracy(ŷ, y)
     Tsunami.log(trainer, "loss/train", loss)
-    Tsunami.log(trainer, "accuracy/train", accuracy)
+    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y))
     return loss
 end
 ```
