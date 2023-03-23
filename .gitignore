@@ -9,4 +9,5 @@ checkpoints
 .DS_Store
 .ipynb_checkpoints
 .CondaPkg
-readme.jl
+/readme.jl
+/test.jl
