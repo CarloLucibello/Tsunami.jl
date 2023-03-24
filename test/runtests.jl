@@ -1,7 +1,7 @@
 using Test
 using Tsunami, Flux
 using MLUtils, Functors, Zygote, Optimisers
-using OnlineStats
+using DataFrames
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
 
@@ -16,6 +16,10 @@ end
 
 @testset "FluxModule" begin
    include("fluxmodule.jl") 
+end
+
+@testset "Logging" begin
+   include("logging.jl") 
 end
 
 @testset "Trainer" begin

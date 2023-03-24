@@ -3,6 +3,7 @@ module Tsunami
 using Base: @kwdef
 import BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
+using Crayons
 using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
@@ -10,7 +11,7 @@ import Functors
 using Dates
 # import ImageMagick # for image logging
 using Logging
-import OnlineStats
+using MLUtils
 import Optimisers
 # import ParameterSchedulers
 # @static if Sys.isapple()
@@ -21,8 +22,7 @@ using Statistics
 using TensorBoardLogger: TBLogger, tb_append
 import TensorBoardLogger as TensorBoardLoggers
 using UnPack: @unpack
-import Zygote
-using Crayons
+
 
 CUDA.allowscalar(false)
 

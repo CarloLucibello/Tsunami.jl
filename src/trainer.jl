@@ -12,18 +12,20 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 
 # Fields
 
-- `epoch`: current epoch.
-- `run_dir`
-- `stage`
-- `step`: current step.
-- `training_epoch_out`
-- `validation_epoch_out`
+- `epoch`: the current epoch number.
+- `run_dir`: the directory where the logs and checkpoints are saved.
+- `stage`: the current stage of execution. One of `:train`, `:training_epoch_end`, `:validate`, `:validation_epoch_end`.
+- `step`: the current step number.
+- `batchsize`: number of samples in the current batch.
+- `optimisers`
+- `schedulers`
 """
 @kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
     epoch::Int = 0
     run_dir::String = ""
     stage::Symbol = :train # [:train, :training_epoch_end, :validate, :validation_epoch_end]
     step::Int = 0
+    batchsize::Int = 0
     optimisers = nothing  # TODO move to trainer?
     schedulers = nothing  # TODO move to trainer? in that case the trainer should be part of the checkpoint
 end
@@ -151,7 +153,7 @@ function validation_loop(model, trainer; val_dataloader, device)
     valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
         showspeed=true, enabled=true, color=:green)
     for (batch_idx, batch) in enumerate(val_dataloader)
-        # println("batch_idx: ", batch_idx)
+        fit_state.batchsize = MLUtils.numobs(batch)
         batch = batch |> device
         validation_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
@@ -188,10 +190,11 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
     # SINGLE EPOCH TRAINING LOOP
     for (batch_idx, batch) in enumerate(train_dataloader)
         fit_state.step += 1
+        fit_state.batchsize = MLUtils.numobs(batch)
         
         batch = batch |> device
 
-        grads = Zygote.gradient(model) do model
+        grads = Flux.gradient(model) do model
             loss = training_step(model, trainer, batch, batch_idx)
             return loss
         end
