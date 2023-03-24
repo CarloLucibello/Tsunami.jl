@@ -1,56 +1,41 @@
 
-"""
-    Stats() <: OnlineStat
-"""
-mutable struct Stats <: OnlineStats.OnlineStat{AbstractDict}
-    _stats::Dict{String, OnlineStats.OnlineStat}
+mutable struct Stats
+    num::Dict{String, Int}
+    sum::Dict{String, Float64}
 end
 
-Stats() = Stats(Dict{String, OnlineStats.OnlineStat}())
-
-Base.getindex(s::Stats, k::String) = getindex(s._stats, k)
-Base.keys(s::Stats) = keys(s._stats)
-Base.pairs(s::Stats) = pairs(s._stats)
-Base.setindex!(s::Stats, v, k::String) = setindex!(s._stats, v, k)
-Base.haskey(s::Stats, k::String) = haskey(s._stats, k)
-Base.length(s::Stats) = length(s._stats)
-Base.values(s::Stats) = values(s._stats)
-Base.isempty(s::Stats) = isempty(s._stats)
-
-function OnlineStats._fit!(s::Stats, x::AbstractDict)
-    for (k, v) in pairs(x)
-        if !haskey(s, k)
-            init_stat!(s, k)
-        end
-        OnlineStats.fit!(s[k], v)
-    end
-end
+Stats() = Stats(Dict{String, Int}(), Dict{String, Float64}())
 
 function init_stat!(s::Stats, k::String)
-    # stat() = OnlineStats.Mean(weight=OnlineStats.ExponentialWeight(0.1))
-    s[k] = OnlineStats.Mean()
+    s.num[k] = 0
+    s.sum[k] = 0.0
     return s
 end
 
-function OnlineStats.nobs(s::Stats)
-    if length(s) > 0 
-        ns = [OnlineStats.nobs(v) for v in values(s)]
-        if allequal(ns)
-            return ns[1]
-        else
-            return Dict(k => OnlineStats.nobs(v) for (k,v) in pairs(s))
-        end
-    else 
-        return 0
+function add_obs!(s::Stats, name::String, value::Number, batchsize::Int=1)
+    if !haskey(s.num, name)
+        init_stat!(s, name)
     end
+    s.num[name] += batchsize
+    s.sum[name] += value * batchsize
 end
 
-OnlineStats.value(s::Stats) = Dict(k => OnlineStats.value(v) for (k, v) in pairs(s))
-
-# HAD TO OVERLOAD PRIVATE METHOD TO WORK WITH 
-# vector return from nobs
-function OnlineStats.OnlineStatsBase.nobs_string(o::Stats)
-    n = string(OnlineStats.nobs(o))
-    return n
+function Base.getindex(s::Stats, k::String)
+    return s.sum[k] / s.num[k]
 end
 
+Base.haskey(s::Stats, k::String) = haskey(s.num, k)
+Base.length(s::Stats) = length(s.num)
+Base.keys(s::Stats) = keys(s.num)
+Base.values(s::Stats) = (s[k] for k in keys(s))
+Base.pairs(s::Stats) = (k => s[k] for k in keys(s))
+Base.isempty(s::Stats) = isempty(s.num)
+
+function Statistics.mean(s::Stats)
+    return Dict(k => s[k] for (k, v) in pairs(s))
+end
+
+function Base.empty!(s::Stats)
+    empty!(s.num)
+    empty!(s.sum)
+end

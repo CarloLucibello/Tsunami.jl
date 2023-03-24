@@ -60,3 +60,42 @@ function Tsunami.configure_optimisers(model::LinearModel, trainer)
     return Optimisers.setup(Optimisers.Adam(1e-1), model)
 end
 
+###### TBLoggingModuel ######
+
+Base.@kwdef mutable struct TBLoggingModule <: FluxModule
+    net = Chain(Dense(4, 3, relu), Dense(3, 2))
+    log_on_train_epoch::Bool = true
+    log_on_train_step::Bool = true
+    log_on_val_epoch::Bool = true
+    log_on_val_step::Bool = true
+end
+
+(m::TBLoggingModule)(x) = m.net(x)
+
+io_sizes(m::TBLoggingModule) = 4, 2
+
+function Tsunami.training_step(m::TBLoggingModule, trainer, batch, batch_idx)
+    x, y = batch
+    y_hat = m(x)
+    loss = Flux.mse(y_hat, y)
+    on_step = m.log_on_train_step
+    on_epoch = m.log_on_train_epoch
+    Tsunami.log(trainer, "train/loss", loss; on_step, on_epoch, prog_bar=true)
+    Tsunami.log(trainer, "train/batch_idx", batch_idx; on_step, on_epoch, prog_bar=true)
+    return loss
+end
+
+function Tsunami.validation_step(m::TBLoggingModule, trainer, batch, batch_idx)
+    x, y = batch
+    y_hat = m(x)
+    loss = Flux.mse(y_hat, y)
+    on_step = m.log_on_val_step
+    on_epoch = m.log_on_val_epoch
+    Tsunami.log(trainer, "val/loss", loss; on_step, on_epoch, prog_bar=true)
+    Tsunami.log(trainer, "val/batch_idx", batch_idx; on_step, on_epoch, prog_bar=true)
+    return loss
+end
+
+function Tsunami.configure_optimisers(m::TBLoggingModule, trainer)
+    return Optimisers.setup(Optimisers.Adam(1e-3), m)
+end
