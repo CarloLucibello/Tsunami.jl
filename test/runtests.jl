@@ -1,6 +1,6 @@
 using Test
 using Tsunami, Flux
-using MLUtils, Functors, Zygote, Optimisers
+using MLUtils, Functors, Optimisers
 using DataFrames
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
