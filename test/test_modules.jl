@@ -62,7 +62,7 @@ end
 
 ###### TBLoggingModuel ######
 
-@kwdef mutable struct TBLoggingModule <: FluxModule
+Base.@kwdef mutable struct TBLoggingModule <: FluxModule
     net = Chain(Dense(4, 3, relu), Dense(3, 2))
     log_on_train_epoch::Bool = true
     log_on_train_step::Bool = true
