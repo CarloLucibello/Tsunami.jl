@@ -89,7 +89,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-Tsunami.fit!(model, trainer, train_loader, test_loader);
+Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
 What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and
