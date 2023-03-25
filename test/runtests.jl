@@ -2,7 +2,7 @@ using Test
 using Tsunami, Flux
 using MLUtils, Functors, Optimisers
 using DataFrames
-using Random, Statistics, LinearAlgebra
+using Random, Statistics
 using CUDA
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
