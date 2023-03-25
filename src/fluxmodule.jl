@@ -1,5 +1,5 @@
 """
-    FluxModule
+    abstract type FluxModule end
 
 An abstract type for Flux models.
 A `FluxModule` helps orgainising you code and provides a standard interface for training.
@@ -13,12 +13,12 @@ have to implement the following methods in order to interact with a [`Trainer`](
 # Required methods
 
 - [`configure_optimisers`](@ref)`(model, trainer)`
-- [`train_step`](@ref)`(model, trainer, batch, batch_idx)`
+- [`train_step`](@ref)`(model, trainer, batch, [batch_idx])`
 
 # Optional Methods 
 
-- [`val_step`](@ref)`(model, trainer, batch, batch_idx)`
-- [`test_step`](@ref)`(model, trainer, batch, batch_idx)`
+- [`val_step`](@ref)`(model, trainer, batch, [batch_idx])`
+- [`test_step`](@ref)`(model, trainer, batch, [batch_idx])`
 - [`on_train_epoch_end`](@ref)`(model, trainer)`
 - [`on_val_epoch_end`](@ref)`(model, trainer)`
 - [`on_test_epoch_end`](@ref)`(model, trainer)`
@@ -54,7 +54,7 @@ end
 
 # Prepare the dataset and the DataLoader
 X, Y = rand(4, 100), rand(2, 100)
-train_dataloader = Flux.DataLoader((x, y), batchsize=10)
+train_dataloader = Flux.DataLoader((X, Y), batchsize=10)
 
 # Create and Train the model
 model = Model()
