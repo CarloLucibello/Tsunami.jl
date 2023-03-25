@@ -46,23 +46,23 @@ MLP() = MLP(Chain(flatten,
 
 (model::MLP)(x) = model.net(x)
 
-function Tsunami.train_step(model::MLP, trainer, batch, batch_idx)
+function loss_and_accuracy(model::MLP, batch)
     x, y = batch
     ŷ = model(x)
-    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+    return Flux.logitcrossentropy(ŷ, y), Tsunami.accuracy(ŷ, y)
+end
+
+function Tsunami.train_step(model::MLP, trainer, batch)
+    loss, acc = loss_and_accuracy(model, batch)
     Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
-    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y), prog_bar=true)
+    Tsunami.log(trainer, "accuracy/train", acc, prog_bar=true)
     return loss
 end
 
-
-function Tsunami.val_step(model::MLP, trainer, batch, batch_idx)
-    x, y = batch
-    ŷ = model(x)
-    loss = Flux.Losses.logitcrossentropy(ŷ, y)
+function Tsunami.val_step(model::MLP, trainer, batch)
+    loss, acc = loss_and_accuracy(model, batch)
     Tsunami.log(trainer, "loss/val", loss)
-    Tsunami.log(trainer, "accuracy/val", Tsunami.accuracy(ŷ, y))
-    return loss
+    Tsunami.log(trainer, "accuracy/val", acc)
 end
 
 Tsunami.configure_optimisers(model::MLP, trainer) = 

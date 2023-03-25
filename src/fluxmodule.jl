@@ -123,11 +123,15 @@ function configure_optimisers(model::FluxModule, trainer)
 end
 
 """
-    train_step(model, trainer, batch, batch_idx)
+    train_step(model, trainer, batch, [batch_idx])
 
 The method called at each training step during `Tsunami.fit!`.
 It should compute the forward pass of the model and return the loss 
 (a scalar) corresponding to the minibatch `batch`. 
+The optional argument `batch_idx` is the index of the batch in the current epoch.
+
+Any `Model <: FluxModule` should implement either 
+`train_step(model::Model, trainer, batch)` or `train_step(model::Model, trainer, batch, batch_idx)`.
 
 The training loop in `Tsunami.fit!` approximately looks like this:
 ```julia
@@ -145,7 +149,7 @@ end
 # Examples
 
 ```julia
-function Tsunami.train_step(model::Model, trainer, batch, batch_idx)
+function Tsunami.train_step(model::Model, trainer, batch)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
@@ -155,23 +159,29 @@ function Tsunami.train_step(model::Model, trainer, batch, batch_idx)
 end
 ```
 """
-function train_step(model::FluxModule, trainer, batch, batch_idx)
+train_step(model::FluxModule, trainer, batch, batch_idx) = train_step(model, trainer, batch)
+
+function train_step(model::FluxModule, trainer, batch)
     not_implemented_error("train_step")
 end
 
 """
-    val_step(model, trainer, batch, batch_idx)
+    val_step(model, trainer, batch, [batch_idx])
 
 The method called at each validation step during `Tsunami.fit!`.
 Tipically used for computing metrcis and statistics on the validation 
-set. 
+batch `batch`. The optional argument `batch_idx` is the index of the batch in the current 
+validation epoch. 
+
+A `Model <: FluxModule` should implement either 
+`val_step(model::Model, trainer, batch)` or `val_step(model::Model, trainer, batch, batch_idx)`.
 
 See also [`train_step`](@ref).
 
 # Examples
     
 ```julia
-function Tsunami.val_step(model::Model, trainer, batch, batch_idx)
+function Tsunami.val_step(model::Model, trainer, batch)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
@@ -181,11 +191,12 @@ function Tsunami.val_step(model::Model, trainer, batch, batch_idx)
 end
 ```
 """
-function val_step(model::FluxModule, trainer, batch, batch_idx)
+val_step(model::FluxModule, trainer, batch, batch_idx) = val_step(model, trainer, batch)
+
+function val_step(model::FluxModule, trainer, batch)
     # not_implemented_error("val_step")
     return nothing
 end
-
 
 """
     test_step(model, trainer, batch, batch_idx)
