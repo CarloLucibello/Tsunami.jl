@@ -9,7 +9,7 @@
     model = TBLoggingModule(log_on_train_step=true, log_on_train_epoch=true)
     trainer = Trainer(max_epochs=4, log_every_n_steps=1)
     train_dataloader = make_regression_dataset(io_sizes(model)..., batch_sizes)
-    fit_state = Tsunami.fit!(model, trainer; train_dataloader)
+    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
 
     events = Tsunami.read_tensorboard_logs(fit_state.run_dir)
     @test events isa Vector{Tuple{String, Int64, <:Any}} 

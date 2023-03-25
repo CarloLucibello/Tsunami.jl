@@ -14,7 +14,7 @@ function test_teacher_student(;
     model = LinearModel(N; λ=0)
     trainer = SilentTrainer(max_epochs=1000)
 
-    Tsunami.fit!(model, trainer; train_dataloader=[(X, y)])
+    Tsunami.fit!(model, trainer, [(X, y)])
 
     # @test model(X) ≈ y 
 end

@@ -90,7 +90,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-Tsunami.fit!(model, trainer; train_dataloader=train_loader, val_dataloader=test_loader);
+Tsunami.fit!(model, trainer, train_loader, test_loader);
 ```
 
 <img src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_output.png">

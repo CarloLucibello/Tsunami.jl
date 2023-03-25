@@ -25,7 +25,7 @@ Reads all tensorboard events from the `logdir` path and returns them as a list o
 # Example
 
 ```julia
-julia> fit_state = Tsunami.fit!(model, trainer; train_dataloader);
+julia> fit_state = Tsunami.fit!(model, trainer, train_dataloader);
 
 julia> Tsunami.read_tensorboard_logs(fit_state.run_dir)
 24-element Vector{Tuple{String, Int64, Any}}:

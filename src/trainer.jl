@@ -102,7 +102,7 @@ trainer = Trainer(max_epochs = 10,
                   checkpointer = true,
                   logger = true)
 
-Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
+Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 @kwdef mutable struct Trainer
@@ -144,7 +144,7 @@ end
 # end
 
 
-function validation_loop(model, trainer; val_dataloader, device)
+function validation_loop(model, trainer, val_dataloader; device)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
     oldstage = fit_state.stage
@@ -172,7 +172,7 @@ function validation_loop(model, trainer; val_dataloader, device)
     fit_state.stage = oldstage
 end
 
-function training_loop(model, trainer; train_dataloader, val_dataloader, device, max_steps)
+function training_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
     fit_state = trainer.fit_state
     @unpack epoch, optimisers = fit_state
     opt = optimisers
@@ -217,15 +217,15 @@ function training_loop(model, trainer; train_dataloader, val_dataloader, device,
     fit_state.stage = :train
 
     if  (val_dataloader !== nothing && epoch % trainer.val_every_n_epochs == 0)
-        validation_loop(model, trainer; val_dataloader, device)
+        validation_loop(model, trainer, val_dataloader; device)
     end
 
     fit_state.stage = oldstage
 end
 
 """
-    fit!(model::FluxModule, trainer::Trainer; 
-         train_dataloader, [val_dataloader, ckpt_path, resume_run])
+    fit!(model::FluxModule, trainer::Trainer, train_dataloader,
+        [val_dataloader]; [ckpt_path, resume_run])
 
 Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
@@ -234,7 +234,7 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
 - **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
-- **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`. Required argument.
+- **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
 - **resume\\_run**: If `true` and `ckpt_path` is given, continue the loggin of the run in the same
@@ -244,16 +244,16 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 ```julia
 trainer = Trainer(max_epochs = 10)
-Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
+Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 function fit!(
         model::FluxModule,
-        trainer::Trainer;
+        trainer::Trainer,
+        train_dataloader,
+        val_dataloader = nothing;
         ckpt_path = nothing,
         resume_run = false,
-        train_dataloader,
-        val_dataloader = nothing,
     )
     @assert !resume_run "resume_run=true is not supported yet." # TODO
     input_model = model
@@ -315,12 +315,12 @@ function fit!(
     fit_state.optimisers = opt
     fit_state.schedulers = lr_scheduler
  
-    validation_loop(model, trainer; val_dataloader, device)
+    validation_loop(model, trainer, val_dataloader; device)
 
     for epoch in start_epoch:max_epochs
         fit_state.epoch = epoch
 
-        training_loop(model, trainer; train_dataloader, val_dataloader, device, max_steps)
+        training_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
 
         (fit_state.step == max_steps || epoch == max_epochs) && break
     end

@@ -4,7 +4,7 @@
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
     trainer = Trainer(max_epochs=2, logger=false, checkpointer=false, progress_bar=false)
-    Tsunami.fit!(model, trainer; train_dataloader, val_dataloader=train_dataloader)
+    Tsunami.fit!(model, trainer, train_dataloader)
 end
 
 @testset "fit! mutates" begin
@@ -14,7 +14,7 @@ end
     @test all(==(0), model.net[1].bias)
     train_dataloader = make_dataloader(nx, ny)
     trainer = Trainer(max_epochs=2, logger=false, checkpointer=false, progress_bar=false)
-    Tsunami.fit!(model, trainer; train_dataloader)
+    Tsunami.fit!(model, trainer, train_dataloader)
     @test all(!=(0), model.net[1].bias)
 end
 
@@ -28,11 +28,11 @@ end
     loss0 = Flux.Losses.mse(ŷ0, y)
 
     trainer = Trainer(max_epochs=2, logger=false, checkpointer=true, progress_bar=true, default_root_dir=@__DIR__)
-    fit_state = Tsunami.fit!(model, trainer; train_dataloader)
+    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
     runpath1 = fit_state.run_dir
     bsonpath1 = joinpath(runpath1, "checkpoints", "ckpt_epoch=2_step=4.bson")
     @test isfile(bsonpath1)
-    fit_state = Tsunami.fit!(model, trainer; train_dataloader)
+    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
     runpath2 = fit_state.run_dir
     bsonpath2 = joinpath(runpath2, "checkpoints", "ckpt_epoch=2_step=4.bson")
     @test isfile(bsonpath2)
@@ -56,7 +56,7 @@ end
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
     trainer = SilentTrainer(max_epochs=2, fast_dev_run=true)
-    fit_state = Tsunami.fit!(model, trainer; train_dataloader)
+    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
     @test fit_state.epoch == 1
     @test fit_state.step == 1
 end
@@ -67,7 +67,7 @@ end
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
     trainer = SilentTrainer(max_epochs=2, val_every_n_epochs=2)
-    fit_state = Tsunami.fit!(model, trainer; train_dataloader)
+    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
     @test fit_state.epoch == 2 
 end
 
@@ -77,7 +77,7 @@ end
     train_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
     val_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
     trainer = SilentTrainer(max_epochs = 2)
-    fit_state = Tsunami.fit!(model, trainer; train_dataloader, val_dataloader)
+    fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
     @test fit_state.epoch == 2
 end
 
