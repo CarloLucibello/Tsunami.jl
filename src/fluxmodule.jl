@@ -13,14 +13,14 @@ have to implement the following methods in order to interact with a [`Trainer`](
 # Required methods
 
 - [`configure_optimisers`](@ref)`(model, trainer)`
-- [`training_step`](@ref)`(model, trainer, batch, batch_idx)`
+- [`train_step`](@ref)`(model, trainer, batch, batch_idx)`
 
 # Optional Methods 
 
-- [`validation_step`](@ref)`(model, trainer, batch, batch_idx)`
+- [`val_step`](@ref)`(model, trainer, batch, batch_idx)`
 - [`test_step`](@ref)`(model, trainer, batch, batch_idx)`
 - [`on_train_epoch_end`](@ref)`(model, trainer)`
-- [`on_validation_epoch_end`](@ref)`(model, trainer)`
+- [`on_val_epoch_end`](@ref)`(model, trainer)`
 - [`on_test_epoch_end`](@ref)`(model, trainer)`
 
 # Examples
@@ -41,7 +41,7 @@ end
 
 (model::Model)(x) = model.net(x)
 
-function Tsunami.training_step(model::Model, batch, batch_idx)
+function Tsunami.train_step(model::Model, batch, batch_idx)
     x, y = batch
     y_hat = model(x)
     loss = Flux.Losses.mse(y_hat, y)
@@ -123,7 +123,7 @@ function configure_optimisers(model::FluxModule, trainer)
 end
 
 """
-    training_step(model, trainer, batch, batch_idx)
+    train_step(model, trainer, batch, batch_idx)
 
 The method called at each training step during `Tsunami.fit!`.
 It should compute the forward pass of the model and return the loss 
@@ -134,7 +134,7 @@ The training loop in `Tsunami.fit!` approximately looks like this:
 for epoch in 1:epochs
     for (batch_idx, batch) in enumerate(train_dataloader)
         grads = gradient(model) do m
-            loss = training_step(m, trainer, batch, batch_idx)
+            loss = train_step(m, trainer, batch, batch_idx)
             return loss
         end
         Optimisers.update!(opt, model, grads[1])
@@ -145,7 +145,7 @@ end
 # Examples
 
 ```julia
-function Tsunami.training_step(model::Model, trainer, batch, batch_idx)
+function Tsunami.train_step(model::Model, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
@@ -155,23 +155,23 @@ function Tsunami.training_step(model::Model, trainer, batch, batch_idx)
 end
 ```
 """
-function training_step(model::FluxModule, trainer, batch, batch_idx)
-    not_implemented_error("training_step")
+function train_step(model::FluxModule, trainer, batch, batch_idx)
+    not_implemented_error("train_step")
 end
 
 """
-    validation_step(model, trainer, batch, batch_idx)
+    val_step(model, trainer, batch, batch_idx)
 
 The method called at each validation step during `Tsunami.fit!`.
 Tipically used for computing metrcis and statistics on the validation 
 set. 
 
-See also [`training_step`](@ref).
+See also [`train_step`](@ref).
 
 # Examples
     
 ```julia
-function Tsunami.validation_step(model::Model, trainer, batch, batch_idx)
+function Tsunami.val_step(model::Model, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
@@ -181,8 +181,8 @@ function Tsunami.validation_step(model::Model, trainer, batch, batch_idx)
 end
 ```
 """
-function validation_step(model::FluxModule, trainer, batch, batch_idx)
-    # not_implemented_error("validation_step")
+function val_step(model::FluxModule, trainer, batch, batch_idx)
+    # not_implemented_error("val_step")
     return nothing
 end
 
@@ -190,7 +190,7 @@ end
 """
     test_step(model, trainer, batch, batch_idx)
 
-Similard to [`validation_step`](@ref) but called at each test step.
+Similard to [`val_step`](@ref) but called at each test step.
 """
 function test_step(model::FluxModule, trainer, batch, batch_idx)
     # not_implemented_error("test_step")
@@ -207,11 +207,11 @@ function on_train_epoch_end(model::FluxModule, trainer)
 end 
 
 """
-    on_validation_epoch_end(model, trainer)
+    on_val_epoch_end(model, trainer)
 
 TODO
 """
-function on_validation_epoch_end(model::FluxModule, trainer)
+function on_val_epoch_end(model::FluxModule, trainer)
     return nothing
 end
 
@@ -240,14 +240,14 @@ function check_fluxmodule(m::FluxModule)
     @assert ismutable(m) "FluxModule has to be a `mutable struct`."
 end
 
-function check_training_step(m::FluxModule, trainer, batch)
-    out = training_step(m, trainer, batch, 1)
-    losserrmsg = "The output of `training_step` has to be a scalar."
+function check_train_step(m::FluxModule, trainer, batch)
+    out = train_step(m, trainer, batch, 1)
+    losserrmsg = "The output of `train_step` has to be a scalar."
     @assert out isa Number losserrmsg
 end
 
-function check_validation_step(m::FluxModule, trainer, batch)
-    validation_step(m, trainer, batch, 1)
+function check_val_step(m::FluxModule, trainer, batch)
+    val_step(m, trainer, batch, 1)
     @assert true
 end
 

@@ -47,7 +47,7 @@ MLP() = MLP(Chain(flatten,
 
 (model::MLP)(x) = model.net(x)
 
-function Tsunami.training_step(model::MLP, trainer, batch, batch_idx)
+function Tsunami.train_step(model::MLP, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
@@ -57,7 +57,7 @@ function Tsunami.training_step(model::MLP, trainer, batch, batch_idx)
 end
 
 
-function Tsunami.validation_step(model::MLP, trainer, batch, batch_idx)
+function Tsunami.val_step(model::MLP, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)

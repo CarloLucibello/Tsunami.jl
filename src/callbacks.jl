@@ -4,7 +4,7 @@ function on_train_epoch_end(c::AbstractCallback, model::FluxModule, trainer::Tra
     return nothing
 end
 
-function on_validation_epoch_end(c::AbstractCallback,  model::FluxModule, trainer::Trainer)
+function on_val_epoch_end(c::AbstractCallback,  model::FluxModule, trainer::Trainer)
     return nothing
 end
 

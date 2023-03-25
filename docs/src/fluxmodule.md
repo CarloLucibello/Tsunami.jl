@@ -3,8 +3,8 @@
 ```@docs
 FluxModule
 Tsunami.configure_optimisers
-Tsunami.training_step
-Tsunami.validation_step
+Tsunami.train_step
+Tsunami.val_step
 Tsunami.test_step
 ```
 
@@ -12,6 +12,6 @@ Tsunami.test_step
 
 ```@docs 
 Tsunami.on_train_epoch_end
-Tsunami.on_validation_epoch_end
+Tsunami.on_val_epoch_end
 Tsunami.on_test_epoch_end
 ```
