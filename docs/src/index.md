@@ -33,7 +33,7 @@ train the model on your dataset with `fit!`. Tsunami will handle all of the boil
 
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
-using Flux: DataLoader, flatten, mapobs
+using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
 

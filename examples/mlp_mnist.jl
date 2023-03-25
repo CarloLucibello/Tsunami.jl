@@ -19,7 +19,7 @@ function (m::MLP)(x)
     m.net(x)
 end
 
-function Tsunami.train_step(m::MLP, trainer, batch, batch_idx)
+function Tsunami.train_step(m::MLP, trainer, batch)
     x, y = batch
     ŷ = m(x)
     y = Flux.onehotbatch(y, 0:9)
@@ -29,7 +29,7 @@ function Tsunami.train_step(m::MLP, trainer, batch, batch_idx)
     return loss
 end
 
-function Tsunami.val_step(m::MLP, trainer, batch, batch_idx)
+function Tsunami.val_step(m::MLP, trainer, batch)
     x, y = batch
     ŷ = m(x)
     y = Flux.onehotbatch(y, 0:9)

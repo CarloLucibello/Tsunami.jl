@@ -32,7 +32,7 @@ train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of 
 In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
-using Flux: DataLoader, flatten, mapobs
+using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
 
