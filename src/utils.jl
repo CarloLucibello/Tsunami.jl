@@ -42,3 +42,15 @@ function dir_with_version(dir)
     end
     return outdir
 end
+
+"""
+    seed!(seed::Int)
+
+Seed the RNGs of both CPU and GPU.
+"""
+function seed!(seed::Int)
+    Random.seed!(seed)
+    if CUDA.functional()
+        CUDA.seed!(seed)
+    end
+end

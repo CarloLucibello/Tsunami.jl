@@ -11,3 +11,6 @@ checkpoints
 .CondaPkg
 /readme.jl
 /test.jl
+Datasets/
+MNIST/
+data/

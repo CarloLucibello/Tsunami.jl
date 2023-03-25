@@ -2,6 +2,8 @@ using Test
 using Tsunami, Flux
 using MLUtils, Functors, Optimisers
 using DataFrames
+using Random, Statistics, LinearAlgebra
+using CUDA
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
 
@@ -12,6 +14,10 @@ SilentTrainer = (args...; kws...) -> Trainer(args...; kws..., logger=false, chec
 
 @testset "Stats" begin
    include("stats.jl")
+end
+
+@testset "Utils" begin
+   include("utils.jl")
 end
 
 @testset "FluxModule" begin
