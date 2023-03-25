@@ -1,3 +1,9 @@
+"""
+    TensorBoardLogger(run_dir)
+
+A logger that writes to writes tensorboard events to the
+`run_dir` directory. Relies on the `TensorBoardLogger.jl` package.
+"""
 mutable struct TensorBoardLogger
     tblogger::TBLogger
 end
@@ -37,6 +43,7 @@ julia> Tsunami.read_tensorboard_logs(fit_state.run_dir)
  ("train/acc", 2, 0.5f0)
  ...
 
+# Convert to a DataFrame
 julia> df = DataFrame([(; name, step, value) for (name, step, value) in events]);
 
 julia> unstack(df, :step, :name, :value)

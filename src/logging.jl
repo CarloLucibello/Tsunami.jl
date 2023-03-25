@@ -1,6 +1,6 @@
 
 
-""""
+"""
     log(trainer::Trainer, name::AbstractString, value; 
         [on_step, on_epoch, prog_bar, batchsize])
 

@@ -1,6 +1,6 @@
 # Utils 
 
-```@doc
+```@docs
 Tsunami.accuracy
 Tsunami.seed!
 ```

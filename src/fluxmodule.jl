@@ -211,7 +211,7 @@ end
 """
     on_train_epoch_end(model, trainer)
 
-TODO
+Called in `Tsunami.fit!` at the end of each training epoch.
 """    
 function on_train_epoch_end(model::FluxModule, trainer)
     return nothing
@@ -220,16 +220,16 @@ end
 """
     on_val_epoch_end(model, trainer)
 
-TODO
+Called in `Tsunami.fit!` at the end of each validation epoch.
 """
 function on_val_epoch_end(model::FluxModule, trainer)
     return nothing
 end
 
-""""
+"""
     on_test_epoch_end(model, trainer)
 
-TODO
+Called in `Tsunami.fit!` at the end of each test epoch.
 """
 function on_test_epoch_end(model::FluxModule, trainer)
     return nothing
