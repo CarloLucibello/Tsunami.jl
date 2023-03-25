@@ -2,4 +2,5 @@
 
 ```@doc
 Tsunami.accuracy
+Tsunami.seed!
 ```
