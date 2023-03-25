@@ -73,14 +73,14 @@ class LitClassifier(LightningModule):
         embedding = self.backbone(x)
         return embedding
 
-    def training_step(self, batch, batch_idx):
+    def train_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.log("train_loss", loss, on_epoch=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def val_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)

@@ -39,8 +39,8 @@ include("show.jl")
 
 include("fluxmodule.jl")
 export FluxModule
-        #  training_step,
-        #  validation_step,
+        #  train_step,
+        #  val_step,
         #  test_step,
         #  predict_step,
         #  configure_optimizers

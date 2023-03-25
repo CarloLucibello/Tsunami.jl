@@ -14,7 +14,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 
 - `epoch`: the current epoch number.
 - `run_dir`: the directory where the logs and checkpoints are saved.
-- `stage`: the current stage of execution. One of `:train`, `:training_epoch_end`, `:validate`, `:validation_epoch_end`.
+- `stage`: the current stage of execution. One of `:training`, `:train_epoch_end`, `:validation`, `:val_epoch_end`.
 - `step`: the current step number.
 - `batchsize`: number of samples in the current batch.
 - `optimisers`
@@ -23,7 +23,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 @kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
     epoch::Int = 0
     run_dir::String = ""
-    stage::Symbol = :train # [:train, :training_epoch_end, :validate, :validation_epoch_end]
+    stage::Symbol = :training # [:training, :train_epoch_end, :validation, :val_epoch_end]
     step::Int = 0
     batchsize::Int = 0
     optimisers = nothing  # TODO move to trainer?
@@ -72,7 +72,7 @@ the fit state during the execution of `fit!`.
              Default: `50`.
 
 - **logger**: If `true` use tensorboard for logging.
-            Every output of the `training_step` will be logged every 50 steps.
+            Every output of the `train_step` will be logged every 50 steps.
             See also `log_every_n_steps`.
             Default: `true`.
 
@@ -144,18 +144,18 @@ end
 # end
 
 
-function validation_loop(model, trainer, val_dataloader; device)
+function val_loop(model, trainer, val_dataloader; device)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
     oldstage = fit_state.stage
-    fit_state.stage = :validate
+    fit_state.stage = :validation
 
     valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
         showspeed=true, enabled=true, color=:green)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
         batch = batch |> device
-        validation_step(model, trainer, batch, batch_idx)
+        val_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
                 valuecolor = :green
@@ -163,21 +163,21 @@ function validation_loop(model, trainer, val_dataloader; device)
     end
     ProgressMeter.finish!(valprogressbar)
 
-    fit_state.stage = :validation_epoch_end
-    on_validation_epoch_end(model, trainer)
+    fit_state.stage = :val_epoch_end
+    on_val_epoch_end(model, trainer)
     for cbk in trainer.callbacks
-        on_validation_epoch_end(cbk, model, trainer)
+        on_val_epoch_end(cbk, model, trainer)
     end
     log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = oldstage
 end
 
-function training_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
+function train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
     fit_state = trainer.fit_state
     @unpack epoch, optimisers = fit_state
     opt = optimisers
     oldstage = fit_state.stage
-    fit_state.stage = :train
+    fit_state.stage = :training
 
     if fit_state.schedulers !== nothing
         lr = fit_state.schedulers(epoch)
@@ -187,7 +187,7 @@ function training_loop(model, trainer, train_dataloader, val_dataloader; device,
     progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
                         showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 
-    # SINGLE EPOCH TRAINING LOOP
+    ## SINGLE EPOCH TRAINING LOOP
     for (batch_idx, batch) in enumerate(train_dataloader)
         fit_state.step += 1
         fit_state.batchsize = MLUtils.numobs(batch)
@@ -195,7 +195,7 @@ function training_loop(model, trainer, train_dataloader, val_dataloader; device,
         batch = batch |> device
 
         grads = Flux.gradient(model) do model
-            loss = training_step(model, trainer, batch, batch_idx)
+            loss = train_step(model, trainer, batch, batch_idx)
             return loss
         end
         opt, model = Optimisers.update!(opt, model, grads[1])
@@ -208,16 +208,18 @@ function training_loop(model, trainer, train_dataloader, val_dataloader; device,
     end
     ProgressMeter.finish!(progressbar)
 
-    fit_state.stage = :training_epoch_end
+    ## EPOCH END
+    fit_state.stage = :train_epoch_end
     on_train_epoch_end(model, trainer)
     for cbk in trainer.callbacks
         on_train_epoch_end(cbk, model, trainer)
     end
     log_epoch(trainer.metalogger, fit_state)
-    fit_state.stage = :train
+    fit_state.stage = :training
 
+    ## VALIDATION
     if  (val_dataloader !== nothing && epoch % trainer.val_every_n_epochs == 0)
-        validation_loop(model, trainer, val_dataloader; device)
+        val_loop(model, trainer, val_dataloader; device)
     end
 
     fit_state.stage = oldstage
@@ -289,9 +291,9 @@ function fit!(
 
         check_fluxmodule(model)
         # check forwards on cpu
-        check_training_step(model, trainer, first(train_dataloader))
+        check_train_step(model, trainer, first(train_dataloader))
         if val_dataloader !== nothing
-            check_validation_step(model, trainer, first(val_dataloader))
+            check_val_step(model, trainer, first(val_dataloader))
         end
     end
 
@@ -315,12 +317,12 @@ function fit!(
     fit_state.optimisers = opt
     fit_state.schedulers = lr_scheduler
  
-    validation_loop(model, trainer, val_dataloader; device)
+    val_loop(model, trainer, val_dataloader; device)
 
     for epoch in start_epoch:max_epochs
         fit_state.epoch = epoch
 
-        training_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
+        train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
 
         (fit_state.step == max_steps || epoch == max_epochs) && break
     end
@@ -333,8 +335,8 @@ function fit!(
     return fit_state
 end
 
-# process_out_training_step(training_step_out::Number) = training_step_out, (; loss=training_step_out)
-# process_out_training_step(training_step_out::NamedTuple) = training_step_out.loss, training_step_out
+# process_out_train_step(train_step_out::Number) = train_step_out, (; loss=train_step_out)
+# process_out_train_step(train_step_out::NamedTuple) = train_step_out.loss, train_step_out
 
 function process_out_configure_optimisers(out::Tuple)
     opt, lr_scheduler = out

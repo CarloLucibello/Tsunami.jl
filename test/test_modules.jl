@@ -12,7 +12,7 @@ TestModule1() = TestModule1(Flux.Chain(Flux.Dense(4, 3, relu), Flux.Dense(3, 2))
 
 (m::TestModule1)(x) = m.net(x)
 
-function Tsunami.training_step(m::TestModule1, trainer, batch, batch_idx)
+function Tsunami.train_step(m::TestModule1, trainer, batch, batch_idx)
     x, y = batch
     y_hat = m(x)
     loss = Flux.mse(y_hat, y)
@@ -45,7 +45,7 @@ function (m::LinearModel)(x::AbstractMatrix)
     return (m.W .* m.mask) * x
 end
 
-function Tsunami.training_step(model::LinearModel, trainer, batch, batch_idx)
+function Tsunami.train_step(model::LinearModel, trainer, batch, batch_idx)
     x, y = batch
     ŷ = model(x)
     loss_data = Flux.mse(ŷ, y)
@@ -74,7 +74,7 @@ end
 
 io_sizes(m::TBLoggingModule) = 4, 2
 
-function Tsunami.training_step(m::TBLoggingModule, trainer, batch, batch_idx)
+function Tsunami.train_step(m::TBLoggingModule, trainer, batch, batch_idx)
     x, y = batch
     y_hat = m(x)
     loss = Flux.mse(y_hat, y)
@@ -85,7 +85,7 @@ function Tsunami.training_step(m::TBLoggingModule, trainer, batch, batch_idx)
     return loss
 end
 
-function Tsunami.validation_step(m::TBLoggingModule, trainer, batch, batch_idx)
+function Tsunami.val_step(m::TBLoggingModule, trainer, batch, batch_idx)
     x, y = batch
     y_hat = m(x)
     loss = Flux.mse(y_hat, y)
