@@ -93,7 +93,7 @@ trainer = Trainer(max_epochs=5)
 Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
-<img src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_output.png">
+![console output](./assets/readme_output.png)
 
 See the folder [examples/](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) for usage examples.
 
