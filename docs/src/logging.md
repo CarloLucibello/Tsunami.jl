@@ -9,6 +9,6 @@ Tsunami.log
 ### Tensorboard
 
 ```@docs
-Tsunami.TensorboardLogger
+Tsunami.TensorBoardLogger
 Tsunami.read_tensorboard_logs
 ```
