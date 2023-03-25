@@ -5,10 +5,10 @@
 .vscode/
 /readme.jl
 /test.jl
-build/docs
 checkpoints
 Datasets/
 data/
+docs/build
 logs/
 logs_*/
 lightning_logs/

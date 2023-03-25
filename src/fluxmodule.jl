@@ -19,9 +19,7 @@ have to implement the following methods in order to interact with a [`Trainer`](
 
 - [`val_step`](@ref)`(model, trainer, batch, [batch_idx])`
 - [`test_step`](@ref)`(model, trainer, batch, [batch_idx])`
-- [`on_train_epoch_end`](@ref)`(model, trainer)`
-- [`on_val_epoch_end`](@ref)`(model, trainer)`
-- [`on_test_epoch_end`](@ref)`(model, trainer)`
+- generic [hooks](@ref Hooks)
 
 # Examples
 
