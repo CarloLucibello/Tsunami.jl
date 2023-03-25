@@ -21,7 +21,6 @@ makedocs(;
                  "API Reference" => [
                     # This essentially collects docstrings, with a bit of introduction.
                     "Callbacks" => "callbacks.md",
-                    "Checkpoints" => "checkpoints.md",
                     "FluxModule" => "fluxmodule.md",
                     "Hooks" => "hooks.md",
                     "Logging" => "logging.md",

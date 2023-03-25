@@ -11,23 +11,10 @@ using Distributed
 
 export Progress, ProgressThresh, ProgressUnknown, BarGlyphs, next!, update!, cancel, finish!, @showprogress, progress_map, progress_pmap, ijulia_behavior
 
-"""
-`ProgressMeter` contains a suite of utilities for displaying progress
-in long-running computations. The major functions/types in this module
-are:
-- `@showprogress`: an easy interface for straightforward situations
-- `Progress`: an object for managing progress updates with a predictable number of iterations
-- `ProgressThresh`: an object for managing progress updates where termination is governed by a threshold
-- `next!` and `update!`: report that progress has been made
-- `cancel` and `finish!`: early termination
-"""
 ProgressMeter
 
 abstract type AbstractProgress end
 
-"""
-Holds the five characters that will be used to generate the progress bar.
-"""
 mutable struct BarGlyphs
     leftend::Char
     fill::Char
@@ -36,9 +23,6 @@ mutable struct BarGlyphs
     rightend::Char
 end
 
-"""
-String constructor for BarGlyphs - will split the string into 5 chars
-"""
 function BarGlyphs(s::AbstractString)
     glyphs = (s...,)
     if !isa(glyphs, NTuple{5,Char})
@@ -51,16 +35,6 @@ function BarGlyphs(s::AbstractString)
     return BarGlyphs(glyphs...)
 end
 
-"""
-`prog = Progress(n; dt=0.1, desc="Progress: ", color=:green,
-output=stderr, barlen=tty_width(desc), start=0)` creates a progress meter for a
-task with `n` iterations or stages starting from `start`. Output will be
-generated at intervals at least `dt` seconds apart, and perhaps longer if each
-iteration takes longer than `dt`. `desc` is a description of
-the current task. Optionally you can disable the progress bar by setting
-`enabled=false`. You can also append a per-iteration average duration like
-"(12.34 ms/it)" to the description by setting `showspeed=true`.
-"""
 mutable struct Progress <: AbstractProgress
     n::Int
     reentrantlocker::Threads.ReentrantLock
@@ -113,17 +87,6 @@ Progress(n::Integer, dt::Real, desc::AbstractString="Progress: ",
 Progress(n::Integer, desc::AbstractString, offset::Integer=0) = Progress(n, desc=desc, offset=offset)
 
 
-"""
-`prog = ProgressThresh(thresh; dt=0.1, desc="Progress: ",
-color=:green, output=stderr)` creates a progress meter for a task
-which will terminate once a value less than or equal to `thresh` is
-reached. Output will be generated at intervals at least `dt` seconds
-apart, and perhaps longer if each iteration takes longer than
-`dt`. `desc` is a description of the current task. Optionally you can disable
-the progress meter by setting `enabled=false`. You can also append a
-per-iteration average duration like "(12.34 ms/it)" to the description by
-setting `showspeed=true`.
-"""
 mutable struct ProgressThresh{T<:Real} <: AbstractProgress
     thresh::T
     reentrantlocker::Threads.ReentrantLock
@@ -170,18 +133,7 @@ ProgressThresh(thresh::Real, dt::Real, desc::AbstractString="Progress: ",
 
 ProgressThresh(thresh::Real, desc::AbstractString, offset::Integer=0) = ProgressThresh(thresh; desc=desc, offset=offset)
 
-"""
-`prog = ProgressUnknown(; dt=0.1, desc="Progress: ",
-color=:green, output=stderr)` creates a progress meter for a task
-which has a non-deterministic termination criterion.
-Output will be generated at intervals at least `dt` seconds
-apart, and perhaps longer if each iteration takes longer than
-`dt`. `desc` is a description of the current task. Optionally you can disable
-the progress meter by setting `enabled=false`. You can also append a
-per-iteration average duration like "(12.34 ms/it)" to the description by
-setting `showspeed=true`.  Instead of displaying a counter, it
-can optionally display a spinning ball by passing `spinner=true`.
-"""
+
 mutable struct ProgressUnknown <: AbstractProgress
     done::Bool
     reentrantlocker::Threads.ReentrantLock
@@ -490,13 +442,6 @@ function lock_if_threading(f::Function, p::AbstractProgress)
     end
 end
 
-# update progress display
-"""
-    next!(p::Union{Progress, ProgressUnknown}, [color]; step::Int = 1, options...)
-Report that `step` units of progress have been made. Depending on the time interval since
-the last update, this may or may not result in a change to the display.
-You may optionally change the `color` of the display. See also `update!`.
-"""
 function next!(p::Union{Progress, ProgressUnknown}; step::Int = 1, options...)
     lock_if_threading(p) do
         p.counter += step
@@ -512,13 +457,7 @@ function next!(p::Union{Progress, ProgressUnknown}, color::Symbol; step::Int = 1
     end
 end
 
-"""
-    update!(p::Union{Progress, ProgressUnknown}, [counter,] [color]; options...)
-Set the progress counter to `counter`, relative to the `n` units of progress specified
-when `prog` was initialized.  Depending on the time interval since the last update,
-this may or may not result in a change to the display.
-You may optionally change the color of the display. See also `next!`.
-"""
+
 function update!(p::Union{Progress, ProgressUnknown}, counter::Int=p.counter, color::Symbol=p.color; options...)
     lock_if_threading(p) do
         counter_changed = p.counter != counter
@@ -528,10 +467,7 @@ function update!(p::Union{Progress, ProgressUnknown}, counter::Int=p.counter, co
     end
 end
 
-"""
-    update!(p::ProgressThresh, [val,] [color]; increment::Bool=true, options...)
-Set the progress counter to current value `val`.
-"""
+
 function update!(p::ProgressThresh, val=p.val, color::Symbol=p.color; increment::Bool = true, options...)
     lock_if_threading(p) do
         p.val = val
@@ -543,13 +479,6 @@ function update!(p::ProgressThresh, val=p.val, color::Symbol=p.color; increment:
     end
 end
 
-
-"""
-    cancel(p::AbstractProgress, [msg,] [color=:red]; options...)
-Cancel the progress display before all tasks were completed. Optionally you can specify
-the message printed and its color.
-See also `finish!`.
-"""
 function cancel(p::AbstractProgress, msg::AbstractString = "Aborted before all tasks were completed", color = :red; showvalues = (), truncate_lines = false, valuecolor = :blue, offset = p.offset, keep = (offset == 0))
     lock_if_threading(p) do
         p.offset = offset
@@ -568,11 +497,6 @@ function cancel(p::AbstractProgress, msg::AbstractString = "Aborted before all t
     return
 end
 
-"""
-    finish!(p::Progress; options...)
-Indicate that all tasks have been completed.
-See also `cancel`.
-"""
 function finish!(p::Progress; options...)
     if p.counter < p.n
         update!(p, p.n; options...)
@@ -748,15 +672,6 @@ function Base.iterate(wrap::ProgressWrapper, state...)
     ir
 end
 
-"""
-Equivalent of @showprogress for a distributed for loop.
-```
-result = @showprogress dt "Computing..." @distributed (+) for i = 1:50
-    sleep(0.1)
-    i^2
-end
-```
-"""
 function showprogressdistributed(args...)
     if length(args) < 1
         throw(ArgumentError("@showprogress @distributed requires at least 1 argument"))
@@ -830,19 +745,7 @@ function showprogressdistributed(args...)
     end
 end
 
-"""
-```
-@showprogress dt "Computing..." for i = 1:50
-    # computation goes here
-end
-@showprogress dt "Computing..." pmap(x->x^2, 1:50)
-```
-displays progress in performing a computation. `dt` is the minimum
-interval between updates to the user. You may optionally supply a
-custom message to be printed that specifies the computation being
-performed.
-`@showprogress` works for loops, comprehensions, map, reduce, and pmap.
-"""
+
 macro showprogress(args...)
     showprogress(args...)
 end
@@ -994,11 +897,6 @@ function showprogress(args...)
     end
 end
 
-"""
-    progress_map(f, c...; mapfun=map, progress=Progress(...), kwargs...)
-Run a `map`-like function while displaying progress.
-`mapfun` can be any function, but it is only tested with `map`, `reduce` and `pmap`.
-"""
 function progress_map(args...; mapfun=map,
                                progress=Progress(ncalls(mapfun, args)),
                                channel_bufflen=min(1000, ncalls(mapfun, args)),
@@ -1027,15 +925,9 @@ function progress_map(args...; mapfun=map,
     return vals
 end
 
-"""
-    progress_pmap(f, [::AbstractWorkerPool], c...; progress=Progress(...), kwargs...)
-Run `pmap` while displaying progress.
-"""
+
 progress_pmap(args...; kwargs...) = progress_map(args...; mapfun=pmap, kwargs...)
 
-"""
-Infer the number of calls to the mapped function (i.e. the length of the returned array) given the input arguments to map, reduce or pmap.
-"""
 function ncalls(mapfun::Function, map_args)
     if mapfun == pmap && length(map_args) >= 2 && isa(map_args[2], AbstractWorkerPool)
         relevant = map_args[3:end]

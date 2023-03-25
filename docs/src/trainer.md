@@ -1,6 +1,7 @@
 # Trainer
 
 ```@docs
-Trainer
+Tsunami.Trainer
 Tsunami.fit!
+Tsunami.FitState
 ```

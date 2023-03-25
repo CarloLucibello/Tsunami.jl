@@ -210,6 +210,7 @@ end
 
 """
     on_train_epoch_end(model, trainer)
+    on_train_epoch_end(callback, model, trainer)
 
 Called in `Tsunami.fit!` at the end of each training epoch.
 """    
@@ -219,6 +220,7 @@ end
 
 """
     on_val_epoch_end(model, trainer)
+    on_val_epoch_end(callback, model, trainer)
 
 Called in `Tsunami.fit!` at the end of each validation epoch.
 """
@@ -228,6 +230,7 @@ end
 
 """
     on_test_epoch_end(model, trainer)
+    on_test_epoch_end(callback, model, trainer)
 
 Called in `Tsunami.fit!` at the end of each test epoch.
 """
