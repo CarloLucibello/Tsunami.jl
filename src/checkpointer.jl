@@ -38,7 +38,13 @@ function on_train_epoch_end(cp::Checkpointer, model::FluxModule, trainer::Traine
     mkpath(folder)
     filename = "ckpt_epoch=$(epoch)_step=$(step).bson"
     filepath = joinpath(folder, filename)
-    BSON.@save filepath ckpt=(; model=cpu(model), fit_state=cpu(fit_state))
+
+    ckpt = (model = cpu(model), 
+            fit_state = fit_state,
+            lr_schedulers = trainer.lr_schedulers,
+            optimisers = cpu(trainer.optimisers))
+
+    BSON.@save filepath ckpt=ckpt
 
     if cp.last_ckpt !== nothing
         rm(cp.last_ckpt)
@@ -56,7 +62,7 @@ end
     load_checkpoint(path)
 
 Loads a checkpoint that was saved to `path`. 
-Returns a namedtuple of the model and the optimizer.
+Returns a namedtuple containing the model, the fit state, the lr schedulers and the optimisers.
 
 See also: [`Checkpointer`](@ref).
 """

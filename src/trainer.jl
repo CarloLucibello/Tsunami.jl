@@ -12,8 +12,6 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 - `stage`: the current stage of execution. One of `:training`, `:train_epoch_end`, `:validation`, `:val_epoch_end`.
 - `step`: the current step number.
 - `batchsize`: number of samples in the current batch.
-- `optimisers`: the optimisers used during training.
-- `lr_schedulers`: the learning rate schedulers used during training.
 """
 @kwdef mutable struct FitState
     epoch::Int = 0
@@ -21,16 +19,12 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
     stage::Symbol = :training # [:training, :train_epoch_end, :validation, :val_epoch_end]
     step::Int = 0
     batchsize::Int = 0
-    optimisers = nothing  # TODO move to trainer?
-    lr_schedulers = nothing  # TODO move to trainer? in that case the trainer should be part of the checkpoint
 end
 
 Functors.@functor FitState
 
 function Base.show(io::IO, ::MIME"text/plain", fit_state::FitState)
-    container_show(io, fit_state, exclude = (:optimisers,))
-    # TODO print optimisers in some short form
-    print(io, "\n  optimisers = ...")
+    container_show(io, fit_state)
 end
 
 
@@ -42,7 +36,7 @@ A type storing the training options to be passed to [`fit!`](@ref).
 A `Trainer` object also contains a field `fit_state` of type [`FitState`](@ref) mantaining updated information about 
 the fit state during the execution of `fit!`.
 
-# Arguments
+# Constructor Arguments
 
 - **accelerator**: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
                 `:auto` will automatically select a gpu if available.
@@ -89,6 +83,12 @@ the fit state during the execution of `fit!`.
 - **val\\_every\\_n\\_epochs**: Perform a validation loop every after every N training epochs. 
                         Default: `1`.
 
+# Additional Fields
+
+- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit!`](@ref).
+- **lr\\_schedulers**: The learning rate schedulers used for training.
+- **optimisers**: The optimisers used for training.
+
 # Examples
 
 ```julia
@@ -117,27 +117,9 @@ Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
     val_every_n_epochs::Int = 1
 
     fit_state::FitState = FitState()
+    lr_schedulers = nothing
+    optimisers = nothing
 end
-
-# function  Trainer(;
-#         accelerator::Symbol = :auto,
-#         callbacks = [],
-#         default_root_dir::String = pwd(),
-#         checkpointer::Bool = true,
-#         devices::Union{Int, Nothing} = nothing,
-#         fast_dev_run::Bool = false,
-#         log_every_n_steps::Int = 50,
-#         logger::Bool = true,
-#         max_epochs::Union{Int, Nothing} = nothing,
-#         max_steps::Int = -1,
-#         progress_bar::Bool = true,
-#         val_every_n_epochs::Int = 1,
-#         fit_state::FitState = FitState(),
-#     )
-
-#     Trainer(accelerator, default_root_dir, callbacks, checkpointer, devices, fast_dev_run, log_every_n_steps, logger, max_epochs, max_steps, progress_bar, val_every_n_epochs, fit_state)
-# end
-
 
 function val_loop(model, trainer, val_dataloader; device)
     val_dataloader === nothing && return
@@ -168,18 +150,17 @@ function val_loop(model, trainer, val_dataloader; device)
 end
 
 function train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
-    fit_state = trainer.fit_state
-    @unpack epoch, optimisers = fit_state
-    opt = optimisers
+    @unpack fit_state = trainer
+    
     oldstage = fit_state.stage
     fit_state.stage = :training
 
-    if fit_state.lr_schedulers !== nothing
-        lr = fit_state.lr_schedulers(epoch)
-        Optimisers.adjust!(opt, lr)
+    if trainer.lr_schedulers !== nothing
+        lr = trainer.lr_schedulers(fit_state.epoch)
+        Optimisers.adjust!(trainer.optimisers, lr)
     end
-    
-    progressbar = Progress(length(train_dataloader); desc="Train Epoch $epoch: ", 
+
+    progressbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
                         showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 
     ## SINGLE EPOCH TRAINING LOOP
@@ -193,7 +174,8 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
             loss = train_step(model, trainer, batch, batch_idx)
             return loss
         end
-        opt, model = Optimisers.update!(opt, model, grads[1])
+
+        Optimisers.update!(trainer.optimisers, model, grads[1])
 
         ProgressMeter.next!(progressbar,
             showvalues = values_for_train_progressbar(trainer.metalogger),
@@ -213,7 +195,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
     fit_state.stage = :training
 
     ## VALIDATION
-    if  (val_dataloader !== nothing && epoch % trainer.val_every_n_epochs == 0)
+    if  (val_dataloader !== nothing && fit_state.epoch % trainer.val_every_n_epochs == 0)
         val_loop(model, trainer, val_dataloader; device)
     end
 
@@ -248,7 +230,6 @@ function fit!(
         train_dataloader,
         val_dataloader = nothing;
         ckpt_path = nothing,
-        resume_run = false,
     )
     
     input_model = model
@@ -269,10 +250,6 @@ function fit!(
         push!(trainer.loggers, TensorBoardLogger(run_dir))
     end
     trainer.metalogger = MetaLogger(trainer.loggers)
-
-    # for logger in trainer.loggers
-    #     reset_run_dir!(logger, run_dir)
-    # end
     
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
     
@@ -293,22 +270,19 @@ function fit!(
     print_fit_initial_summary(model, trainer, device)
 
     fit_state.step = 0
-    if ckpt_path !== nothing
-        model, ckpt_fit_state = load_checkpoint(ckpt_path)
+    if ckpt_path !== nothing # load checkpoint and resume training
+        model, ckpt_fit_state, lr_schedulers, optimisers = load_checkpoint(ckpt_path)
         start_epoch = ckpt_fit_state.epoch + 1
-        opt = ckpt_fit_state.optimisers
-        lr_scheduler = ckpt_fit_state.lr_schedulers
         fit_state.step = ckpt_fit_state.step
-    else
-        opt, lr_scheduler = configure_optimisers(model, trainer) |> process_out_configure_optimisers
+    else # train from scratch
+        optimisers, lr_schedulers = configure_optimisers(model, trainer) |> process_out_configure_optimisers
         start_epoch = 1
     end
     fit_state.epoch = start_epoch - 1
 
     model = model |> device
-    opt = opt |> device
-    fit_state.optimisers = opt
-    fit_state.lr_schedulers = lr_scheduler
+    trainer.optimisers = optimisers |> device
+    trainer.lr_schedulers = lr_schedulers
  
     val_loop(model, trainer, val_dataloader; device)
 
@@ -327,9 +301,6 @@ function fit!(
 
     return fit_state
 end
-
-# process_out_train_step(train_step_out::Number) = train_step_out, (; loss=train_step_out)
-# process_out_train_step(train_step_out::NamedTuple) = train_step_out.loss, train_step_out
 
 function process_out_configure_optimisers(out::Tuple)
     opt, lr_scheduler = out
@@ -385,7 +356,6 @@ function select_cuda_device(devices::Union{Vector{Int}, Tuple})
     CUDA.device!(devices[1])
     return gpu
 end
-
  
 function print_fit_initial_summary(model, trainer, device)
     cuda_available = CUDA.functional()
