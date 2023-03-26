@@ -17,8 +17,8 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 - `stage`: the current stage of execution. One of `:training`, `:train_epoch_end`, `:validation`, `:val_epoch_end`.
 - `step`: the current step number.
 - `batchsize`: number of samples in the current batch.
-- `optimisers`
-- `schedulers`
+- `optimisers`: the optimisers used during training.
+- `lr_schedulers`: the learning rate schedulers used during training.
 """
 @kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
     epoch::Int = 0
@@ -27,7 +27,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
     step::Int = 0
     batchsize::Int = 0
     optimisers = nothing  # TODO move to trainer?
-    schedulers = nothing  # TODO move to trainer? in that case the trainer should be part of the checkpoint
+    lr_schedulers = nothing  # TODO move to trainer? in that case the trainer should be part of the checkpoint
 end
 
 Functors.@functor FitState
@@ -179,8 +179,8 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
     oldstage = fit_state.stage
     fit_state.stage = :training
 
-    if fit_state.schedulers !== nothing
-        lr = fit_state.schedulers(epoch)
+    if fit_state.lr_schedulers !== nothing
+        lr = fit_state.lr_schedulers(epoch)
         Optimisers.adjust!(opt, lr)
     end
     
@@ -304,7 +304,7 @@ function fit!(
         model, ckpt_fit_state = load_checkpoint(ckpt_path)
         start_epoch = ckpt_fit_state.epoch + 1
         opt = ckpt_fit_state.optimisers
-        lr_scheduler = ckpt_fit_state.schedulers
+        lr_scheduler = ckpt_fit_state.lr_schedulers
         fit_state.step = ckpt_fit_state.step
     else
         opt, lr_scheduler = configure_optimisers(model, trainer) |> process_out_configure_optimisers
@@ -315,7 +315,7 @@ function fit!(
     model = model |> device
     opt = opt |> device
     fit_state.optimisers = opt
-    fit_state.schedulers = lr_scheduler
+    fit_state.lr_schedulers = lr_scheduler
  
     val_loop(model, trainer, val_dataloader; device)
 
