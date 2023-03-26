@@ -170,28 +170,3 @@ end
 @non_differentiable log_epoch(::Any...)
 @non_differentiable log_step(::Any...)
 @non_differentiable accumulate_epoch!(::Any...)
-
-# function log_validation(tblogger, nsteps::Int, val_epoch_out::NamedTuple)
-#     if tblogger !== nothing
-#         TensorBoardLogger.set_step!(tblogger, nsteps)
-#         with_logger(tblogger) do
-#             @info "Validation" val_epoch_out...
-#         end
-#     end
-
-#     #TODO customize with https://github.com/JuliaLogging/MiniLoggers.jl
-#     f(k, v) = "$(k) = $(roundval(v))"
-
-#     val_crayon = Crayon(foreground=:light_cyan, bold=true)
-#     print(val_crayon, "Validation: ")
-#     println(Crayon(foreground=:white, bold=false), "$(join([f(k, v) for (k, v) in pairs(val_epoch_out)], ", "))")
-# end
-
-# function log_train_step(tblogger, epoch, step, out::NamedTuple)
-#     if tblogger !== nothing
-#         TensorBoardLogger.set_step!(tblogger, step)
-#         with_logger(tblogger) do
-#             @info "Training" epoch out...
-#         end
-#     end
-# end

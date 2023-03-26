@@ -1,8 +1,3 @@
-## TODO from PL ("train", "sanity_check", "validate", "test", "predict", "tune") 
-# abstract type AbstractStage end
-# struct TrainStage end 
-# struct ValidateStage end 
-
 """
     FitState
 
@@ -20,7 +15,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 - `optimisers`: the optimisers used during training.
 - `lr_schedulers`: the learning rate schedulers used during training.
 """
-@kwdef mutable struct FitState  # TODO make all field const except for e.g. last_epoch?
+@kwdef mutable struct FitState
     epoch::Int = 0
     run_dir::String = ""
     stage::Symbol = :training # [:training, :train_epoch_end, :validation, :val_epoch_end]
@@ -239,8 +234,6 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
-- **resume\\_run**: If `true` and `ckpt_path` is given, continue the loggin of the run in the same
-                   directory instead of creating a new one. Default: `false`.
 
 # Examples
 
@@ -257,7 +250,7 @@ function fit!(
         ckpt_path = nothing,
         resume_run = false,
     )
-    @assert !resume_run "resume_run=true is not supported yet." # TODO
+    
     input_model = model
     trainer.fit_state = FitState()
     fit_state = trainer.fit_state
