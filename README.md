@@ -16,12 +16,9 @@ and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.read
 
 ## Installation 
 
-Tsunami is still in an early development phase and it is not a registered package yet. 
-Things can break without any notice. 
-
 Install Tsunami with 
 ```julia
-pkg> add https://github.com/CarloLucibello/Tsunami.jl
+pkg> add Tsunami
 ```
 
 ## Usage
