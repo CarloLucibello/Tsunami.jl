@@ -63,6 +63,7 @@ trainer = Trainer(max_epochs = 3,
                  accelerator = :cpu,
                  checkpointer = true,
                  logger = true,
+                 progress_bar = true,
                  )
 
 fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)

@@ -153,7 +153,7 @@ function store_for_val_prog_bar!(metalogger::MetaLogger, name::AbstractString, v
     metalogger.values_for_val_progressbar[name] = value
 end
 
-function values_for_train_progressbar(metalogger::MetaLogger)
+function values_for_train_progbar(metalogger::MetaLogger)
     dict = metalogger.values_for_train_progressbar
     ks = sort(collect(keys(dict)))
     return [(k, roundval(dict[k])) for k in ks]

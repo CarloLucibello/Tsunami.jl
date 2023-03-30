@@ -57,8 +57,8 @@ end
     train_dataloader = make_dataloader(nx, ny)
     trainer = SilentTrainer(max_epochs=2, fast_dev_run=true)
     fit_state = Tsunami.fit!(model, trainer, train_dataloader)
-    @test fit_state.epoch == 1
-    @test fit_state.step == 1
+    @test fit_state.epoch == 0
+    @test fit_state.step == 0
 end
 
 @testset "val_every_n_epochs" begin

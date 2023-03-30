@@ -80,7 +80,9 @@ the fit state during the execution of `fit!`.
 - **progress\\_bar**: It `true`, shows a progress bar during training. 
                   Default: `true`.
 
-- **val\\_every\\_n\\_epochs**: Perform a validation loop every after every N training epochs. 
+- **val\\_every\\_n\\_epochs**: Perform a validation loop every after every N training epochs.
+                        The validation loop is in any case performed at the end of the last training epoch.
+                        Set to 0 or negative to disable validation.
                         Default: `1`.
 
 # Additional Fields
@@ -121,14 +123,14 @@ Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
     optimisers = nothing
 end
 
-function val_loop(model, trainer, val_dataloader; device)
+function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, progbar_keep = true)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
     oldstage = fit_state.stage
     fit_state.stage = :validation
 
-    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
-        showspeed=true, enabled=true, color=:green)
+    valprogressbar = Progress(length(val_dataloader); desc="Val Epoch $(fit_state.epoch): ", 
+        showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
         batch = batch |> device
@@ -154,14 +156,16 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
     
     oldstage = fit_state.stage
     fit_state.stage = :training
+    islastepoch = fit_state.epoch == trainer.max_epochs
 
     if trainer.lr_schedulers !== nothing
         lr = trainer.lr_schedulers(fit_state.epoch)
         Optimisers.adjust!(trainer.optimisers, lr)
     end
 
-    progressbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
-                        showspeed=true, enabled = trainer.progress_bar, color=:yellow)
+    train_progbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
+                        showspeed=true, enabled = trainer.progress_bar, color=:yellow,
+                        keep = islastepoch)
 
     ## SINGLE EPOCH TRAINING LOOP
     for (batch_idx, batch) in enumerate(train_dataloader)
@@ -177,13 +181,13 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
 
         Optimisers.update!(trainer.optimisers, model, grads[1])
 
-        ProgressMeter.next!(progressbar,
-            showvalues = values_for_train_progressbar(trainer.metalogger),
+        ProgressMeter.next!(train_progbar,
+            showvalues = values_for_train_progbar(trainer.metalogger),
             valuecolor = :yellow)
 
         fit_state.step == max_steps && break
     end
-    ProgressMeter.finish!(progressbar)
+    ProgressMeter.finish!(train_progbar)
 
     ## EPOCH END
     fit_state.stage = :train_epoch_end
@@ -195,8 +199,12 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
     fit_state.stage = :training
 
     ## VALIDATION
-    if  (val_dataloader !== nothing && fit_state.epoch % trainer.val_every_n_epochs == 0)
-        val_loop(model, trainer, val_dataloader; device)
+    if  val_dataloader !== nothing && trainer.val_every_n_epochs > 0
+        if  (fit_state.epoch % trainer.val_every_n_epochs == 0) || islastepoch
+            val_loop(model, trainer, val_dataloader; device, 
+                    progbar_offset = islastepoch ? 0 : train_progbar.numprintedvalues + 1, 
+                    progbar_keep = islastepoch)
+        end
     end
 
     fit_state.stage = oldstage
@@ -254,8 +262,8 @@ function fit!(
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
     
     if trainer.fast_dev_run
-        max_epochs = 1
-        max_steps = 1
+        # max_steps = 1
+        # max_epochs = 1
         trainer.val_every_n_epochs = 1
         empty!(trainer.loggers)
 
@@ -265,6 +273,7 @@ function fit!(
         if val_dataloader !== nothing
             check_val_step(model, trainer, first(val_dataloader))
         end
+        return fit_state
     end
 
     print_fit_initial_summary(model, trainer, device)
@@ -284,7 +293,7 @@ function fit!(
     trainer.optimisers = optimisers |> device
     trainer.lr_schedulers = lr_schedulers
  
-    val_loop(model, trainer, val_dataloader; device)
+    val_loop(model, trainer, val_dataloader; device, progbar_keep=false)
 
     for epoch in start_epoch:max_epochs
         fit_state.epoch = epoch
