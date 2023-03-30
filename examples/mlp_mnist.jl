@@ -58,7 +58,7 @@ Tsunami.fit!(model, trainer, train_loader, test_loader)
 
 # TRAIN FROM SCRATCH
 
-trainer = Trainer(max_epochs = 5, 
+trainer = Trainer(max_epochs = 3, 
                  default_root_dir = @__DIR__,
                  accelerator = :cpu,
                  checkpointer = true,
