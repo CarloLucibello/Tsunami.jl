@@ -1,11 +1,12 @@
 # Had to copy and past the entire ProgressMeter package here 
 # since the mantainer is not responsive. See:
 # https://github.com/timholy/ProgressMeter.jl/pull/261
-# The change with respect to the original package are:
+# The changes with respect to the original package are:
 # - merged PR #261
 # - removed docstring so that Documenter does not complain they are not in the docs
 # - removed ProgressThresh and ProgressUnknown since not needed
 # - removed @showprogress
+# - added the `keep` keyword argument to Progress
 
 module ProgressMeter
 
