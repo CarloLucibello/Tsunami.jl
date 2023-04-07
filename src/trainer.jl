@@ -376,8 +376,32 @@ function print_fit_initial_summary(model, trainer, device)
     println()
 end
 
+"""
+    test(model::FluxModule, trainer, dataloader)
 
+Run the test loop, calling the [`test_step`](@ref) method on the model for each batch returned by the `dataloader`.
+Return the aggregated results from the values logged in the `test_step` as a dictionary.
 
+# Examples
+
+```julia
+julia> struct Model <: FluxModule end 
+
+julia> function Tsunami.test_step(::Model, trainer, batch)
+    Tsunami.log(trainer, "test/loss", rand())
+end
+
+julia> model, trainer = Model(), Trainer();
+
+julia> test_results = Tsunami.test(model, trainer, [rand(2) for i=1:3]);
+Testing: 100%|████████████████████████████████████████████████████████████████████████████████| Time: 0:00:00 (6.04 μs/it)
+  test/loss:  0.675
+
+julia> test_results
+Dict{String, Float64} with 1 entry:
+  "test/loss" => 0.674665
+```
+"""
 function test(
         model::FluxModule,
         trainer::Trainer,
