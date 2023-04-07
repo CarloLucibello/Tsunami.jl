@@ -257,7 +257,7 @@ function fit!(
     if trainer.logger && isempty(trainer.loggers)
         push!(trainer.loggers, TensorBoardLogger(run_dir))
     end
-    trainer.metalogger = MetaLogger(trainer.loggers)
+    trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
     
     max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
     
@@ -374,4 +374,82 @@ function print_fit_initial_summary(model, trainer, device)
     @info "Model Summary:"
     show(stdout, MIME("text/plain"), model)
     println()
+end
+
+"""
+    test(model::FluxModule, trainer, dataloader)
+
+Run the test loop, calling the [`test_step`](@ref) method on the model for each batch returned by the `dataloader`.
+Return the aggregated results from the values logged in the `test_step` as a dictionary.
+
+# Examples
+
+```julia
+julia> struct Model <: FluxModule end 
+
+julia> function Tsunami.test_step(::Model, trainer, batch)
+    Tsunami.log(trainer, "test/loss", rand())
+end
+
+julia> model, trainer = Model(), Trainer();
+
+julia> test_results = Tsunami.test(model, trainer, [rand(2) for i=1:3]);
+Testing: 100%|████████████████████████████████████████████████████████████████████████████████| Time: 0:00:00 (6.04 μs/it)
+  test/loss:  0.675
+
+julia> test_results
+Dict{String, Float64} with 1 entry:
+  "test/loss" => 0.674665
+```
+"""
+function test(
+        model::FluxModule,
+        trainer::Trainer,
+        test_dataloader,
+    )
+    
+    device = select_device(trainer.accelerator, trainer.devices)
+    
+
+    # tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
+    # run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
+    # fit_state.run_dir = run_dir
+    # if trainer.logger && isempty(trainer.loggers)
+    #     push!(trainer.loggers, TensorBoardLogger(run_dir))
+    # end
+    trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
+    
+    model = model |> device
+    
+    test_loop(model, trainer, test_dataloader; device, progbar_keep=true)
+end
+
+function test_loop(model, trainer, test_dataloader; device, progbar_offset = 0, progbar_keep = true)
+    test_dataloader === nothing && return
+    fit_state = trainer.fit_state
+    oldstage = fit_state.stage
+    fit_state.stage = :testing
+
+
+    testprogressbar = Progress(length(test_dataloader); desc="Testing: ", 
+        showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
+    for (batch_idx, batch) in enumerate(test_dataloader)
+        fit_state.batchsize = MLUtils.numobs(batch)
+        batch = batch |> device
+        test_step(model, trainer, batch, batch_idx)
+        ProgressMeter.next!(testprogressbar, 
+                showvalues = values_for_val_progressbar(trainer.metalogger),
+                valuecolor = :green
+                )
+    end
+    ProgressMeter.finish!(testprogressbar)
+
+    fit_state.stage = :test_epoch_end
+    on_test_epoch_end(model, trainer)
+    for cbk in trainer.callbacks
+        on_test_epoch_end(cbk, model, trainer)
+    end
+    test_results = log_epoch(trainer.metalogger, fit_state)
+    fit_state.stage = oldstage
+    return test_results
 end

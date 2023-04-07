@@ -81,3 +81,17 @@ end
     @test fit_state.epoch == 2
 end
 
+@testset "Tsunami.test" begin
+    struct TestModuleTest <: FluxModule end 
+    function Tsunami.test_step(::TestModuleTest, trainer, batch, batch_idx)
+        Tsunami.log(trainer, "a", 1)
+        Tsunami.log(trainer, "b", batch_idx)
+    end
+    test_dataloader = [rand(2) for i=1:3]
+    trainer = Trainer()
+    model = TestModuleTest()
+    res = Tsunami.test(model, trainer, test_dataloader)
+    @test res["a"] == 1
+    @test res["b"] == 2.0
+end
+

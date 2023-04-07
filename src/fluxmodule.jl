@@ -197,11 +197,13 @@ function val_step(model::FluxModule, trainer, batch)
 end
 
 """
-    test_step(model, trainer, batch, batch_idx)
+    test_step(model, trainer, batch, [batch_idx])
 
 Similard to [`val_step`](@ref) but called at each test step.
 """
-function test_step(model::FluxModule, trainer, batch, batch_idx)
+test_step(model::FluxModule, trainer, batch, batch_idx) = test_step(model, trainer, batch)
+
+function test_step(model::FluxModule, trainer, batch)
     # not_implemented_error("test_step")
     return nothing 
 end
