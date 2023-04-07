@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#%%
 """MNIST backbone image classifier example.
 To run: python backbone_image_classifier.py --trainer.max_epochs=50
 """
@@ -20,14 +21,12 @@ from typing import Optional
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
-
+import lightning.pytorch as pl
 from lightning.pytorch import cli_lightning_logo, LightningDataModule, LightningModule
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.demos.mnist_datamodule import MNIST
 from lightning.pytorch.utilities.imports import _TORCHVISION_AVAILABLE
-
-if _TORCHVISION_AVAILABLE:
-    from torchvision import transforms
+from torchvision import transforms
 
 DATASETS_PATH = path.join(path.dirname(__file__), "..", "..", "Datasets")
 
@@ -73,24 +72,26 @@ class LitClassifier(LightningModule):
         embedding = self.backbone(x)
         return embedding
 
-    def train_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.log("train_loss", loss, on_epoch=True)
         return loss
 
-    def val_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log("valid_loss", loss, on_step=True)
+        return loss
+        # self.log("valid_loss", loss, on_step=False, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log("test_loss", loss)
+        return loss
+        # self.log("test_loss", loss)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         x, y = batch
@@ -131,7 +132,20 @@ def cli_main():
     predictions = cli.trainer.predict(ckpt_path="best", datamodule=cli.datamodule)
     print(predictions[0])
 
+#%%
+trainer = pl.Trainer(max_epochs=2)
+model = LitClassifier()
+dm = MyDataModule()
+trainer.fit(model, datamodule=dm)
 
-if __name__ == "__main__":
-    cli_lightning_logo()
-    cli_main()
+
+#%%
+resval = trainer.validate(model, datamodule=dm)
+# restes = trainer.test(model, datamodule=dm)
+
+
+# #%%
+# if __name__ == "__main__":
+#     # cli_lightning_logo()
+#     cli_main()
+# %%

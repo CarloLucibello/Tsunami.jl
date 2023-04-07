@@ -1,5 +1,5 @@
 using Flux, Optimisers, Tsunami, MLDatasets
-using MLUtils: MLUtils, DataLoader, flatten
+using MLUtils: MLUtils, DataLoader, flatten, mapobs, splitobs
 import ParameterSchedulers
 
 mutable struct MLP <: FluxModule
@@ -22,7 +22,6 @@ end
 function Tsunami.train_step(m::MLP, trainer, batch)
     x, y = batch
     ŷ = m(x)
-    y = Flux.onehotbatch(y, 0:9)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
     Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
     Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y), prog_bar=true)
@@ -32,12 +31,18 @@ end
 function Tsunami.val_step(m::MLP, trainer, batch)
     x, y = batch
     ŷ = m(x)
-    y = Flux.onehotbatch(y, 0:9)
     loss = Flux.logitcrossentropy(ŷ, y)
     Tsunami.log(trainer, "loss/val", loss)
     Tsunami.log(trainer, "accuracy/val", Tsunami.accuracy(ŷ, y))
 end
 
+function Tsunami.test_step(m::MLP, trainer, batch)
+    x, y = batch
+    ŷ = m(x)
+    loss = Flux.logitcrossentropy(ŷ, y)
+    Tsunami.log(trainer, "loss/test", loss)
+    Tsunami.log(trainer, "accuracy/test", Tsunami.accuracy(ŷ, y))
+end
 
 function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, and decay intervals (corresponding to epochs 2 and 4)
@@ -46,15 +51,22 @@ function Tsunami.configure_optimisers(m::MLP, trainer)
     return opt, lr_scheduler
 end
 
-train_loader = DataLoader(MNIST(:train), batchsize=128, shuffle=true)
-test_loader = DataLoader(MNIST(:test), batchsize=128)
+train_data = mapobs(batch -> (batch[1], Flux.onehotbatch(batch[2], 0:9)), MNIST(:train))
+train_data, val_data = splitobs(train_data, at = 0.9)
+test_data = mapobs(batch -> (batch[1], Flux.onehotbatch(batch[2], 0:9)), MNIST(:test))
+ 
+train_loader = DataLoader(train_data, batchsize=128, shuffle=true)
+val_loader = DataLoader(val_data, batchsize=128, shuffle=true)
+test_loader = DataLoader(test_data, batchsize=128)
+
+# CREATE MODEL
 
 model = MLP()
 
 # DRY RUN FOR DEBUGGING
 
 trainer = Trainer(fast_dev_run=true, accelerator=:cpu)
-Tsunami.fit!(model, trainer, train_loader, test_loader)
+Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TRAIN FROM SCRATCH
 
@@ -66,8 +78,8 @@ trainer = Trainer(max_epochs = 3,
                  progress_bar = true,
                  )
 
-fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)
-@assert fit_state.step == 1407
+fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
+@assert fit_state.step == 1266
 
 # RESUME TRAINING
 trainer = Trainer(max_epochs = 5,
@@ -79,5 +91,10 @@ trainer = Trainer(max_epochs = 5,
 
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
 
-fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader; ckpt_path)
-@assert fit_state.step == 2345
+fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
+@assert fit_state.step == 2110
+
+
+# TEST
+model = MLP()
+test_results = Tsunami.test(model, trainer, test_loader)

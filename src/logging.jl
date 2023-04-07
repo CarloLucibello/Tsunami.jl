@@ -27,7 +27,7 @@ If both `on_step` and `on_epoch` are `true`, the values will be logged as
                     Defaults to `true` if `stage` is `:train_epoch_end` or `:val_epoch_end`, 
                     `false` otherwise.
 - `on_step::Bool`: Whether to log the value on each step. 
-                  Defaults to `true` if `stage` is `:training` or `:validation`, `false` otherwise.
+                  Defaults to `true` if `stage` is `:training`, `false` for `:validation` and `:testing`.
 - `prog_bar::Bool`: Whether to log the value to the progress bar. Defaults to `false`.
 
 # Examples
@@ -57,7 +57,7 @@ function log(trainer::Trainer, name::AbstractString, value;
         end
     end
     if on_epoch === nothing
-        if stage ∈ (:validation, :train_epoch_end, :val_epoch_end)
+        if stage ∈ (:validation, :testing, :train_epoch_end, :val_epoch_end, :test_epoch_end)
             on_epoch = true
         else
             on_epoch = false
@@ -83,7 +83,7 @@ function log(trainer::Trainer, name::AbstractString, value;
     if prog_bar && stage ∈ (:training,) && on_step 
         store_for_train_prog_bar!(metalogger, name_step, value)
     end
-    if prog_bar && stage ∈ (:validation,) && on_epoch 
+    if prog_bar && stage ∈ (:validation, :testing) && on_epoch 
         store_for_val_prog_bar!(metalogger, name_step, value)
     end
 end
@@ -92,8 +92,8 @@ end
 
 mutable struct MetaLogger
     loggers::Vector
-    train_epoch_stats::Stats
-    val_epoch_stats::Stats
+    train_epoch_stats::Stats # accumulates the values during the training epoch
+    val_epoch_stats::Stats # accumulates the values during the validation epoch or test epoch
     values_for_train_progressbar::Dict{String, Any}
     values_for_val_progressbar::Dict{String, Any}
     last_step_printed::Int
@@ -120,7 +120,6 @@ function accumulate_epoch!(metalogger::MetaLogger, name::AbstractString, value, 
     stats = stage ∈ (:training, :train_epoch_end)  ? metalogger.train_epoch_stats : 
                                                      metalogger.val_epoch_stats
 
-
     add_obs!(stats, name, value, batchsize)
 end
 
@@ -134,13 +133,15 @@ function log_epoch(metalogger::MetaLogger, fit_state)
             log_scalar(logger, name, value; step)
         end
     end
-    clean_stats!(metalogger, stage)
+    dict_stats = Dict(pairs(stats))
+    clean_stats!(metalogger, stage) # TODO make sure that this is always called
+    return dict_stats
 end
 
 function clean_stats!(metalogger::MetaLogger, stage)
     if stage ∈ (:training, :train_epoch_end)
         empty!(metalogger.train_epoch_stats)
-    else
+    else # stage ∈ (:validation, :testing, :val_epoch_end, :test_epoch_end)
         empty!(metalogger.val_epoch_stats)
     end
 end
