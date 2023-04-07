@@ -147,8 +147,9 @@ function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, pr
     for cbk in trainer.callbacks
         on_val_epoch_end(cbk, model, trainer)
     end
-    log_epoch(trainer.metalogger, fit_state)
+    val_results = log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = oldstage
+    return val_results
 end
 
 function train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
@@ -380,7 +381,7 @@ end
     test(model::FluxModule, trainer, dataloader)
 
 Run the test loop, calling the [`test_step`](@ref) method on the model for each batch returned by the `dataloader`.
-Return the aggregated results from the values logged in the `test_step` as a dictionary.
+Returns the aggregated results from the values logged in the `test_step` as a dictionary.
 
 # Examples
 
@@ -402,38 +403,23 @@ Dict{String, Float64} with 1 entry:
   "test/loss" => 0.674665
 ```
 """
-function test(
-        model::FluxModule,
-        trainer::Trainer,
-        test_dataloader,
-    )
-    
+function test(model::FluxModule, trainer::Trainer, dataloader)
     device = select_device(trainer.accelerator, trainer.devices)
-    
-
-    # tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
-    # run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
-    # fit_state.run_dir = run_dir
-    # if trainer.logger && isempty(trainer.loggers)
-    #     push!(trainer.loggers, TensorBoardLogger(run_dir))
-    # end
     trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
-    
     model = model |> device
-    
-    test_loop(model, trainer, test_dataloader; device, progbar_keep=true)
+    return test_loop(model, trainer, dataloader; device, progbar_keep=true)
 end
 
-function test_loop(model, trainer, test_dataloader; device, progbar_offset = 0, progbar_keep = true)
-    test_dataloader === nothing && return
+function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progbar_keep = true)
+    dataloader === nothing && return
     fit_state = trainer.fit_state
     oldstage = fit_state.stage
     fit_state.stage = :testing
 
 
-    testprogressbar = Progress(length(test_dataloader); desc="Testing: ", 
+    testprogressbar = Progress(length(dataloader); desc="Testing: ", 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
-    for (batch_idx, batch) in enumerate(test_dataloader)
+    for (batch_idx, batch) in enumerate(dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
         batch = batch |> device
         test_step(model, trainer, batch, batch_idx)
@@ -452,4 +438,19 @@ function test_loop(model, trainer, test_dataloader; device, progbar_offset = 0, 
     test_results = log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = oldstage
     return test_results
+end
+
+"""
+    validate(model::FluxModule, trainer, dataloader)
+
+Run the validation loop, calling the [`val_step`](@ref) method on the model for each batch returned by the `dataloader`.
+Returns the aggregated results from the values logged in the `val_step` as a dictionary.
+
+See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
+"""
+function validate(model::FluxModule, trainer::Trainer, dataloader)
+    device = select_device(trainer.accelerator, trainer.devices)
+    trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
+    model = model |> device
+    return val_loop(model, trainer, dataloader; device, progbar_keep=true)
 end

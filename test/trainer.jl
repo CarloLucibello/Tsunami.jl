@@ -95,3 +95,19 @@ end
     @test res["b"] == 2.0
 end
 
+@testset "Tsunami.validate" begin
+    struct TestModuleVal <: FluxModule end 
+
+    function Tsunami.val_step(::TestModuleVal, trainer, batch, batch_idx)
+        
+        Tsunami.log(trainer, "a", 1)
+        Tsunami.log(trainer, "b", batch_idx)
+    end
+    
+    val_dataloader = [rand(2) for i=1:3]
+    trainer = Trainer()
+    model = TestModuleVal()
+    res = Tsunami.validate(model, trainer, val_dataloader)
+    @test res["a"] == 1
+    @test res["b"] == 2.0
+end

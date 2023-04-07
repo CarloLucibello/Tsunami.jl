@@ -12,4 +12,5 @@ Tsunami.Trainer
 Tsunami.fit!
 Tsunami.FitState
 Tsunami.test
+Tsunami.validate
 ```
