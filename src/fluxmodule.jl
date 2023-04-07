@@ -209,36 +209,6 @@ function test_step(model::FluxModule, trainer, batch)
 end
 
 """
-    on_train_epoch_end(model, trainer)
-    on_train_epoch_end(callback, model, trainer)
-
-Called in `Tsunami.fit!` at the end of each training epoch.
-"""    
-function on_train_epoch_end(model::FluxModule, trainer)
-    return nothing
-end 
-
-"""
-    on_val_epoch_end(model, trainer)
-    on_val_epoch_end(callback, model, trainer)
-
-Called in `Tsunami.fit!` at the end of each validation epoch.
-"""
-function on_val_epoch_end(model::FluxModule, trainer)
-    return nothing
-end
-
-"""
-    on_test_epoch_end(model, trainer)
-    on_test_epoch_end(callback, model, trainer)
-
-Called in `Tsunami.fit!` at the end of each test epoch.
-"""
-function on_test_epoch_end(model::FluxModule, trainer)
-    return nothing
-end
-
-"""
     copy!(dest::FluxModule, src::FluxModule)
 
 Shallow copy of all fields of `src` to `dest`.

@@ -175,12 +175,17 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
         
         batch = batch |> device
 
-        grads = Flux.gradient(model) do model
+        grad = Flux.gradient(model) do model
             loss = train_step(model, trainer, batch, batch_idx)
             return loss
+        end[1]
+
+        on_before_update(model, trainer, grad)
+        for callback in trainer.callbacks
+            on_before_update(callback, model, trainer, grad)
         end
 
-        Optimisers.update!(trainer.optimisers, model, grads[1])
+        Optimisers.update!(trainer.optimisers, model, grad)
 
         ProgressMeter.next!(train_progbar,
             showvalues = values_for_train_progbar(trainer.metalogger),

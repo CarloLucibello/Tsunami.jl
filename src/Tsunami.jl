@@ -45,6 +45,12 @@ export FluxModule
         #  predict_step,
         #  configure_optimizers
 
+include("hooks.jl")
+# export  on_before_update,
+#         on_train_epoch_end,
+#         on_test_epoch_end,
+#         on_val_epoch_end
+
 
 include("trainer.jl")
 export Trainer
