@@ -123,108 +123,6 @@ Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
     optimisers = nothing
 end
 
-function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, progbar_keep = true)
-    val_dataloader === nothing && return
-    fit_state = trainer.fit_state
-    oldstage = fit_state.stage
-    fit_state.stage = :validation
-
-    on_val_epoch_start(model, trainer)
-    for cbk in trainer.callbacks
-        on_val_epoch_start(cbk, model, trainer)
-    end
-
-    valprogressbar = Progress(length(val_dataloader); desc="Val Epoch $(fit_state.epoch): ", 
-        showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
-    for (batch_idx, batch) in enumerate(val_dataloader)
-        fit_state.batchsize = MLUtils.numobs(batch)
-        batch = batch |> device
-        val_step(model, trainer, batch, batch_idx)
-        ProgressMeter.next!(valprogressbar, 
-                showvalues = values_for_val_progressbar(trainer.metalogger),
-                valuecolor = :green
-                )
-    end
-    ProgressMeter.finish!(valprogressbar)
-
-    fit_state.stage = :val_epoch_end
-    on_val_epoch_end(model, trainer)
-    for cbk in trainer.callbacks
-        on_val_epoch_end(cbk, model, trainer)
-    end
-    val_results = log_epoch(trainer.metalogger, fit_state)
-    fit_state.stage = oldstage
-    return val_results
-end
-
-function train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
-    @unpack fit_state = trainer
-    
-    oldstage = fit_state.stage
-    fit_state.stage = :training
-    islastepoch = fit_state.epoch == trainer.max_epochs
-
-    on_train_epoch_start(model, trainer)
-    for callback in trainer.callbacks
-        on_train_epoch_start(callback, model, trainer)
-    end
-
-    if trainer.lr_schedulers !== nothing
-        lr = trainer.lr_schedulers(fit_state.epoch)
-        Optimisers.adjust!(trainer.optimisers, lr)
-    end
-
-    train_progbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
-                        showspeed=true, enabled = trainer.progress_bar, color=:yellow,
-                        keep = islastepoch)
-
-    ## SINGLE EPOCH TRAINING LOOP
-    for (batch_idx, batch) in enumerate(train_dataloader)
-        fit_state.step += 1
-        fit_state.batchsize = MLUtils.numobs(batch)
-        
-        batch = batch |> device
-
-        grad = Flux.gradient(model) do model
-            loss = train_step(model, trainer, batch, batch_idx)
-            return loss
-        end[1]
-
-        on_before_update(model, trainer, grad)
-        for callback in trainer.callbacks
-            on_before_update(callback, model, trainer, grad)
-        end
-
-        Optimisers.update!(trainer.optimisers, model, grad)
-
-        ProgressMeter.next!(train_progbar,
-            showvalues = values_for_train_progbar(trainer.metalogger),
-            valuecolor = :yellow)
-
-        fit_state.step == max_steps && break
-    end
-    ProgressMeter.finish!(train_progbar)
-
-    ## EPOCH END
-    fit_state.stage = :train_epoch_end
-    on_train_epoch_end(model, trainer)
-    for cbk in trainer.callbacks
-        on_train_epoch_end(cbk, model, trainer)
-    end
-    log_epoch(trainer.metalogger, fit_state)
-    fit_state.stage = :training
-
-    ## VALIDATION
-    if  val_dataloader !== nothing && trainer.val_every_n_epochs > 0
-        if  (fit_state.epoch % trainer.val_every_n_epochs == 0) || islastepoch
-            val_loop(model, trainer, val_dataloader; device, 
-                    progbar_offset = islastepoch ? 0 : train_progbar.numprintedvalues + 1, 
-                    progbar_keep = islastepoch)
-        end
-    end
-
-    fit_state.stage = oldstage
-end
 
 """
     fit!(model::FluxModule, trainer::Trainer, train_dataloader,
@@ -325,6 +223,121 @@ function fit!(
     end
 
     return fit_state
+end
+
+function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, progbar_keep = true)
+    val_dataloader === nothing && return
+    fit_state = trainer.fit_state
+    oldstage = fit_state.stage
+    fit_state.stage = :validation
+
+    on_val_epoch_start(model, trainer)
+    for cbk in trainer.callbacks
+        on_val_epoch_start(cbk, model, trainer)
+    end
+
+    valprogressbar = Progress(length(val_dataloader); desc="Val Epoch $(fit_state.epoch): ", 
+        showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
+    for (batch_idx, batch) in enumerate(val_dataloader)
+        fit_state.batchsize = MLUtils.numobs(batch)
+        batch = batch |> device
+        val_step(model, trainer, batch, batch_idx)
+        ProgressMeter.next!(valprogressbar, 
+                showvalues = values_for_val_progressbar(trainer.metalogger),
+                valuecolor = :green
+                )
+    end
+    ProgressMeter.finish!(valprogressbar)
+
+    fit_state.stage = :val_epoch_end
+    on_val_epoch_end(model, trainer)
+    for cbk in trainer.callbacks
+        on_val_epoch_end(cbk, model, trainer)
+    end
+    val_results = log_epoch(trainer.metalogger, fit_state)
+    fit_state.stage = oldstage
+    return val_results
+end
+
+function train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
+    @unpack fit_state = trainer
+    
+    oldstage = fit_state.stage
+    fit_state.stage = :training
+    islastepoch = fit_state.epoch == trainer.max_epochs
+
+    on_train_epoch_start(model, trainer)
+    for callback in trainer.callbacks
+        on_train_epoch_start(callback, model, trainer)
+    end
+
+    if trainer.lr_schedulers !== nothing
+        lr = trainer.lr_schedulers(fit_state.epoch)
+        Optimisers.adjust!(trainer.optimisers, lr)
+    end
+
+    train_progbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
+                        showspeed=true, enabled = trainer.progress_bar, color=:yellow,
+                        keep = islastepoch)
+
+    ## SINGLE EPOCH TRAINING LOOP
+    for (batch_idx, batch) in enumerate(train_dataloader)
+        fit_state.step += 1
+        fit_state.batchsize = MLUtils.numobs(batch)
+        
+        batch = batch |> device
+
+        # grad = Zygote.gradient(model) do model
+        #     loss = train_step(model, trainer, batch, batch_idx)
+        #     return loss
+        # end[1]
+        
+        loss, pb = Zygote.pullback(model) do model
+            loss = train_step(model, trainer, batch, batch_idx)
+            return loss
+        end
+        
+        on_before_pullback_call(model, trainer, loss)
+        for callback in trainer.callbacks
+            on_before_pullback_call(callback, model, trainer, loss)
+        end
+        
+        grad = unref(pb(one(loss))[1]) # zygote returns a Ref with immutable, so we need to unref it
+
+        on_before_update(model, trainer, grad)
+        for callback in trainer.callbacks
+            on_before_update(callback, model, trainer, grad)
+        end
+
+        Optimisers.update!(trainer.optimisers, model, grad)
+
+        ProgressMeter.next!(train_progbar,
+            showvalues = values_for_train_progbar(trainer.metalogger),
+            valuecolor = :yellow)
+
+        fit_state.step == max_steps && break
+    end
+    ProgressMeter.finish!(train_progbar)
+
+    ## EPOCH END
+    fit_state.stage = :train_epoch_end
+    on_train_epoch_end(model, trainer)
+    for cbk in trainer.callbacks
+        on_train_epoch_end(cbk, model, trainer)
+    end
+    log_epoch(trainer.metalogger, fit_state)
+    fit_state.stage = :training
+
+    ## VALIDATION
+    if  val_dataloader !== nothing && trainer.val_every_n_epochs > 0
+        if  (fit_state.epoch % trainer.val_every_n_epochs == 0) || islastepoch
+            val_loop(model, trainer, val_dataloader; device, 
+                    progbar_offset = islastepoch ? 0 : train_progbar.numprintedvalues + 1, 
+                    progbar_keep = islastepoch)
+        end
+    end
+
+    fit_state.stage = oldstage
 end
 
 function process_out_configure_optimisers(out::Tuple)

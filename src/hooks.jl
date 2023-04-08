@@ -9,6 +9,14 @@ on_before_update(model, trainer, grad) = nothing
 on_before_update(cb, model, trainer, grad) = nothing
 
 """
+    on_before_pullback_call([callback,] model, trainer, loss)
+
+Called in `fit!` after the forward but before the call to the pullback computed by Zygote (the backward pass).
+"""
+on_before_pullback_call(model, trainer, loss) = nothing
+on_before_pullback_call(cb, model, trainer, loss) = nothing
+
+"""
     on_train_epoch_start([callback,] model, trainer)
 
 Called in `fit!` at the beginning of each training epoch.

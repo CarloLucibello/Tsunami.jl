@@ -54,3 +54,7 @@ function seed!(seed::Int)
         CUDA.seed!(seed)
     end
 end
+
+
+unref(x::Ref) = x[]
+unref(x) = x

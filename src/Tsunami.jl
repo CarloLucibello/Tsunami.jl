@@ -8,9 +8,7 @@ using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
 import Functors
-using Dates
 # import ImageMagick # for image logging
-using Logging
 using MLUtils
 import Optimisers
 # import ParameterSchedulers
@@ -22,7 +20,7 @@ using Statistics
 using TensorBoardLogger: TBLogger, tb_append
 import TensorBoardLogger as TensorBoardLoggers
 using UnPack: @unpack
-
+using Zygote
 
 CUDA.allowscalar(false)
 
@@ -47,9 +45,13 @@ export FluxModule
 
 include("hooks.jl")
 # export  on_before_update,
+#         on_before_pullback_call,
+#         on_train_epoch_start,
 #         on_train_epoch_end,
-#         on_test_epoch_end,
+#         on_val_epoch_start,
 #         on_val_epoch_end
+#         on_test_epoch_start,
+#         on_test_epoch_end,
 
 
 include("trainer.jl")
