@@ -423,7 +423,8 @@ function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progb
 
 
     testprogressbar = Progress(length(dataloader); desc="Testing: ", 
-        showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
+                                showspeed=true, enabled=trainer.progress_bar, 
+                                color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
         batch = batch |> device
@@ -437,8 +438,8 @@ function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progb
 
     fit_state.stage = :test_epoch_end
     on_test_epoch_end(model, trainer)
-    for cbk in trainer.callbacks
-        on_test_epoch_end(cbk, model, trainer)
+    for callback in trainer.callbacks
+        on_test_epoch_end(callback, model, trainer)
     end
     test_results = log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = oldstage

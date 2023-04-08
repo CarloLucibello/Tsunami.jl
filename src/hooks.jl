@@ -14,6 +14,7 @@ on_before_update(cb, model, trainer, grad) = nothing
 Called in `Tsunami.fit!` at the end of each training epoch.
 """ 
 on_train_epoch_end(model, trainer) = nothing
+on_train_epoch_end(cb, model, trainer) = nothing
 
 """
     on_val_epoch_end([callback,] model, trainer)
@@ -21,6 +22,7 @@ on_train_epoch_end(model, trainer) = nothing
 Called in `Tsunami.fit!` at the end of each validation epoch.
 """
 on_val_epoch_end(model, trainer) = nothing
+on_val_epoch_end(cb, model, trainer) = nothing
 
 """
     on_test_epoch_end([callback,] model, trainer)
@@ -28,3 +30,4 @@ on_val_epoch_end(model, trainer) = nothing
 Called in `Tsunami.fit!` at the end of each test epoch.
 """
 on_test_epoch_end(model, trainer) = nothing
+on_test_epoch_end(cb, model, trainer) = nothing
