@@ -76,3 +76,22 @@ end
     Tsunami.test(model, trainer, train_dataloader)
     @test out == [1, 2]
 end
+
+@testset "on_before_pullback_call" begin
+    out = []
+
+    struct BeforePullbackCbk end
+    
+    function Tsunami.on_before_pullback_call(::BeforePullbackCbk, model, trainer, loss)
+        push!(out, loss)
+    end
+    function Tsunami.on_before_update(::BeforePullbackCbk, model, trainer, grad)
+        @show grad
+    end
+
+    trainer = SilentTrainer(max_epochs=2, callbacks=[BeforePullbackCbk()])
+    model = TestModule1()
+    train_dataloader = make_dataloader(io_sizes(model)..., 10, 5)
+    Tsunami.fit!(model, trainer, train_dataloader)
+    @test out == [1, 1]
+end

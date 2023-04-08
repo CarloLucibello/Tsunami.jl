@@ -20,7 +20,9 @@ function train_loop()
 
     for batch in train_dataloader
         batch = transfer_batch_to_device(batch)
-        grad = gradient(m -> train_step(model, batch),  model)
+        loss, pb = pullback(m -> train_step(model, batch),  model)
+        on_before_pullback_call()
+        grad = pb(1)
         on_before_update()
         update!(opt_state, model, grad)
         if should_check_val
