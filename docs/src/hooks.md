@@ -43,8 +43,11 @@ end
 ## Hooks API
 
 ```@docs
-Tsunami.on_test_epoch_end
-Tsunami.on_train_epoch_end
-Tsunami.on_val_epoch_end
 Tsunami.on_before_update
+Tsunami.on_train_epoch_start
+Tsunami.on_train_epoch_end
+Tsunami.on_test_epoch_start
+Tsunami.on_test_epoch_end
+Tsunami.on_val_epoch_start
+Tsunami.on_val_epoch_end
 ```
