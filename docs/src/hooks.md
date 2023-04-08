@@ -15,6 +15,7 @@ function fit!()
 end
 
 function train_loop()
+    on_train_epoch_start()
     set_learning_rate(lr_scheduler, epoch)
 
     for batch in train_dataloader
@@ -30,6 +31,7 @@ function train_loop()
 end
 
 function val_loop()
+    on_val_epoch_start()
     for batch in val_dataloader
         batch = transfer_batch_to_device(batch)
         val_step(batch)

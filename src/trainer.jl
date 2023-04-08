@@ -129,6 +129,11 @@ function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, pr
     oldstage = fit_state.stage
     fit_state.stage = :validation
 
+    on_val_epoch_start(model, trainer)
+    for cbk in trainer.callbacks
+        on_val_epoch_start(cbk, model, trainer)
+    end
+
     valprogressbar = Progress(length(val_dataloader); desc="Val Epoch $(fit_state.epoch): ", 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
@@ -158,6 +163,11 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
     oldstage = fit_state.stage
     fit_state.stage = :training
     islastepoch = fit_state.epoch == trainer.max_epochs
+
+    on_train_epoch_start(model, trainer)
+    for callback in trainer.callbacks
+        on_train_epoch_start(callback, model, trainer)
+    end
 
     if trainer.lr_schedulers !== nothing
         lr = trainer.lr_schedulers(fit_state.epoch)
@@ -421,6 +431,10 @@ function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progb
     oldstage = fit_state.stage
     fit_state.stage = :testing
 
+    on_test_epoch_start(model, trainer)
+    for callback in trainer.callbacks
+        on_test_epoch_start(callback, model, trainer)
+    end
 
     testprogressbar = Progress(length(dataloader); desc="Testing: ", 
                                 showspeed=true, enabled=trainer.progress_bar, 
