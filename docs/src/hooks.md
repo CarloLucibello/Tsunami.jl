@@ -15,13 +15,14 @@ function fit!()
 end
 
 function train_loop()
+    on_train_epoch_start()
     set_learning_rate(lr_scheduler, epoch)
 
     for batch in train_dataloader
         batch = transfer_batch_to_device(batch)
-        train_step(batch)
-        compute_gradient()
-        optimizer_step()
+        grad = gradient(m -> train_step(model, batch),  model)
+        on_before_update()
+        update!(opt_state, model, grad)
         if should_check_val
             val_loop()
         end
@@ -30,6 +31,7 @@ function train_loop()
 end
 
 function val_loop()
+    on_val_epoch_start()
     for batch in val_dataloader
         batch = transfer_batch_to_device(batch)
         val_step(batch)
@@ -41,7 +43,11 @@ end
 ## Hooks API
 
 ```@docs
-Tsunami.on_test_epoch_end
+Tsunami.on_before_update
+Tsunami.on_train_epoch_start
 Tsunami.on_train_epoch_end
+Tsunami.on_test_epoch_start
+Tsunami.on_test_epoch_end
+Tsunami.on_val_epoch_start
 Tsunami.on_val_epoch_end
 ```

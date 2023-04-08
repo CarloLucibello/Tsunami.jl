@@ -96,5 +96,5 @@ fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
 
 
 # TEST
-model = MLP()
+val_results = Tsunami.validate(model, trainer, val_loader)
 test_results = Tsunami.test(model, trainer, test_loader)
