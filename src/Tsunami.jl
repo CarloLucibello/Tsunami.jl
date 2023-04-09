@@ -54,17 +54,24 @@ include("hooks.jl")
 #         on_test_epoch_end,
 
 
-include("trainer.jl")
-export Trainer
+include("loggers/metalogger.jl") # export MetaLogger
+include("loggers/tensorboard.jl") # export TensorBoardLogger
 
-include("logging.jl")
-include("loggers/tensorboard.jl")
 
 include("callbacks.jl")
 export AbstractCallback
 
 include("checkpointer.jl")
 export Checkpointer, load_checkpoint
+
+include("foil.jl")
+# export Foil
+
+include("trainer.jl")
+export Trainer
+
+include("log.jl")
+# export log
 
 include("deprecated.jl")
 
