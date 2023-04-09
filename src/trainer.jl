@@ -38,10 +38,6 @@ the fit state during the execution of `fit!`.
 
 # Constructor Arguments
 
-- **accelerator**: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
-                `:auto` will automatically select a gpu if available.
-                See also the `devices` option.
-                 Default: `:auto`.
 - **callbacks**: Pass a single or a list of callbacks. Default `nothing`.
 - **checkpointer**: If `true`, enable checkpointing.
                     Default: `true`.
@@ -49,11 +45,6 @@ the fit state during the execution of `fit!`.
 - **default\\_root\\_dir** : Default path for logs and weights.
                       Default: `pwd()`.
                     
-- **devices**: Pass an integer `n` to train on `n` devices, 
-            or a list of devices ids to train on specific devices.
-            If `nothing`, will use all available devices. 
-            Default: `nothing`.
-
 - **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
@@ -85,9 +76,17 @@ the fit state during the execution of `fit!`.
                         Set to 0 or negative to disable validation.
                         Default: `1`.
 
-# Additional Fields
+The constructor also take any of the [`Foil`](@ref)'s constructor arguments:
+
+$FOIL_CONSTRUCTOR_ARGS
+
+# Fields
+
+Besides most of the constructor arguments, a `Trainer` object also contains the following fields:
 
 - **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit!`](@ref).
+- **foil**: A [`Foil`](@ref) object.
+- **loggers**: A list of loggers.
 - **lr\\_schedulers**: The learning rate schedulers used for training.
 - **optimisers**: The optimisers used for training.
 
@@ -102,25 +101,72 @@ trainer = Trainer(max_epochs = 10,
 Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
-@kwdef mutable struct Trainer
-    accelerator::Symbol = :auto
-    callbacks = []
-    checkpointer::Bool = true
-    default_root_dir::String = pwd()
-    devices::Union{Int, Nothing} = nothing
-    fast_dev_run::Bool = false
-    log_every_n_steps::Int = 50
-    logger::Bool = true
-    loggers = []
-    metalogger = nothing
-    max_epochs::Union{Int, Nothing} = nothing
-    max_steps::Int = -1
-    progress_bar::Bool = true
-    val_every_n_epochs::Int = 1
+mutable struct Trainer
+    callbacks::Vector
+    default_root_dir::AbstractString
+    fast_dev_run::Bool
+    log_every_n_steps::Int
+    loggers::Vector
+    metalogger::MetaLogger
+    max_epochs::Int
+    max_steps::Int
+    progress_bar::Bool
+    val_every_n_epochs::Int
 
-    fit_state::FitState = FitState()
+    fit_state::FitState
+    foil::Foil
+    lr_schedulers
+    optimisers
+end
+
+function Trainer(; 
+            callbacks = [],
+            checkpointer = true,
+            default_root_dir = pwd(),
+            fast_dev_run = false,
+            log_every_n_steps = 50,
+            logger = true,
+            loggers = [],
+            max_epochs = nothing,
+            max_steps = -1,
+            progress_bar = true,
+            val_every_n_epochs = 1,
+            foil_kws...
+         )
+    
+
+
+    fit_state = FitState()
+    foil = Foil(; foil_kws...)
     lr_schedulers = nothing
     optimisers = nothing
+    loggers = copy(loggers)  # copy to avoid mutating the original list
+    callbacks = copy(callbacks)
+
+    if checkpointer && !any(x -> x isa Checkpointer, callbacks)
+        push!(callbacks, Checkpointer())
+    end
+    if logger && isempty(loggers)
+        push!(loggers, TensorBoardLogger())
+    end
+    metalogger = MetaLogger(loggers)
+
+    if max_steps == -1 && max_epochs === nothing
+        max_epochs = 1000
+    end
+    if max_epochs == -1
+        max_epochs = maxtype(Int)
+    end
+
+    if fast_dev_run
+        val_every_n_epochs = 1
+        loggers = []
+        metalogger = MetaLogger(loggers)
+    end
+
+    return Trainer(callbacks, default_root_dir, fast_dev_run, log_every_n_steps, loggers, metalogger, 
+                    max_epochs, max_steps, progress_bar, val_every_n_epochs, 
+                    fit_state, foil, lr_schedulers, optimisers)
 end
 
 
@@ -155,34 +201,16 @@ function fit!(
     )
     
     input_model = model
-    trainer.fit_state = FitState()
+    trainer.fit_state = FitState() # create a new one each time fit! is called
     fit_state = trainer.fit_state
 
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
     fit_state.run_dir = run_dir
-    
-    if trainer.checkpointer && !any(x -> x isa Checkpointer, trainer.callbacks)
-        push!(trainer.callbacks, Checkpointer())
-    end
+    set_run_dir!(trainer.metalogger, run_dir)
 
-    device = select_device(trainer.accelerator, trainer.devices)
-    
-    if trainer.logger && isempty(trainer.loggers)
-        push!(trainer.loggers, TensorBoardLogger(run_dir))
-    end
-    trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
-    
-    max_steps, max_epochs = compute_max_steps_and_epochs(trainer.max_steps, trainer.max_epochs)
-    
     if trainer.fast_dev_run
-        # max_steps = 1
-        # max_epochs = 1
-        trainer.val_every_n_epochs = 1
-        empty!(trainer.loggers)
-
         check_fluxmodule(model)
-        # check forwards on cpu
         check_train_step(model, trainer, first(train_dataloader))
         if val_dataloader !== nothing
             check_val_step(model, trainer, first(val_dataloader))
@@ -190,7 +218,7 @@ function fit!(
         return fit_state
     end
 
-    print_fit_initial_summary(model, trainer, device)
+    print_fit_initial_summary(model, trainer)
 
     fit_state.step = 0
     if ckpt_path !== nothing # load checkpoint and resume training
@@ -203,18 +231,19 @@ function fit!(
     end
     fit_state.epoch = start_epoch - 1
 
-    model = model |> device
-    trainer.optimisers = optimisers |> device
+    model, optimisers = setup(trainer.foil, model, optimisers)
+
+    trainer.optimisers = optimisers
     trainer.lr_schedulers = lr_schedulers
  
-    val_loop(model, trainer, val_dataloader; device, progbar_keep=false)
+    val_loop(model, trainer, val_dataloader; progbar_keep=false)
 
-    for epoch in start_epoch:max_epochs
+    for epoch in start_epoch:trainer.max_epochs
         fit_state.epoch = epoch
 
-        train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
+        train_loop(model, trainer, train_dataloader, val_dataloader)
 
-        (fit_state.step == max_steps || epoch == max_epochs) && break
+        (fit_state.step == trainer.max_steps || epoch == trainer.max_epochs) && break
     end
 
     model = model |> cpu
@@ -225,10 +254,9 @@ function fit!(
     return fit_state
 end
 
-function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, progbar_keep = true)
+function val_loop(model, trainer, val_dataloader; progbar_offset = 0, progbar_keep = true)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
-    oldstage = fit_state.stage
     fit_state.stage = :validation
 
     on_val_epoch_start(model, trainer)
@@ -236,11 +264,11 @@ function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, pr
         on_val_epoch_start(cbk, model, trainer)
     end
 
-    valprogressbar = Progress(length(val_dataloader); desc="Val Epoch $(fit_state.epoch): ", 
+    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
-        batch = batch |> device
+        batch = to_device(trainer.foil, batch)
         val_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
@@ -255,14 +283,12 @@ function val_loop(model, trainer, val_dataloader; device, progbar_offset = 0, pr
         on_val_epoch_end(cbk, model, trainer)
     end
     val_results = log_epoch(trainer.metalogger, fit_state)
-    fit_state.stage = oldstage
     return val_results
 end
 
-function train_loop(model, trainer, train_dataloader, val_dataloader; device, max_steps)
+function train_loop(model, trainer, train_dataloader, val_dataloader)
     @unpack fit_state = trainer
     
-    oldstage = fit_state.stage
     fit_state.stage = :training
     islastepoch = fit_state.epoch == trainer.max_epochs
 
@@ -285,7 +311,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
         fit_state.step += 1
         fit_state.batchsize = MLUtils.numobs(batch)
         
-        batch = batch |> device
+        batch = to_device(trainer.foil, batch)
 
         # grad = Zygote.gradient(model) do model
         #     loss = train_step(model, trainer, batch, batch_idx)
@@ -315,7 +341,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
             showvalues = values_for_train_progbar(trainer.metalogger),
             valuecolor = :yellow)
 
-        fit_state.step == max_steps && break
+        fit_state.step == trainer.max_steps && break
     end
     ProgressMeter.finish!(train_progbar)
 
@@ -331,13 +357,11 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; device, ma
     ## VALIDATION
     if  val_dataloader !== nothing && trainer.val_every_n_epochs > 0
         if  (fit_state.epoch % trainer.val_every_n_epochs == 0) || islastepoch
-            val_loop(model, trainer, val_dataloader; device, 
+            val_loop(model, trainer, val_dataloader; 
                     progbar_offset = islastepoch ? 0 : train_progbar.numprintedvalues + 1, 
                     progbar_keep = islastepoch)
         end
     end
-
-    fit_state.stage = oldstage
 end
 
 function process_out_configure_optimisers(out::Tuple)
@@ -351,53 +375,9 @@ function process_out_configure_optimisers(out)
     return opt, lr_scheduler
 end
 
-function compute_max_steps_and_epochs(max_steps, max_epochs)
-    if max_steps == -1 && max_epochs === nothing
-        max_epochs = 1000
-    end
-    if max_epochs == -1
-        max_epochs = nothing
-    end
-    return max_steps, max_epochs
-end
-
-function select_device(accelerator::Symbol, devices)
-    if accelerator == :auto
-        if CUDA.functional()
-            return select_cuda_device(devices)
-        else
-            return cpu
-        end
-    elseif accelerator == :cpu
-        return cpu
-    elseif accelerator == :gpu
-        if !CUDA.functional()
-            @warn "CUDA is not available"
-            return cpu
-        else
-            return select_cuda_device(devices)
-        end
-    else
-        throw(ArgumentError("accelerator must be one of :auto, :cpu, :gpu"))
-    end
-end
-
-select_cuda_device(devices::Nothing) = gpu
-
-function select_cuda_device(devices::Int)
-    @assert devices == 1 "Only one device is supported"
-    return gpu
-end
-
-function select_cuda_device(devices::Union{Vector{Int}, Tuple})
-    @assert length(devices) == 1 "Only one device is supported"
-    CUDA.device!(devices[1])
-    return gpu
-end
- 
-function print_fit_initial_summary(model, trainer, device)
+function print_fit_initial_summary(model, trainer)
     cuda_available = CUDA.functional()
-    use_cuda = cuda_available && device === gpu
+    use_cuda = is_using_cuda(trainer.foil)
     str_gpuavail = cuda_available ? "true (CUDA)" : "false"
     @info "GPU available: $(str_gpuavail), used: $use_cuda"
     @info "Model Summary:"
@@ -432,16 +412,13 @@ Dict{String, Float64} with 1 entry:
 ```
 """
 function test(model::FluxModule, trainer::Trainer, dataloader)
-    device = select_device(trainer.accelerator, trainer.devices)
-    trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
-    model = model |> device
-    return test_loop(model, trainer, dataloader; device, progbar_keep=true)
+    model = to_device(trainer.foil, model)
+    return test_loop(model, trainer, dataloader; progbar_keep=true)
 end
 
-function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progbar_keep = true)
+function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep = true)
     dataloader === nothing && return
     fit_state = trainer.fit_state
-    oldstage = fit_state.stage
     fit_state.stage = :testing
 
     on_test_epoch_start(model, trainer)
@@ -454,7 +431,7 @@ function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progb
                                 color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
-        batch = batch |> device
+        batch = to_device(trainer.foil, batch)
         test_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(testprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
@@ -469,7 +446,6 @@ function test_loop(model, trainer, dataloader; device, progbar_offset = 0, progb
         on_test_epoch_end(callback, model, trainer)
     end
     test_results = log_epoch(trainer.metalogger, fit_state)
-    fit_state.stage = oldstage
     return test_results
 end
 
@@ -482,8 +458,6 @@ Returns the aggregated results from the values logged in the `val_step` as a dic
 See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
-    device = select_device(trainer.accelerator, trainer.devices)
-    trainer.metalogger = MetaLogger(trainer.loggers) # TODO move to trainer constructor
-    model = model |> device
-    return val_loop(model, trainer, dataloader; device, progbar_keep=true)
+    model = to_device(trainer.foil, model)
+    return val_loop(model, trainer, dataloader; progbar_keep=true)
 end

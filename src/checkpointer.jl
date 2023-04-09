@@ -27,7 +27,7 @@ mutable struct Checkpointer <: AbstractCallback
     end
 end
 
-function on_train_epoch_end(cp::Checkpointer, model::FluxModule, trainer::Trainer)
+function on_train_epoch_end(cp::Checkpointer, model::FluxModule, trainer)
     @unpack fit_state = trainer
     @unpack step, epoch, run_dir = fit_state
    if cp.folder !== nothing

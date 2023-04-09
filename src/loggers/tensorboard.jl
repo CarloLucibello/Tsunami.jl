@@ -7,18 +7,21 @@ A logger that writes to writes tensorboard events to the
 See also [`read_tensorboard_logs`](@ref).
 """
 mutable struct TensorBoardLogger
-    tblogger::TBLogger
+    tblogger::Union{Nothing, TBLogger}
 end
 
-function TensorBoardLogger(run_dir::AbstractString)
-    tblogger = TBLogger(run_dir, tb_append, step_increment=0)
-    return TensorBoardLogger(tblogger)
+TensorBoardLogger() = TensorBoardLogger(nothing)
+TensorBoardLogger(run_dir::AbstractString) = set_run_dir!(TensorBoardLogger(), run_dir)
+
+function set_run_dir!(logger::TensorBoardLogger, run_dir::AbstractString)
+    logger.tblogger = TBLogger(run_dir, tb_append, step_increment=0)
 end
 
 log_scalar(logger::TensorBoardLogger, name::Symbol, value; step::Int) = 
     log_scalar(logger, string(name), value; step=step)
 
 function log_scalar(logger::TensorBoardLogger, name::AbstractString, value; step::Int)
+    logger.tblogger === nothing && return
     TensorBoardLoggers.log_value(logger.tblogger, name, value; step)
 end
 
