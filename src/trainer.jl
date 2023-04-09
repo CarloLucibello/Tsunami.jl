@@ -238,12 +238,12 @@ function fit!(
  
     val_loop(model, trainer, val_dataloader; progbar_keep=false)
 
-    for epoch in start_epoch:max_epochs
+    for epoch in start_epoch:trainer.max_epochs
         fit_state.epoch = epoch
 
-        train_loop(model, trainer, train_dataloader, val_dataloader; max_steps)
+        train_loop(model, trainer, train_dataloader, val_dataloader)
 
-        (fit_state.step == max_steps || epoch == max_epochs) && break
+        (fit_state.step == trainer.max_steps || epoch == trainer.max_epochs) && break
     end
 
     model = model |> cpu
@@ -286,7 +286,7 @@ function val_loop(model, trainer, val_dataloader; progbar_offset = 0, progbar_ke
     return val_results
 end
 
-function train_loop(model, trainer, train_dataloader, val_dataloader; max_steps)
+function train_loop(model, trainer, train_dataloader, val_dataloader)
     @unpack fit_state = trainer
     
     fit_state.stage = :training
@@ -341,7 +341,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader; max_steps)
             showvalues = values_for_train_progbar(trainer.metalogger),
             valuecolor = :yellow)
 
-        fit_state.step == max_steps && break
+        fit_state.step == trainer.max_steps && break
     end
     ProgressMeter.finish!(train_progbar)
 

@@ -23,7 +23,7 @@ A type that takes care of the acceleration of the training process.
 $FOIL_CONSTRUCTOR_ARGS
 """
 mutable struct Foil
-    devices
+    device
     precision
 end
 
@@ -75,4 +75,14 @@ end
 function is_using_cuda(foil::Foil)
     cuda_available = CUDA.functional()
     return cuda_available && foil.device === gpu
+end
+
+function to_device(foil::Foil, x)
+    return x |> foil.device
+end
+
+function setup(foil::Foil, model::FluxModule, optimisers)
+    model = to_device(foil, model)
+    optimisers = to_device(foil, optimisers)
+    return model, optimisers
 end
