@@ -1,15 +1,15 @@
 FOIL_CONSTRUCTOR_ARGS ="""
 - **accelerator**: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
-`:auto` will automatically select a gpu if available.
-See also the `devices` option.
+    Use `:auto` to automatically select a gpu if available.
+    See also the `devices` option.
     Default: `:auto`.
 
-- **devices**: Pass an integer `n` to train on `n` devices, 
-or a list of devices ids to train on specific devices.
-If `nothing`, will use all available devices. 
-Default: `nothing`.
+- **devices**: Pass an integer `n` to train on `n` devices,
+    or a list of devices ids to train on specific devices.
+    If `nothing`, will use all available devices. 
+    Default: `nothing`.
 
-- **precision**: Supports passing different precision types `(:f32, :f64)`.
+- **precision**: Supports passing different precision types `(:f16, :f32, :f64)`.
     Default: `:f32`.
 """
 

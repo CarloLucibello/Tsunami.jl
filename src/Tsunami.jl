@@ -65,7 +65,7 @@ include("checkpointer.jl")
 export Checkpointer, load_checkpoint
 
 include("foil.jl")
-# export Foil
+export Foil
 
 include("trainer.jl")
 export Trainer

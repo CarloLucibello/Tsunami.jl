@@ -94,7 +94,5 @@ ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
 fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
 @assert fit_state.step == 2110
 
-
 # TEST
-val_results = Tsunami.validate(model, trainer, val_loader)
 test_results = Tsunami.test(model, trainer, test_loader)
