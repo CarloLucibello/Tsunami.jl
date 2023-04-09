@@ -21,6 +21,7 @@ log_scalar(logger::TensorBoardLogger, name::Symbol, value; step::Int) =
     log_scalar(logger, string(name), value; step=step)
 
 function log_scalar(logger::TensorBoardLogger, name::AbstractString, value; step::Int)
+    logger.tblogger === nothing && return
     TensorBoardLoggers.log_value(logger.tblogger, name, value; step)
 end
 

@@ -264,7 +264,7 @@ function val_loop(model, trainer, val_dataloader; progbar_offset = 0, progbar_ke
         on_val_epoch_start(cbk, model, trainer)
     end
 
-    valprogressbar = Progress(length(val_dataloader); desc="Val Epoch $(fit_state.epoch): ", 
+    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
