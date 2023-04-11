@@ -1,5 +1,6 @@
 module Tsunami
 
+using Adapt
 using Base: @kwdef
 import BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable

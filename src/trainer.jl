@@ -12,6 +12,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
 - `stage`: the current stage of execution. One of `:training`, `:train_epoch_end`, `:validation`, `:val_epoch_end`.
 - `step`: the current step number.
 - `batchsize`: number of samples in the current batch.
+- `should_stop`: set to `true` to stop the training loop.
 """
 @kwdef mutable struct FitState
     epoch::Int = 0
@@ -19,6 +20,7 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
     stage::Symbol = :training # [:training, :train_epoch_end, :validation, :val_epoch_end]
     step::Int = 0
     batchsize::Int = 0
+    should_stop::Bool = false
 end
 
 Functors.@functor FitState
@@ -236,14 +238,14 @@ function fit!(
     trainer.optimisers = optimisers
     trainer.lr_schedulers = lr_schedulers
  
-    val_loop(model, trainer, val_dataloader; progbar_keep=false)
+    val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
 
-    for epoch in start_epoch:trainer.max_epochs
+    for epoch in start_epoch:trainer.max_epochs # TODO turn into while loop
         fit_state.epoch = epoch
 
         train_loop(model, trainer, train_dataloader, val_dataloader)
 
-        (fit_state.step == trainer.max_steps || epoch == trainer.max_epochs) && break
+        fit_state.should_stop && break
     end
 
     model = model |> cpu
@@ -254,7 +256,8 @@ function fit!(
     return fit_state
 end
 
-function val_loop(model, trainer, val_dataloader; progbar_offset = 0, progbar_keep = true)
+function val_loop(model, trainer, val_dataloader; progbar_offset = 0, 
+            progbar_keep = true, progbar_print_epoch = false)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
     fit_state.stage = :validation
@@ -264,18 +267,17 @@ function val_loop(model, trainer, val_dataloader; progbar_offset = 0, progbar_ke
         on_val_epoch_start(cbk, model, trainer)
     end
 
-    valprogressbar = Progress(length(val_dataloader); desc="Validation: ", 
+    progbar_desc = progbar_print_epoch ?  "Val Epoch $(fit_state.epoch): " : "Validation: "
+    valprogressbar = Progress(length(val_dataloader); desc=progbar_desc, 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
-        batch = to_device(trainer.foil, batch)
+        batch = setup_batch(trainer.foil, batch)
         val_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
-                valuecolor = :green
-                )
+                valuecolor = :green)
     end
-    ProgressMeter.finish!(valprogressbar)
 
     fit_state.stage = :val_epoch_end
     on_val_epoch_end(model, trainer)
@@ -290,7 +292,6 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
     @unpack fit_state = trainer
     
     fit_state.stage = :training
-    islastepoch = fit_state.epoch == trainer.max_epochs
 
     on_train_epoch_start(model, trainer)
     for callback in trainer.callbacks
@@ -303,33 +304,27 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
     end
 
     train_progbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
-                        showspeed=true, enabled = trainer.progress_bar, color=:yellow,
-                        keep = islastepoch)
+                        showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 
     ## SINGLE EPOCH TRAINING LOOP
     for (batch_idx, batch) in enumerate(train_dataloader)
         fit_state.step += 1
         fit_state.batchsize = MLUtils.numobs(batch)
         
-        batch = to_device(trainer.foil, batch)
-
-        # grad = Zygote.gradient(model) do model
-        #     loss = train_step(model, trainer, batch, batch_idx)
-        #     return loss
-        # end[1]
+        batch = setup_batch(trainer.foil, batch)
         
-        loss, pb = Zygote.pullback(model) do model
+        loss, pb = pullback(model, trainer.foil) do model
             loss = train_step(model, trainer, batch, batch_idx)
             return loss
         end
-        
+
         on_before_pullback_call(model, trainer, loss)
         for callback in trainer.callbacks
             on_before_pullback_call(callback, model, trainer, loss)
         end
         
-        grad = unref(pb(one(loss))[1]) # zygote returns a Ref with immutable, so we need to unref it
-
+        grad = pb()
+        
         on_before_update(model, trainer, grad)
         for callback in trainer.callbacks
             on_before_update(callback, model, trainer, grad)
@@ -337,13 +332,22 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
 
         Optimisers.update!(trainer.optimisers, model, grad)
 
+        if fit_state.step == trainer.max_steps
+            fit_state.should_stop = true
+        end
+        
         ProgressMeter.next!(train_progbar,
             showvalues = values_for_train_progbar(trainer.metalogger),
-            valuecolor = :yellow)
+            valuecolor = :yellow, 
+            final = fit_state.should_stop || batch_idx == length(train_dataloader),
+            keep = fit_state.should_stop || fit_state.epoch == trainer.max_epochs
+        )
 
-        fit_state.step == trainer.max_steps && break
+        fit_state.should_stop && break
     end
-    ProgressMeter.finish!(train_progbar)
+    if fit_state.epoch == trainer.max_epochs
+        fit_state.should_stop = true
+    end
 
     ## EPOCH END
     fit_state.stage = :train_epoch_end
@@ -356,10 +360,11 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
 
     ## VALIDATION
     if  val_dataloader !== nothing && trainer.val_every_n_epochs > 0
-        if  (fit_state.epoch % trainer.val_every_n_epochs == 0) || islastepoch
+        if  (fit_state.epoch % trainer.val_every_n_epochs == 0) || fit_state.should_stop
             val_loop(model, trainer, val_dataloader; 
-                    progbar_offset = islastepoch ? 0 : train_progbar.numprintedvalues + 1, 
-                    progbar_keep = islastepoch)
+                    progbar_offset = fit_state.should_stop ? 0 : train_progbar.numprintedvalues + 1, 
+                    progbar_keep = fit_state.should_stop, 
+                    progbar_print_epoch=true)
         end
     end
 end
@@ -412,7 +417,7 @@ Dict{String, Float64} with 1 entry:
 ```
 """
 function test(model::FluxModule, trainer::Trainer, dataloader)
-    model = to_device(trainer.foil, model)
+    model = setup_batch(trainer.foil, model)
     return test_loop(model, trainer, dataloader; progbar_keep=true)
 end
 
@@ -431,7 +436,7 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
                                 color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
-        batch = to_device(trainer.foil, batch)
+        batch = setup_batch(trainer.foil, batch)
         test_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(testprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
@@ -458,6 +463,6 @@ Returns the aggregated results from the values logged in the `val_step` as a dic
 See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
-    model = to_device(trainer.foil, model)
+    model = setup_batch(trainer.foil, model)
     return val_loop(model, trainer, dataloader; progbar_keep=true)
 end

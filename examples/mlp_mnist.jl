@@ -70,12 +70,15 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TRAIN FROM SCRATCH
 
-trainer = Trainer(max_epochs = 3, 
+trainer = Trainer(max_epochs = 3,
+                 max_steps=-1,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu,
                  checkpointer = true,
                  logger = true,
                  progress_bar = true,
+                 precision = :f64,
+                 val_every_n_epochs = 1,
                  )
 
 fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
