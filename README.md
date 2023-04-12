@@ -11,7 +11,8 @@ that helps you focus and organize the relevant part of your code
 while removing the boilerplate. 
 
 Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
-and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
+and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/)
+(although [Lightning AI](https://www.pytorchlightning.ai/index.html) is not involved in this project).
 
 
 ## Installation 
@@ -104,8 +105,12 @@ See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and ch
 - Hyperparameters' schedulers.
 - GPU movement.
 
+## Contributions are welcome!
 
-## Similar libraries 
+If you want to contribute to Tsunami, please open an issue or a pull request.
+Any help is appreciated!
+
+## Similar julia libraries 
 
 - [FastAI.jl](https://github.com/FluxML/FastAI.jl)
 - [FluxTraining.jl](https://github.com/FluxML/FluxTraining.jl)
