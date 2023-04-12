@@ -46,7 +46,7 @@ export FluxModule
 
 include("hooks.jl")
 # export  on_before_update,
-#         on_before_backward,
+#         on_before_backprop,
 #         on_train_epoch_start,
 #         on_train_epoch_end,
 #         on_val_epoch_start,

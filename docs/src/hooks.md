@@ -22,7 +22,7 @@ function train_loop()
         on_train_batch_start()
         batch = transfer_batch_to_device(batch)
         loss, pb = pullback(m -> train_step(model, batch),  model)
-        on_before_backward()
+        on_before_backprop()
         grad = pb(1)
         on_before_update()
         update!(opt_state, model, grad)
@@ -49,7 +49,7 @@ end
 ## Hooks API
 
 ```@docs
-Tsunami.on_before_backward
+Tsunami.on_before_backprop
 Tsunami.on_before_update
 Tsunami.on_train_batch_start
 Tsunami.on_train_batch_end

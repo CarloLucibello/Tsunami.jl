@@ -318,7 +318,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
             return loss
         end
 
-        hook(on_before_backward, model, trainer, loss)
+        hook(on_before_backprop, model, trainer, loss)
         
         grad = pb()
 

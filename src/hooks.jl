@@ -15,13 +15,13 @@ on_before_update(model, trainer, grad) = nothing
 on_before_update(cb, model, trainer, grad) = nothing
 
 """
-    on_before_backward([callback,] model, trainer, loss)
+    on_before_backprop([callback,] model, trainer, loss)
 
 Called after the model's forward, where also the pullback is computed, 
 but before the call to the pullback (the backward pass).
 """
-on_before_backward(model, trainer, loss) = nothing
-on_before_backward(cb, model, trainer, loss) = nothing
+on_before_backprop(model, trainer, loss) = nothing
+on_before_backprop(cb, model, trainer, loss) = nothing
 
 """
     on_train_epoch_start([callback,] model, trainer)
