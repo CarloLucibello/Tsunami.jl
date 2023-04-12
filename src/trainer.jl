@@ -262,28 +262,29 @@ function val_loop(model, trainer, val_dataloader; progbar_offset = 0,
     fit_state = trainer.fit_state
     fit_state.stage = :validation
 
-    on_val_epoch_start(model, trainer)
-    for cbk in trainer.callbacks
-        on_val_epoch_start(cbk, model, trainer)
-    end
+    hook(on_val_epoch_start, model, trainer)
 
     progbar_desc = progbar_print_epoch ?  "Val Epoch $(fit_state.epoch): " : "Validation: "
     valprogressbar = Progress(length(val_dataloader); desc=progbar_desc, 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
+
+        hook(on_val_batch_start, model, trainer, batch, batch_idx)
+
         batch = setup_batch(trainer.foil, batch)
         val_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
                 valuecolor = :green)
+
+        hook(on_val_batch_end, model, trainer)
     end
 
     fit_state.stage = :val_epoch_end
-    on_val_epoch_end(model, trainer)
-    for cbk in trainer.callbacks
-        on_val_epoch_end(cbk, model, trainer)
-    end
+
+    hook(on_val_epoch_end, model, trainer)
+
     val_results = log_epoch(trainer.metalogger, fit_state)
     return val_results
 end
@@ -293,10 +294,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
     
     fit_state.stage = :training
 
-    on_train_epoch_start(model, trainer)
-    for callback in trainer.callbacks
-        on_train_epoch_start(callback, model, trainer)
-    end
+    hook(on_train_epoch_start, model, trainer)
 
     if trainer.lr_schedulers !== nothing
         lr = trainer.lr_schedulers(fit_state.epoch)
@@ -311,6 +309,8 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
         fit_state.step += 1
         fit_state.batchsize = MLUtils.numobs(batch)
         
+        hook(on_train_batch_start, model, trainer, batch, batch_idx)
+        
         batch = setup_batch(trainer.foil, batch)
         
         loss, pb = pullback(model, trainer.foil) do model
@@ -318,17 +318,11 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
             return loss
         end
 
-        on_before_pullback_call(model, trainer, loss)
-        for callback in trainer.callbacks
-            on_before_pullback_call(callback, model, trainer, loss)
-        end
+        hook(on_before_backward, model, trainer, loss)
         
         grad = pb()
-        
-        on_before_update(model, trainer, grad)
-        for callback in trainer.callbacks
-            on_before_update(callback, model, trainer, grad)
-        end
+
+        hook(on_before_update, model, trainer, grad)
 
         Optimisers.update!(trainer.optimisers, model, grad)
 
@@ -343,6 +337,8 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
             keep = fit_state.should_stop || fit_state.epoch == trainer.max_epochs
         )
 
+        hook(on_train_batch_end, model, trainer)
+        
         fit_state.should_stop && break
     end
     if fit_state.epoch == trainer.max_epochs
@@ -351,10 +347,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
 
     ## EPOCH END
     fit_state.stage = :train_epoch_end
-    on_train_epoch_end(model, trainer)
-    for cbk in trainer.callbacks
-        on_train_epoch_end(cbk, model, trainer)
-    end
+    hook(on_train_epoch_end, model, trainer)
     log_epoch(trainer.metalogger, fit_state)
     fit_state.stage = :training
 
@@ -426,30 +419,28 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
     fit_state = trainer.fit_state
     fit_state.stage = :testing
 
-    on_test_epoch_start(model, trainer)
-    for callback in trainer.callbacks
-        on_test_epoch_start(callback, model, trainer)
-    end
+    hook(on_test_epoch_start, model, trainer)
 
     testprogressbar = Progress(length(dataloader); desc="Testing: ", 
                                 showspeed=true, enabled=trainer.progress_bar, 
                                 color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
+
+        hook(on_test_batch_start, model, trainer, batch, batch_idx)
+
         batch = setup_batch(trainer.foil, batch)
         test_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(testprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
                 valuecolor = :green
                 )
+
+        hook(on_test_batch_end, model, trainer)
     end
-    ProgressMeter.finish!(testprogressbar)
 
     fit_state.stage = :test_epoch_end
-    on_test_epoch_end(model, trainer)
-    for callback in trainer.callbacks
-        on_test_epoch_end(callback, model, trainer)
-    end
+    hook(on_test_epoch_end, model, trainer)
     test_results = log_epoch(trainer.metalogger, fit_state)
     return test_results
 end

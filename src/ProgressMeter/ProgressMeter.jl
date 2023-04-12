@@ -8,13 +8,14 @@
 # - removed @showprogress
 # - added the `keep` keyword argument to Progress
 # - added `rewind` method
+# - remove `finish!`, simplify updateProgress
 
 module ProgressMeter
 
 using Printf: @sprintf
 using Distributed
 
-export Progress, BarGlyphs, next!, update!, cancel, finish!, ijulia_behavior
+export Progress, BarGlyphs, next!, update!, cancel, ijulia_behavior
 
 
 abstract type AbstractProgress end

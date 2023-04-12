@@ -47,9 +47,45 @@ end
 function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, and decay intervals (corresponding to epochs 2 and 4)
     lr_scheduler = ParameterSchedulers.Step(1e-2, 1/10, [2, 2])
-    opt = Optimisers.setup(Optimisers.AdamW(), m)
+    opt = Optimisers.setup(Optimisers.Adam(1e-5), m)
     return opt, lr_scheduler
 end
+
+function Tsunami.on_before_backward(m::MLP, trainer, loss)
+    @show loss
+    @assert loss isa Float16
+end
+
+using Flux: Functors
+using StructWalk
+using Random, Statistics
+
+function Tsunami.on_before_update(m::MLP, trainer, grad)
+    StructWalk.scan(identity, FunctorStyle(), m, grad) do ((x, g))
+        if x isa AbstractArray
+            @assert all(isfinite, x)
+            # println("model : $(typeof(x))")
+            # println(sum(abs2, x))            
+        end
+        if g isa AbstractArray
+            @assert all(isfinite, g)
+            # println("grad : $(typeof(g))")
+            # println(sum(abs2, g))
+        end
+        opt = Optimisers.setup(Optimisers.Adam(1e-5), x)
+    end
+end
+
+function Tsunami.on_train_batch_end(m::MLP, trainer)
+    StructWalk.scan(identity, FunctorStyle(), m) do x
+        if x isa AbstractArray
+            println("model post : $(typeof(x))")
+            println(sum(abs2, x))
+            # @assert all(isfinite, x)
+        end
+    end
+end
+
 
 train_data = mapobs(batch -> (batch[1], Flux.onehotbatch(batch[2], 0:9)), MNIST(:train))
 train_data, val_data = splitobs(train_data, at = 0.9)
@@ -70,14 +106,16 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TRAIN FROM SCRATCH
 
+Tsunami.seed!(17)
+model = MLP()
 trainer = Trainer(max_epochs = 3,
-                 max_steps=-1,
+                 max_steps = 1,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu,
                  checkpointer = true,
                  logger = true,
-                 progress_bar = true,
-                 precision = :f64,
+                 progress_bar = false,
+                 precision = :f16,
                  val_every_n_epochs = 1,
                  )
 
@@ -99,3 +137,4 @@ fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
 
 # TEST
 test_results = Tsunami.test(model, trainer, test_loader)
+Tsunami.is_all_finite(model)

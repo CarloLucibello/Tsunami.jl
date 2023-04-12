@@ -19,12 +19,14 @@ function train_loop()
     set_learning_rate(lr_scheduler, epoch)
 
     for batch in train_dataloader
+        on_train_batch_start()
         batch = transfer_batch_to_device(batch)
         loss, pb = pullback(m -> train_step(model, batch),  model)
-        on_before_pullback_call()
+        on_before_backward()
         grad = pb(1)
         on_before_update()
         update!(opt_state, model, grad)
+        on_train_batch_end()
         if should_check_val
             val_loop()
         end
@@ -35,8 +37,10 @@ end
 function val_loop()
     on_val_epoch_start()
     for batch in val_dataloader
+        on_val_batch_start()
         batch = transfer_batch_to_device(batch)
         val_step(batch)
+        on_val_batch_end()
     end
     on_val_epoch_end()
 end
@@ -45,11 +49,18 @@ end
 ## Hooks API
 
 ```@docs
+Tsunami.on_before_backward
 Tsunami.on_before_update
+Tsunami.on_train_batch_start
+Tsunami.on_train_batch_end
 Tsunami.on_train_epoch_start
 Tsunami.on_train_epoch_end
+Tsunami.on_test_batch_start
+Tsunami.on_test_batch_end
 Tsunami.on_test_epoch_start
 Tsunami.on_test_epoch_end
+Tsunami.on_val_batch_start
+Tsunami.on_val_batch_end
 Tsunami.on_val_epoch_start
 Tsunami.on_val_epoch_end
 ```
