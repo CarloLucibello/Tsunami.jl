@@ -153,33 +153,6 @@ function updateProgress!(p::Progress; showvalues = (),
     p.offset = offset
     p.keep = keep
     
-    # if p.counter >= p.n
-    #     if p.counter == p.n #&& p.printed
-    #         t = time()
-    #         barlen = p.barlen isa Nothing ? tty_width(p.desc, p.output, p.showspeed) : p.barlen
-    #         percentage_complete = 100.0 * p.counter / p.n
-    #         bar = barstring(barlen, percentage_complete, barglyphs=p.barglyphs)
-    #         elapsed_time = t - p.tinit
-    #         dur = durationstring(elapsed_time)
-    #         spacer = endswith(p.desc, " ") ? "" : " "
-    #         msg = @sprintf "%s%s%3u%%%s Time: %s" p.desc spacer round(Int, percentage_complete) bar dur
-    #         if p.showspeed
-    #             sec_per_iter = elapsed_time / (p.counter - p.start)
-    #             msg = @sprintf "%s (%s)" msg speedstring(sec_per_iter)
-    #         end
-    #         !CLEAR_IJULIA[] && print(p.output, "\n" ^ (p.offset + p.numprintedvalues))
-    #         move_cursor_up_while_clearing_lines(p.output, p.numprintedvalues)
-    #         printover(p.output, msg, p.color)
-    #         printvalues!(p, showvalues; color = valuecolor, truncate = truncate_lines)
-    #         if p.keep
-    #             println(p.output)
-    #         else
-    #             print(p.output, "\r\u1b[A" ^ (p.offset + p.numprintedvalues))
-    #         end
-    #         flush(p.output)
-    #     end
-    #     return nothing
-    # end
     if final === nothing
         final = p.counter == p.n
     end
