@@ -7,13 +7,15 @@
 # - removed ProgressThresh and ProgressUnknown since not needed
 # - removed @showprogress
 # - added the `keep` keyword argument to Progress
+# - added `rewind` method
+# - remove `finish!`, simplify updateProgress
 
 module ProgressMeter
 
 using Printf: @sprintf
 using Distributed
 
-export Progress, BarGlyphs, next!, update!, cancel, finish!, ijulia_behavior
+export Progress, BarGlyphs, next!, update!, cancel, ijulia_behavior
 
 
 abstract type AbstractProgress end
@@ -130,9 +132,14 @@ function calc_check_iterations(p, t)
 end
 
 # update progress display
-function updateProgress!(p::Progress; showvalues = (), truncate_lines = false, valuecolor = :blue,
-                        offset::Integer = p.offset, keep = p.keep, desc::Union{Nothing,AbstractString} = nothing,
-                        ignore_predictor = false)
+function updateProgress!(p::Progress; showvalues = (), 
+                        truncate_lines = false, 
+                        valuecolor = :blue,
+                        offset::Integer = p.offset, 
+                        keep = p.keep, 
+                        desc::Union{Nothing,AbstractString} = nothing,
+                        ignore_predictor = false, 
+                        final::Union{Nothing, Bool} = nothing)
     !p.enabled && return
     if p.counter == 2 # ignore the first loop given usually uncharacteristically slow
         p.tsecond = time()
@@ -146,40 +153,15 @@ function updateProgress!(p::Progress; showvalues = (), truncate_lines = false, v
     p.offset = offset
     p.keep = keep
     
-    if p.counter >= p.n
-        if p.counter == p.n #&& p.printed
-            t = time()
-            barlen = p.barlen isa Nothing ? tty_width(p.desc, p.output, p.showspeed) : p.barlen
-            percentage_complete = 100.0 * p.counter / p.n
-            bar = barstring(barlen, percentage_complete, barglyphs=p.barglyphs)
-            elapsed_time = t - p.tinit
-            dur = durationstring(elapsed_time)
-            spacer = endswith(p.desc, " ") ? "" : " "
-            msg = @sprintf "%s%s%3u%%%s Time: %s" p.desc spacer round(Int, percentage_complete) bar dur
-            if p.showspeed
-                sec_per_iter = elapsed_time / (p.counter - p.start)
-                msg = @sprintf "%s (%s)" msg speedstring(sec_per_iter)
-            end
-            !CLEAR_IJULIA[] && print(p.output, "\n" ^ (p.offset + p.numprintedvalues))
-            move_cursor_up_while_clearing_lines(p.output, p.numprintedvalues)
-            printover(p.output, msg, p.color)
-            printvalues!(p, showvalues; color = valuecolor, truncate = truncate_lines)
-            if p.keep
-                println(p.output)
-            else
-                print(p.output, "\r\u1b[A" ^ (p.offset + p.numprintedvalues))
-            end
-            flush(p.output)
-        end
-        return nothing
+    if final === nothing
+        final = p.counter == p.n
     end
-  
-    if ignore_predictor || predicted_updates_per_dt_have_passed(p)
+    if final || ignore_predictor || predicted_updates_per_dt_have_passed(p)
         t = time()
         if p.counter > 2
             p.check_iterations = calc_check_iterations(p, t)
         end
-        if t > p.tlast+p.dt
+        if t > p.tlast+p.dt || p.counter == p.n || final
             barlen = p.barlen isa Nothing ? tty_width(p.desc, p.output, p.showspeed) : p.barlen
             percentage_complete = 100.0 * p.counter / p.n
             bar = barstring(barlen, percentage_complete, barglyphs=p.barglyphs)
@@ -201,7 +183,15 @@ function updateProgress!(p::Progress; showvalues = (), truncate_lines = false, v
             move_cursor_up_while_clearing_lines(p.output, p.numprintedvalues)
             printover(p.output, msg, p.color)
             printvalues!(p, showvalues; color = valuecolor, truncate = truncate_lines)
-            !CLEAR_IJULIA[] && print(p.output, "\r\u1b[A" ^ (p.offset + p.numprintedvalues))
+            if !final
+                !CLEAR_IJULIA[] && rewind(p)
+            else 
+                if keep
+                    println(p.output)
+                else
+                    !CLEAR_IJULIA[] && rewind(p)
+                end
+            end
             flush(p.output)
             # Compensate for any overhead of printing. This can be
             # especially important if you're running over a slow network
@@ -283,12 +273,6 @@ function cancel(p::AbstractProgress, msg::AbstractString = "Aborted before all t
         end
     end
     return
-end
-
-function finish!(p::Progress; options...)
-    if p.counter < p.n
-        update!(p, p.n; options...)
-    end
 end
 
 
@@ -410,6 +394,13 @@ function speedstring(sec_per_iter)
     return " >100  d/it"
 end
 
+"""
+    rewind(p::AbstractProgress)
 
-
+Rewinds the cursor to the beginning of the progress bar.
+"""
+function rewind(p::AbstractProgress)
+    print(p.output, "\r\u1b[A" ^ (p.offset + p.numprintedvalues))
 end
+
+end # module

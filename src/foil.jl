@@ -24,7 +24,8 @@ $FOIL_CONSTRUCTOR_ARGS
 """
 mutable struct Foil
     device
-    precision
+    fprec
+    precision::Symbol
 end
 
 function Foil(;
@@ -34,9 +35,19 @@ function Foil(;
     )
     
     device = select_device(accelerator, devices)
-    Foil(device, precision) 
-end
 
+    fprec = if precision == :f16
+                f16
+            elseif precision == :f32
+                f32
+            elseif precision == :f64
+                f64
+            else
+                throw(ArgumentError("precision must be one of :f16, :f32, :f64"))
+            end
+
+    Foil(device, fprec, precision) 
+end
 
 function select_device(accelerator::Symbol, devices)
     if accelerator == :auto
@@ -77,12 +88,34 @@ function is_using_cuda(foil::Foil)
     return cuda_available && foil.device === gpu
 end
 
-function to_device(foil::Foil, x)
-    return x |> foil.device
-end
+to_device(foil::Foil) =  foil.device
+to_device(foil::Foil, x) =  x |> foil.device
+to_precision(foil::Foil) = foil.fprec
+to_precision(foil::Foil, x) = x |> foil.fprec
 
-function setup(foil::Foil, model::FluxModule, optimisers)
-    model = to_device(foil, model)
-    optimisers = to_device(foil, optimisers)
+function setup(foil::Foil, model, optimisers)
+    model = model |> to_precision(foil) |> to_device(foil)
+    optimisers = optimisers |> to_precision(foil) |> to_device(foil)
     return model, optimisers
 end
+
+function setup_batch(foil::Foil, batch)
+    return batch |> to_precision(foil) |> to_device(foil)
+end
+
+function Zygote.gradient(f, x, foil::Foil)
+   return Zygote.gradient(f, x)[1] 
+end
+
+function Zygote.withgradient(f, x, foil::Foil)
+    fx, gs = Zygote.withgradient(f, x)
+    return fx, gs[1] 
+ end
+
+ function Zygote.pullback(f, x, foil::Foil)
+    fx, pb = Zygote.pullback(f, x)
+    return fx, () -> unref(pb(one(fx))[1]) # zygote returns a Ref with immutable, so we need to unref it
+ end
+ 
+unref(x::Ref) = x[]
+unref(x) = x

@@ -1,5 +1,6 @@
 module Tsunami
 
+using Adapt
 using Base: @kwdef
 import BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
@@ -7,7 +8,7 @@ using Crayons
 using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
-import Functors
+using Functors
 # import ImageMagick # for image logging
 using MLUtils
 import Optimisers
@@ -45,7 +46,7 @@ export FluxModule
 
 include("hooks.jl")
 # export  on_before_update,
-#         on_before_pullback_call,
+#         on_before_backprop,
 #         on_train_epoch_start,
 #         on_train_epoch_end,
 #         on_val_epoch_start,

@@ -53,12 +53,6 @@ class Backbone(torch.nn.Module):
 
 
 class LitClassifier(LightningModule):
-    """
-    >>> LitClassifier(Backbone())  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    LitClassifier(
-      (backbone): ...
-    )
-    """
 
     def __init__(self, backbone: Optional[Backbone] = None, learning_rate: float = 0.0001):
         super().__init__()

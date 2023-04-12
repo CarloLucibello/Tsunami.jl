@@ -77,12 +77,12 @@ end
     @test out == [1, 2]
 end
 
-@testset "on_before_pullback_call" begin
+@testset "on_before_backprop" begin
     out = []
 
     struct BeforePullbackCbk end
     
-    function Tsunami.on_before_pullback_call(::BeforePullbackCbk, model, trainer, loss)
+    function Tsunami.on_before_backprop(::BeforePullbackCbk, model, trainer, loss)
         push!(out, loss)
     end
     function Tsunami.on_before_update(::BeforePullbackCbk, model, trainer, grad)

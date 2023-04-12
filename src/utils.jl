@@ -56,5 +56,24 @@ function seed!(seed::Int)
 end
 
 
-unref(x::Ref) = x[]
-unref(x) = x
+#### CONVERSION
+# Have to define our own until 
+# https://github.com/FluxML/Flux.jl/issues/2225
+# is resolved
+
+struct TsunamiEltypeAdaptor{T} end
+
+function Adapt.adapt_storage(::TsunamiEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}) where 
+            {T <: AbstractFloat}
+    convert(AbstractArray{T}, x)
+end
+
+_paramtype(::Type{T}, m) where T = fmap(adapt(TsunamiEltypeAdaptor{T}()), m)
+
+# shortcuts for common cases
+_paramtype(::Type{T}, x::AbstractArray{<:Real}) where {T<:AbstractFloat} = x
+_paramtype(::Type{T}, x::AbstractArray{<:AbstractFloat}) where {T<:AbstractFloat} = convert(AbstractArray{T}, x)
+
+f16(m) = _paramtype(Float16, m)
+f32(m) = _paramtype(Float32, m)
+f64(m) = _paramtype(Float64, m)

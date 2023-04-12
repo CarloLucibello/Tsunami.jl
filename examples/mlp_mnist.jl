@@ -47,7 +47,7 @@ end
 function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, and decay intervals (corresponding to epochs 2 and 4)
     lr_scheduler = ParameterSchedulers.Step(1e-2, 1/10, [2, 2])
-    opt = Optimisers.setup(Optimisers.AdamW(), m)
+    opt = Optimisers.setup(Optimisers.Adam(1e-5), m)
     return opt, lr_scheduler
 end
 
@@ -70,13 +70,12 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TRAIN FROM SCRATCH
 
-trainer = Trainer(max_epochs = 3, 
+Tsunami.seed!(17)
+model = MLP()
+trainer = Trainer(max_epochs = 3,
+                 max_steps = -1,
                  default_root_dir = @__DIR__,
-                 accelerator = :cpu,
-                 checkpointer = true,
-                 logger = true,
-                 progress_bar = true,
-                 )
+                 accelerator = :cpu)
 
 fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
 @assert fit_state.step == 1266
