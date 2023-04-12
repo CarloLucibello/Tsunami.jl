@@ -224,16 +224,6 @@ function check_fluxmodule(m::FluxModule)
     @assert ismutable(m) "FluxModule has to be a `mutable struct`."
 end
 
-function is_all_finite(m)
-    ok = true
-    fmapstructure(m) do x
-        if x isa AbstractArray{<:Number}
-            ok &= all(isfinite, x)
-        end
-    end 
-    return ok
-end
-
 function check_train_step(m::FluxModule, trainer, batch)
     out = train_step(m, trainer, batch, 1)
     losserrmsg = "The output of `train_step` has to be a scalar."

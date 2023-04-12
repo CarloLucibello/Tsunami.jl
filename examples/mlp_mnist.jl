@@ -95,4 +95,3 @@ fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
 
 # TEST
 test_results = Tsunami.test(model, trainer, test_loader)
-Tsunami.is_all_finite(model)
