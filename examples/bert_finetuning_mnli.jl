@@ -1,18 +1,52 @@
+# using Pkg
+# Pkg.activate(@__DIR__)
+
 using Transformers
 using Transformers.TextEncoders
 using Transformers.HuggingFace
 using Transformers.Datasets
 using Transformers.Datasets: GLUE
-using HuggingFaceDatasets
+# using HuggingFaceDatasets
 
-using Flux
+using Flux, Tsunami
 using  Optimisers: Optimisers, Adam
 
-function preprocess(batch)
-    global bertenc, labels
-    data = encode(bertenc, map(collect, zip(batch[1], batch[2])))
-    label = lookup(OneHot, labels, batch[3])
-    return merge(data, (label = label,))
+#### MODEL #########
+
+mutable struct Bert{B,E,L} <: FluxModule
+    net::B
+    tokenizer::E
+    labels::L
+end
+
+Flux.trainable(b::Bert) = (net = b.net,)
+
+function Bert(labels)
+    labels = Vocab([labels...])
+    num_labels = length(labels)
+    config = HuggingFace.HGFConfig(hgf"bert-base-uncased:config"; num_labels)
+    net = load_model("bert-base-uncased", :ForSequenceClassification; config)
+    tokenizer = load_tokenizer("bert-base-uncased"; config)
+    return Bert(net, tokenizer, labels)
+end
+
+function Tsunami.train_step(model::Bert, trainer, batch, batch_idx)
+    input = preprocess(model, batch)
+    l, p = loss(model, input)
+    acc = acc(p, input.label)
+    Tsunami.log(trainer, "train/loss", l)
+    Tsunami.log(trainer, "train/acc", acc)
+    return l
+end
+
+function configure_optimizers(model, trainer)
+    return Adam(model.net, 1e-5)
+end
+
+function preprocess(model, batch)
+    data = encode(model.encoder, map(collect, zip(batch[1], batch[2])))
+    label = lookup(OneHot, model.labels, batch[3])
+    return merge(data, (; label))
 end
 
 function acc(p, label)
@@ -28,54 +62,40 @@ function loss(model, input)
     return l, p
 end
 
-dtrain = load_dataset("glue", "mnli", split = "train")
+### DATASET ######
+mutable struct Dataset
+    mnli
+    batchsize
+    split
+end
 
+Dataset(; split = :train, batchsize = 4) = Dataset(GLUE.MNLI(false), batchsize, split)
 
-mnli = GLUE.MNLI(false)
-labels = Vocab([get_labels(mnli)...])
-# load the old config file and update some value
-bert_config = HuggingFace.HGFConfig(hgf"bert-base-uncased:config"; num_labels = length(labels))
-
-# load the model / tokenizer with new config
-bert_model = load_model("bert-base-uncased", :ForSequenceClassification; config = bert_config)
-bertenc = load_tokenizer("bert-base-uncased"; config = bert_config)
-
-opt = Optimisers.setup(Adam(1e-6), bert_model)
-    
-for e = 1:2
-    @info "epoch: $e"
-    datas = dataset(Train, mnli)
-    i = 1
-    al = zero(Float64)
-    while (batch = get_batch(datas, Batch)) !== nothing
-        input = preprocess(batch::Vector{Vector{String}})
-        (l, p), back = Zygote.pullback(bert_model) do model
-            loss(model, input)
+function Base.iterate(d::Dataset, datas = nothing)
+    if datas === nothing
+        if d.split == :train
+            datas = dataset(Train, d.mnli)
+        elseif d.split == :dev
+            datas = dataset(Dev, d.mnli)
         end
-        a = acc(p, input.label)
-        al += a
-        (grad,) = back((Zygote.sensitivity(l), nothing))
-        i += 1
-        Optimisers.update!(opt, bert_model, grad)
-        mod1(i, 16) == 1 && @info "training" loss=l accuracy=al/i
     end
-
-    test()
+    res = get_batch(datas, d.batchsize)
+    res === nothing && return nothing
+    return res, datas
 end
 
-function test()
-    @info "testing"
-    i = 1
-    al = zero(Float64)
-    datas = dataset(Dev, mnli)
-    while (batch = get_batch(datas, Batch)) !== nothing
-        input = preprocess(batch)
-        p = bert_model(input).logit
-        a = acc(p, input.label)
-        al += a
-        i+=1
-    end
-    al /= i
-    @info "testing" accuracy = al
-    return al
-end
+get_labels(d::Dataset) = Transformers.get_labels(d.mnli)
+Base.length(d::Dataset) = nothing # unknown length
+
+########## TRAINING #########
+
+train_loader = Dataset(; split = :train, batchsize = 4)
+val_loader = Dataset(; split = :dev, batchsize = 4)
+
+labels = get_labels(train_loader)
+model = Bert(labels)
+
+Trainer(max_steps = 10)
+
+batch = first(train_loader)
+

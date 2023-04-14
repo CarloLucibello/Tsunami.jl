@@ -137,7 +137,6 @@ function Trainer(;
          )
     
 
-
     fit_state = FitState()
     foil = Foil(; foil_kws...)
     lr_schedulers = nothing
@@ -156,8 +155,8 @@ function Trainer(;
     if max_steps == -1 && max_epochs === nothing
         max_epochs = 1000
     end
-    if max_epochs == -1
-        max_epochs = maxtype(Int)
+    if max_epochs === nothing  || max_epochs < 0
+        max_epochs = typemax(Int)
     end
 
     if fast_dev_run
@@ -165,7 +164,7 @@ function Trainer(;
         loggers = []
         metalogger = MetaLogger(loggers)
     end
-
+    
     return Trainer(callbacks, default_root_dir, fast_dev_run, log_every_n_steps, loggers, metalogger, 
                     max_epochs, max_steps, progress_bar, val_every_n_epochs, 
                     fit_state, foil, lr_schedulers, optimisers)
