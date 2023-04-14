@@ -3,6 +3,7 @@ using Transformers.TextEncoders
 using Transformers.HuggingFace
 using Transformers.Datasets
 using Transformers.Datasets: GLUE
+using HuggingFaceDatasets
 
 using Flux
 using  Optimisers: Optimisers, Adam
@@ -27,6 +28,7 @@ function loss(model, input)
     return l, p
 end
 
+dtrain = load_dataset("glue", "mnli", split = "train")
 
 
 mnli = GLUE.MNLI(false)
