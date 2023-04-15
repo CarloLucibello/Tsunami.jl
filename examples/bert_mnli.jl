@@ -1,5 +1,8 @@
-# using Pkg
-# Pkg.activate(@__DIR__)
+# Load a pretrained Bert model and finetune it on the 
+# glue-mnli dataset.
+
+# Ported to Tsunami from Transformers.jl:
+# https://github.com/chengchingwen/Transformers.jl/blob/master/example/BERT/mnli/train.jl
 
 using Transformers
 using Transformers.TextEncoders
@@ -101,5 +104,5 @@ val_loader = Dataset(; split = :dev, batchsize = 4)
 labels = get_labels(train_loader)
 model = Bert(labels)
 
-trainer = Trainer(max_steps = 10, fast_dev_run = false)
+trainer = Trainer(max_steps=10, fast_dev_run=false, checkpointer=false, log_every_n_steps=1)
 Tsunami.fit!(model, trainer, train_loader)
