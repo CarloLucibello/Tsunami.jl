@@ -10,6 +10,7 @@ using Transformers.Datasets: GLUE
 
 using Flux, Tsunami
 using  Optimisers: Optimisers, Adam
+using ChainRulesCore
 
 #### MODEL #########
 
@@ -30,26 +31,30 @@ function Bert(labels)
     return Bert(net, tokenizer, labels)
 end
 
+(b::Bert)(x) = b.net(x)
+
 function Tsunami.train_step(model::Bert, trainer, batch, batch_idx)
     input = preprocess(model, batch)
     l, p = loss(model, input)
-    acc = acc(p, input.label)
+    acc = accuracy(p, input.label)
     Tsunami.log(trainer, "train/loss", l)
     Tsunami.log(trainer, "train/acc", acc)
     return l
 end
 
-function configure_optimizers(model, trainer)
-    return Adam(model.net, 1e-5)
+function Tsunami.configure_optimisers(model::Bert, trainer)
+    return Optimisers.setup(Optimisers.Adam(1e-6), model)
 end
 
 function preprocess(model, batch)
-    data = encode(model.encoder, map(collect, zip(batch[1], batch[2])))
+    data = encode(model.tokenizer, map(collect, zip(batch[1], batch[2])))
     label = lookup(OneHot, model.labels, batch[3])
     return merge(data, (; label))
 end
 
-function acc(p, label)
+@non_differentiable preprocess(::Any...)
+
+function accuracy(p, label)
     pred = Flux.onecold(p)
     truth = Flux.onecold(label)
     sum(pred .== truth) / length(truth)
@@ -58,7 +63,7 @@ end
 function loss(model, input)
     nt = model(input)
     p = nt.logit
-    l = logitcrossentropy(p, input.label)
+    l = Flux.logitcrossentropy(p, input.label)
     return l, p
 end
 
@@ -81,21 +86,20 @@ function Base.iterate(d::Dataset, datas = nothing)
     end
     res = get_batch(datas, d.batchsize)
     res === nothing && return nothing
-    return res, datas
+    return (res...,), datas
 end
 
 get_labels(d::Dataset) = Transformers.get_labels(d.mnli)
-Base.length(d::Dataset) = nothing # unknown length
 
 ########## TRAINING #########
 
 train_loader = Dataset(; split = :train, batchsize = 4)
 val_loader = Dataset(; split = :dev, batchsize = 4)
 
+# batch = first(train_loader)
+
 labels = get_labels(train_loader)
 model = Bert(labels)
 
-Trainer(max_steps = 10)
-
-batch = first(train_loader)
-
+trainer = Trainer(max_steps = 10, fast_dev_run = false)
+Tsunami.fit!(model, trainer, train_loader)

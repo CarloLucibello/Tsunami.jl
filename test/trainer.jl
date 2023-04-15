@@ -1,3 +1,20 @@
+@testset "Constructor" begin
+    trainer = Trainer()
+    @test trainer.max_epochs == 1000
+    @test trainer.max_steps == -1
+
+    trainer = Trainer(max_steps=10)
+    @test trainer.max_epochs == typemax(Int)
+    @test trainer.max_steps == 10
+
+    trainer = Trainer(max_epochs=10)
+    @test trainer.max_epochs == 10
+    @test trainer.max_steps == -1
+
+    trainer = Trainer(max_epochs=10, max_steps=20)
+    @test trainer.max_epochs == 10
+    @test trainer.max_steps == 20
+end
 
 @testset "no val loader" begin
     model = TestModule1()
