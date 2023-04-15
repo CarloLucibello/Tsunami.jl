@@ -77,3 +77,18 @@ _paramtype(::Type{T}, x::AbstractArray{<:AbstractFloat}) where {T<:AbstractFloat
 f16(m) = _paramtype(Float16, m)
 f32(m) = _paramtype(Float32, m)
 f64(m) = _paramtype(Float64, m)
+
+"""
+    _length(x)
+
+Return the length of `x` if defined, otherwise return -1.
+"""
+function _length(x)
+    try
+        return length(x)
+    catch
+        return -1
+    end
+end
+
+@non_differentiable _length(::Any)

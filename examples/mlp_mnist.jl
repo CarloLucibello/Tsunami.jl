@@ -23,8 +23,8 @@ function Tsunami.train_step(m::MLP, trainer, batch)
     x, y = batch
     ŷ = m(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
-    Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
-    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y), prog_bar=true)
+    Tsunami.log(trainer, "loss/train", loss)
+    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y))
     return loss
 end
 

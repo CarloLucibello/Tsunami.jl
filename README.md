@@ -11,7 +11,8 @@ that helps you focus and organize the relevant part of your code
 while removing the boilerplate. 
 
 Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
-and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
+and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/)
+(although [LightningAI](https://www.pytorchlightning.ai/index.html) is not involved in this project).
 
 
 ## Installation 
@@ -28,7 +29,7 @@ train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of 
 
 In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
-using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
+using Flux, Optimisers, Statistics, Tsunami, MLDatasets
 using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
@@ -68,17 +69,16 @@ Tsunami.configure_optimisers(model::MLP, trainer) =
 ## Prepare the data
 
 function mnist_transform(batch)
-    image = ImageCore.channelview.(batch["image"])
-    image = Flux.batch(image) ./ 255f0
-    label = Flux.onehotbatch(batch["label"], 0:9)
-    return (; image, label)
+    x, y = batch
+    y = Flux.onehotbatch(y, 0:9)
+    return (x, y)
 end
 
-train_data = load_dataset("fashion_mnist", split="train").with_format("julia")
+train_data = FashionMNIST(split=:train)
 train_data = mapobs(mnist_transform, train_data)[:]
 train_loader = DataLoader(train_data, batchsize=128, shuffle=true)
 
-test_data = load_dataset("fashion_mnist", split="test").with_format("julia")
+test_data = FashionMNIST(split=:test)
 test_data = mapobs(mnist_transform, test_data)[:]
 test_loader = DataLoader(test_data, batchsize=128)
 
@@ -104,8 +104,12 @@ See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and ch
 - Hyperparameters' schedulers.
 - GPU movement.
 
+## Contributions are welcome!
 
-## Similar libraries 
+If you want to contribute to Tsunami, please open an issue or a pull request.
+Any help is appreciated!
+
+## Similar julia libraries 
 
 - [FastAI.jl](https://github.com/FluxML/FastAI.jl)
 - [FluxTraining.jl](https://github.com/FluxML/FluxTraining.jl)

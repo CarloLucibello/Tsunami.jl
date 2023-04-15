@@ -137,7 +137,6 @@ function Trainer(;
          )
     
 
-
     fit_state = FitState()
     foil = Foil(; foil_kws...)
     lr_schedulers = nothing
@@ -156,8 +155,8 @@ function Trainer(;
     if max_steps == -1 && max_epochs === nothing
         max_epochs = 1000
     end
-    if max_epochs == -1
-        max_epochs = maxtype(Int)
+    if max_epochs === nothing  || max_epochs < 0
+        max_epochs = typemax(Int)
     end
 
     if fast_dev_run
@@ -165,7 +164,7 @@ function Trainer(;
         loggers = []
         metalogger = MetaLogger(loggers)
     end
-
+    
     return Trainer(callbacks, default_root_dir, fast_dev_run, log_every_n_steps, loggers, metalogger, 
                     max_epochs, max_steps, progress_bar, val_every_n_epochs, 
                     fit_state, foil, lr_schedulers, optimisers)
@@ -265,7 +264,7 @@ function val_loop(model, trainer, val_dataloader; progbar_offset = 0,
     hook(on_val_epoch_start, model, trainer)
 
     progbar_desc = progbar_print_epoch ?  "Val Epoch $(fit_state.epoch): " : "Validation: "
-    valprogressbar = Progress(length(val_dataloader); desc=progbar_desc, 
+    valprogressbar = Progress(_length(val_dataloader); desc=progbar_desc, 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
         fit_state.batchsize = MLUtils.numobs(batch)
@@ -301,7 +300,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
         Optimisers.adjust!(trainer.optimisers, lr)
     end
 
-    train_progbar = Progress(length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
+    train_progbar = Progress(_length(train_dataloader); desc="Train Epoch $(fit_state.epoch): ", 
                         showspeed=true, enabled = trainer.progress_bar, color=:yellow)
 
     ## SINGLE EPOCH TRAINING LOOP
@@ -333,7 +332,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
         ProgressMeter.next!(train_progbar,
             showvalues = values_for_train_progbar(trainer.metalogger),
             valuecolor = :yellow, 
-            final = fit_state.should_stop || batch_idx == length(train_dataloader),
+            final = fit_state.should_stop || batch_idx == _length(train_dataloader),
             keep = fit_state.should_stop || fit_state.epoch == trainer.max_epochs
         )
 
@@ -421,7 +420,8 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
 
     hook(on_test_epoch_start, model, trainer)
 
-    testprogressbar = Progress(length(dataloader); desc="Testing: ", 
+
+    testprogressbar = Progress(_length(dataloader); desc="Testing: ", 
                                 showspeed=true, enabled=trainer.progress_bar, 
                                 color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(dataloader)

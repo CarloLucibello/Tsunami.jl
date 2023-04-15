@@ -26,7 +26,7 @@ If both `on_step` and `on_epoch` are `true`, the values will be logged as
                     `false` otherwise.
 - `on_step::Bool`: Whether to log the value on each step. 
                   Defaults to `true` if `stage` is `:training`, `false` for `:validation` and `:testing`.
-- `prog_bar::Bool`: Whether to log the value to the progress bar. Defaults to `false`.
+- `prog_bar::Bool`: Whether to log the value to the progress bar. Defaults to `true`.
 
 # Examples
 
@@ -41,7 +41,7 @@ end
 function log(trainer::Trainer, name::AbstractString, value; 
         on_step = nothing, 
         on_epoch = nothing,
-        prog_bar = false, 
+        prog_bar = true, 
         batchsize = trainer.fit_state.batchsize)
 
     @unpack fit_state, metalogger  = trainer
