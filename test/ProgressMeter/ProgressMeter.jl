@@ -32,4 +32,12 @@ end
     println("done!")
 end
 
-test()
+@testset "showvalues" begin
+    r = 1:10
+    p = Progress()
+    for i in r
+        sleep(0.2)
+        next!(p, showvalues = [("i", i), ("a", 1)], final = i == length(r))
+    end
+    println("done!")
+end

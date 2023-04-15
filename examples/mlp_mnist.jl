@@ -23,8 +23,8 @@ function Tsunami.train_step(m::MLP, trainer, batch)
     x, y = batch
     ŷ = m(x)
     loss = Flux.Losses.logitcrossentropy(ŷ, y)
-    Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
-    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y), prog_bar=true)
+    Tsunami.log(trainer, "loss/train", loss)
+    Tsunami.log(trainer, "accuracy/train", Tsunami.accuracy(ŷ, y))
     return loss
 end
 
@@ -73,11 +73,12 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 Tsunami.seed!(17)
 model = MLP()
 trainer = Trainer(max_epochs = 3,
-                 max_steps = -1,
+                 max_steps = 10,
+                 log_every_n_steps = 1,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu)
 
-fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader)
 @assert fit_state.step == 1266
 
 # RESUME TRAINING

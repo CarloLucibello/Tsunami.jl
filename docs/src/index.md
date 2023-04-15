@@ -52,8 +52,8 @@ end
 
 function Tsunami.train_step(model::MLP, trainer, batch)
     loss, acc = loss_and_accuracy(model, batch)
-    Tsunami.log(trainer, "loss/train", loss, prog_bar=true)
-    Tsunami.log(trainer, "accuracy/train", acc, prog_bar=true)
+    Tsunami.log(trainer, "loss/train", loss)
+    Tsunami.log(trainer, "accuracy/train", acc)
     return loss
 end
 
