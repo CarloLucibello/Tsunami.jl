@@ -1,49 +1,56 @@
-
-function tsunami_big_show(io::IO, obj, indent::Int=0, name=nothing)
-    pre, post = obj isa Chain{<:AbstractVector} ? ("([", "])") : ("(", ")")
-    children = Flux._show_children(obj)
-    if all(Flux._show_leaflike, children)
-        Flux._layer_show(io, obj, indent, name)
+function fluxshow(io::IO, m::MIME"text/plain", x::T) where T
+    has_array_field = any(f -> getfield(x, f) isa AbstractArray, fieldnames(T))
+    
+    if !has_array_field && get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        Flux._big_show(io, x)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        Flux._layer_show(io, x)
     else
-        println(io, isnothing(name) ? "" : "$name = ", nameof(typeof(obj)), pre)
-        if obj isa Chain{<:NamedTuple} && children == getfield(obj, :layers)
-            # then we insert names -- can this be done more generically? 
-            for k in Base.keys(obj)
-                Flux._big_show(io, obj[k], indent+2, k)
-            end
-        elseif obj isa Parallel{<:Any, <:NamedTuple} || obj isa PairwiseFusion{<:Any, <:NamedTuple}
-            Flux._big_show(io, obj.connection, indent+2)
-            for k in Base.keys(obj)
-                Flux._big_show(io, obj[k], indent+2, k)
-            end
-        else
-            for c in children
-                Flux._big_show(io, c, indent+2)
-            end
-        end
-        # if indent == 0  # i.e. this is the outermost container
-            print(io, " "^indent, rpad(post, 2))
-            Flux._big_finale(io, obj)
-        # else
-        #     println(io, " "^indent, post, ",")
-        # end
+        show(io, x)
     end
 end
 
+function shortshow(io::IO, x::T) where T
+    str = string(T.name.name)
+    print(io, str * "(...)")
+end
+
 function container_show(io::IO, m::T; exclude=[]) where T
+    Tname = compact_typename(T)
     if get(io, :compact, false)
-        return print(io, "$T()")
+        return print(io, "$Tname()")
     end
-    print(io, "$T:")
+    print(io, "$Tname:")
     for f in sort(fieldnames(T) |> collect)
         startswith(string(f), "_") && continue
         f in exclude && continue
         v = getfield(m, f)
         print(io, "\n  $f = ")
-        show(IOContext(io, :compact=>true), v)
+        compact_show(io, v)
     end
 end
 
 function compact_show(io::IO, x)
-    show(IOContext(stdout, :limit => true, :compact => true), x)
+    show(IOContext(io, :limit => true, :compact => true), x)
+end
+
+"""
+    compact_typename(x::T) -> String
+    compact_typename(T) -> String
+
+Return a compact string representation of the type `T` of `x`.
+Keep only the name and `T`'s parameters, discarding their own parameters.
+"""
+compact_typename(x::T) where T = compact_typename(T)
+
+function compact_typename(T::DataType)
+    name = T.name.name
+    params = T.parameters
+    pnames = map(S -> S.name.name, params)
+    if isempty(pnames)
+        str = "$name"
+    else
+        str = "$(name){$(join(pnames, ", "))}"
+    end
+    return str
 end

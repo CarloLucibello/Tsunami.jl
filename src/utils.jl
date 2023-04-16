@@ -79,7 +79,7 @@ f32(m) = _paramtype(Float32, m)
 f64(m) = _paramtype(Float64, m)
 
 """
-    _length(x)
+    _length(x) -> Int
 
 Return the length of `x` if defined, otherwise return -1.
 """
@@ -92,3 +92,4 @@ function _length(x)
 end
 
 @non_differentiable _length(::Any)
+
