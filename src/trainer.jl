@@ -207,15 +207,6 @@ function fit!(
     fit_state.run_dir = run_dir
     set_run_dir!(trainer.metalogger, run_dir)
 
-    if trainer.fast_dev_run
-        check_fluxmodule(model)
-        check_train_step(model, trainer, first(train_dataloader))
-        if val_dataloader !== nothing
-            check_val_step(model, trainer, first(val_dataloader))
-        end
-        return fit_state
-    end
-
     print_fit_initial_summary(model, trainer)
 
     fit_state.step = 0
@@ -234,13 +225,20 @@ function fit!(
     trainer.optimisers = optimisers
     trainer.lr_schedulers = lr_schedulers
  
+    if trainer.fast_dev_run
+        check_fluxmodule(model)
+        check_train_step(model, trainer, first(train_dataloader))
+        if val_dataloader !== nothing
+            check_val_step(model, trainer, first(val_dataloader))
+        end
+        return fit_state
+    end
+
     val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
 
     for epoch in start_epoch:trainer.max_epochs # TODO turn into while loop
         fit_state.epoch = epoch
-
         train_loop(model, trainer, train_dataloader, val_dataloader)
-
         fit_state.should_stop && break
     end
 

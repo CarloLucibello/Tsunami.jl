@@ -104,5 +104,5 @@ val_loader = Dataset(; split = :dev, batchsize = 4)
 labels = get_labels(train_loader)
 model = Bert(labels)
 
-trainer = Trainer(accelerator=:gpu, max_steps=0, fast_dev_run=false, checkpointer=false, log_every_n_steps=1)
+trainer = Trainer(accelerator=:gpu, max_steps=0, fast_dev_run=true, checkpointer=false, log_every_n_steps=1)
 Tsunami.fit!(model, trainer, train_loader)

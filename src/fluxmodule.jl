@@ -64,7 +64,8 @@ abstract type FluxModule end
 
 function Functors.functor(::Type{<:FluxModule}, m::T) where T
     childr = (; (f => getfield(m, f) for f in fieldnames(T))...)
-    re = x -> T(x...)
+    Tstripped = Base.typename(T).wrapper # remove all parameters. From https://discourse.julialang.org/t/stripping-parameter-from-parametric-types/8293/16
+    re = x -> Tstripped(x...)
     return childr, re
 end
 
