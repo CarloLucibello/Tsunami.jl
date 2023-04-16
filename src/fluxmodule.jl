@@ -68,6 +68,8 @@ function Functors.functor(::Type{<:FluxModule}, m::T) where T
     return childr, re
 end
 
+Base.show(io::IO, mime::MIME"text/plain", m::FluxModule) = fluxshow(io, mime, m)
+
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
 
 """
@@ -235,21 +237,3 @@ function check_val_step(m::FluxModule, trainer, batch)
     @assert true
 end
 
-function Base.show(io::IO, mime::MIME"text/plain", m::T) where T <: FluxModule
-    if get(io, :compact, false)
-        return print(io, "$T()")
-    end
-    print(io, "$T:")
-    for f in sort(fieldnames(T) |> collect)
-        startswith(string(f), "_") && continue
-        v = getfield(m, f)
-        if v isa Chain
-            s = "  $f = "
-            print(io, "\n$s")
-            tsunami_big_show(io, v, length(s))
-        else
-            print(io, "\n  $f = ")
-            compact_show(io, v)
-        end
-    end
-end

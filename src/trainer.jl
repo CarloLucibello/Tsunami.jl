@@ -25,10 +25,7 @@ end
 
 Functors.@functor FitState
 
-function Base.show(io::IO, ::MIME"text/plain", fit_state::FitState)
-    container_show(io, fit_state)
-end
-
+Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, fit_state)
 
 """
     Trainer(; kws...)

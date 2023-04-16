@@ -79,7 +79,7 @@ f32(m) = _paramtype(Float32, m)
 f64(m) = _paramtype(Float64, m)
 
 """
-    _length(x)
+    _length(x) -> Int
 
 Return the length of `x` if defined, otherwise return -1.
 """
@@ -92,3 +92,25 @@ function _length(x)
 end
 
 @non_differentiable _length(::Any)
+
+
+"""
+    compact_typename(x::T) -> String
+    compact_typename(T) -> String
+
+Return a compact string representation of the type `T` of `x`.
+Keep only the name and `T`'s parameters, discarding their own parameters.
+"""
+compact_typename(x::T) where T = compact_typename(T)
+
+function compact_typename(T::DataType)
+    name = T.name.name
+    params = T.parameters
+    pnames = map(S -> S.name.name, params)
+    if isempty(pnames)
+        str = "$name"
+    else
+        str = "$(name){$(join(pnames, ", "))}"
+    end
+    return str
+end
