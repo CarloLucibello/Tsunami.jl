@@ -70,6 +70,7 @@ function Functors.functor(::Type{<:FluxModule}, m::T) where T
 end
 
 Base.show(io::IO, mime::MIME"text/plain", m::FluxModule) = fluxshow(io, mime, m)
+Base.show(io::IO, m::FluxModule) = shortshow(io, m)
 
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
 
@@ -216,9 +217,11 @@ end
 
 Shallow copy of all fields of `src` to `dest`.
 """
-function Base.copy!(dest::T, src::T) where T <: FluxModule
-    for f in fieldnames(T)
-        setfield!(dest, f, getfield(src, f))
+function Base.copy!(dest::T1, src::T2) where {T1 <: FluxModule, T2 <: FluxModule}
+    @assert fieldnames(T1) == fieldnames(T2) "The two structs have different fields."
+    for f in fieldnames(T1)
+        Tdst = typeof(getfield(dest, f))
+        setfield!(dest, f, convert(Tdst, getfield(src, f)))
     end
     return dest
 end
@@ -228,12 +231,14 @@ function check_fluxmodule(m::FluxModule)
 end
 
 function check_train_step(m::FluxModule, trainer, batch)
+    batch = setup_batch(trainer.foil, batch)
     out = train_step(m, trainer, batch, 1)
     losserrmsg = "The output of `train_step` has to be a scalar."
     @assert out isa Number losserrmsg
 end
 
 function check_val_step(m::FluxModule, trainer, batch)
+    batch = setup_batch(trainer.foil, batch)
     val_step(m, trainer, batch, 1)
     @assert true
 end

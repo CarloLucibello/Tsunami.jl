@@ -11,7 +11,7 @@ function test_teacher_student(;
     X = randn(Float32, N, M)
     y = teacher(X)
 
-    model = LinearModel(N; λ=0)
+    model = LinearModel(N; λ)
     trainer = SilentTrainer(max_epochs=1000)
 
     Tsunami.fit!(model, trainer, [(X, y)])

@@ -1,11 +1,18 @@
-function fluxshow(io::IO, m::MIME"text/plain", x)
-    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+function fluxshow(io::IO, m::MIME"text/plain", x::T) where T
+    has_array_field = any(f -> getfield(x, f) isa AbstractArray, fieldnames(T))
+    
+    if !has_array_field && get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
         Flux._big_show(io, x)
     elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
         Flux._layer_show(io, x)
     else
         show(io, x)
     end
+end
+
+function shortshow(io::IO, x::T) where T
+    str = string(T.name.name)
+    print(io, str * "(...)")
 end
 
 function container_show(io::IO, m::T; exclude=[]) where T
@@ -25,4 +32,25 @@ end
 
 function compact_show(io::IO, x)
     show(IOContext(io, :limit => true, :compact => true), x)
+end
+
+"""
+    compact_typename(x::T) -> String
+    compact_typename(T) -> String
+
+Return a compact string representation of the type `T` of `x`.
+Keep only the name and `T`'s parameters, discarding their own parameters.
+"""
+compact_typename(x::T) where T = compact_typename(T)
+
+function compact_typename(T::DataType)
+    name = T.name.name
+    params = T.parameters
+    pnames = map(S -> S.name.name, params)
+    if isempty(pnames)
+        str = "$name"
+    else
+        str = "$(name){$(join(pnames, ", "))}"
+    end
+    return str
 end
