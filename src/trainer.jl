@@ -243,8 +243,8 @@ function fit!(
     end
 
     model = model |> cpu
-    if model !== input_model
-        foreach_trainable(model, input_model) do x, y
+    if input_model !== model 
+        foreach_trainable(input_model, model) do x, y
             x .= y
         end
     end

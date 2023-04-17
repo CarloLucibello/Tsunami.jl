@@ -99,6 +99,16 @@ end
 
 # Adapted from `setup` implementation in
 # https://github.com/FluxML/Optimisers.jl/blob/master/src/interface.jl
+"""
+    foreach_trainable(f, x, ys...)
+
+Apply `f` to each trainable array in object `x`
+(or `x` itself if it is a leaf array) recursing into the children given by
+`Optimisers.trainable`.
+
+`ys` are optional additional objects with the same structure as `x`.
+`f` will be applied to corresponding elements of `x` and `ys`.
+"""
 function foreach_trainable(f, x, ys...)
     if Optimisers.isnumeric(x)
         f(x, ys...)
