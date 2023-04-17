@@ -1,7 +1,5 @@
 function fluxshow(io::IO, m::MIME"text/plain", x::T) where T
-    has_array_field = any(f -> getfield(x, f) isa AbstractArray, fieldnames(T))
-    
-    if !has_array_field && get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
         Flux._big_show(io, x)
     elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
         Flux._layer_show(io, x)

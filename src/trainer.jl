@@ -170,10 +170,14 @@ end
 
 """
     fit!(model::FluxModule, trainer::Trainer, train_dataloader,
-        [val_dataloader]; [ckpt_path, resume_run])
+        [val_dataloader]; [ckpt_path, resume_run]) -> FitState
 
 Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
+
+The function will copy back the trained parameters into the input `model`.
+Use [`fit`](@ref) for a non-mutating version instead, if you want to keep the original `model`
+or if you modify non-trainable parameters during the fit and don't want to lose the changes.
 
 # Arguments
 
@@ -190,7 +194,41 @@ trainer = Trainer(max_epochs = 10)
 Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
-function fit!(
+function fit!(model, args...; kws...)
+    newmodel, fit_state = fit(model, args...; kws...)
+
+    foreach_trainable(model, newmodel) do x, y
+        x .= y
+    end
+    return fit_state
+end
+
+"""
+    fit(model::FluxModule, trainer::Trainer, train_dataloader,
+        [val_dataloader]; [ckpt_path, resume_run]) -> (new_model, fit_state)
+
+Train a `model` using the configuration given by `trainer`.
+If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
+
+`fit` is the same as [`fit!`](@ref), but returns a trained copy of the model instead,
+preserving the original one. Also returns [`FitState`](@ref) object.
+
+# Arguments
+
+- **model**: A Flux model subtyping [`FluxModule`](@ref).
+- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
+- **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
+- **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
+- **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
+
+# Examples
+
+```julia
+trainer = Trainer(max_epochs = 10)
+model, fit_state = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+```
+"""
+function fit(
         model::FluxModule,
         trainer::Trainer,
         train_dataloader,
@@ -198,7 +236,7 @@ function fit!(
         ckpt_path = nothing,
     )
     
-    input_model = model
+    model = deepcopy(model)
     trainer.fit_state = FitState() # create a new one each time fit! is called
     fit_state = trainer.fit_state
 
@@ -231,7 +269,7 @@ function fit!(
         if val_dataloader !== nothing
             check_val_step(model, trainer, first(val_dataloader))
         end
-        return fit_state
+        return model, fit_state
     end
 
     val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
@@ -242,13 +280,7 @@ function fit!(
         fit_state.should_stop && break
     end
 
-    model = model |> cpu
-    if input_model !== model 
-        foreach_trainable(input_model, model) do x, y
-            x .= y
-        end
-    end
-    return fit_state
+    return model |> cpu, fit_state
 end
 
 function val_loop(model, trainer, val_dataloader; progbar_offset = 0, 
