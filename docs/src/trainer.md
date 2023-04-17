@@ -9,6 +9,7 @@ After training, you can use the [`Tsunami.test`](@ref) function to test the mode
 
 ```@docs
 Tsunami.Trainer
+Tsunami.fit
 Tsunami.fit!
 Tsunami.FitState
 Tsunami.test

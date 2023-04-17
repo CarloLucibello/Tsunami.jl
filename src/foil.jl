@@ -4,8 +4,8 @@ FOIL_CONSTRUCTOR_ARGS ="""
     See also the `devices` option.
     Default: `:auto`.
 
-- **devices**: Pass an integer `n` to train on `n` devices,
-    or a list of devices ids to train on specific devices.
+- **devices**: Pass an integer `n` to train on `n` devices (only `1` supported at the moment),
+    or a list of devices ids to train on specific devices (e.g. `[2]` to train on gpu with idx 2).
     If `nothing`, will use all available devices. 
     Default: `nothing`.
 
@@ -31,7 +31,7 @@ end
 function Foil(;
         accelerator::Symbol = :auto,
         precision::Symbol = :f32,
-        devices::Union{Int, Nothing} = nothing
+        devices = nothing
     )
     
     device = select_device(accelerator, devices)

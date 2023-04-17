@@ -93,3 +93,31 @@ end
 
 @non_differentiable _length(::Any)
 
+function foreach_trainable(f, m)
+    foreach(f, trainable(m))
+end
+
+# Adapted from `setup` implementation in
+# https://github.com/FluxML/Optimisers.jl/blob/master/src/interface.jl
+"""
+    foreach_trainable(f, x, ys...)
+
+Apply `f` to each trainable array in object `x`
+(or `x` itself if it is a leaf array) recursing into the children given by
+`Optimisers.trainable`.
+
+`ys` are optional additional objects with the same structure as `x`.
+`f` will be applied to corresponding elements of `x` and `ys`.
+"""
+function foreach_trainable(f, x, ys...)
+    if Optimisers.isnumeric(x)
+        f(x, ys...)
+    else
+        valueforeach((xs...) -> foreach_trainable(f, xs...), trainable(x), (trainable(y) for y in ys)...)
+    end
+end
+
+valueforeach(f, x...) = foreach(f, x...)
+valueforeach(f, x::Dict, ys...) = foreach(pairs(x)) do (k, v)
+    f(v, (get(y, k, nothing) for y in ys)...)
+end

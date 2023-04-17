@@ -11,8 +11,7 @@ using Flux: onecold, onehotbatch, DataLoader
 using Functors
 # import ImageMagick # for image logging
 using MLUtils
-import Optimisers
-# import ParameterSchedulers
+using Optimisers: Optimisers, trainable
 # @static if Sys.isapple()
 #     import QuartzImageIO # for image logging
 # end

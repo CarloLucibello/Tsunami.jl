@@ -16,6 +16,14 @@ To select a specific GPU, use the `devices` keyword argument:
 trainer = Trainer(devices = [0])
 ```
 
+## Selecting trainable components
+
+TODO
+
+## Freezing parameters
+
+TODO
+
 ## Gradient accumulation
 
 TODO
