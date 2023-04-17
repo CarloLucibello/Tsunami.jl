@@ -12,7 +12,7 @@ function test_teacher_student(;
     y = teacher(X)
 
     model = LinearModel(N; λ)
-    trainer = SilentTrainer(max_epochs=1000)
+    trainer = SilentTrainer(max_epochs=1000, devices=[1])
 
     Tsunami.fit!(model, trainer, [(X, y)])
 
