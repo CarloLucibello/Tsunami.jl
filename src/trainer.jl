@@ -25,7 +25,7 @@ end
 
 Functors.@functor FitState
 
-Base.show(io::IO, fit_state::FitState) = print(io, "FitState()")
+# Base.show(io::IO, fit_state::FitState) = print(io, "FitState()")
 Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, fit_state)
 
 """
