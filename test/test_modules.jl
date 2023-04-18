@@ -9,6 +9,7 @@ mutable struct TestModule1 <: FluxModule
 end
 
 TestModule1() = TestModule1(Flux.Chain(Flux.Dense(4, 3, relu), Flux.Dense(3, 2)), (1, 2))
+TestModule1(net) = TestModule1(net, (1, 2))
 
 (m::TestModule1)(x) = m.net(x)
 

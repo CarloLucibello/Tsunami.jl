@@ -10,6 +10,9 @@ X = randn(Float32, N, M)
 y = teacher(X)
 
 model = LinearModel(N; λ)
-trainer = SilentTrainer(max_epochs=1000, devices=[1])
+@test model.W isa Matrix{Float64}
+@test size(model.W) == (1, N)
 
-Tsunami.fit!(model, trainer, [(X, y)])
+trainer = SilentTrainer(max_epochs=1000, devices=[1])
+model, fit_state = Tsunami.fit(model, trainer, [(X, y)])
+@test model.W isa Matrix{Float32} # by default precision is Float32

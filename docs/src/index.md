@@ -18,7 +18,7 @@ pkg> add Tsunami
 
 ## Features
 
-- Use `fit!` instead of implementing a training loop.
+- Use `fit` instead of implementing a training loop.
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
 - GPU movement.
@@ -26,7 +26,7 @@ pkg> add Tsunami
 ## Usage Examples
 
 Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer`
-train the model on your dataset with `fit!`. Tsunami will handle all of the boilerplate (training loop, logging, gpu movement, validation, ...).
+train the model on your dataset with `fit`. Tsunami will handle all of the boilerplate (training loop, logging, gpu movement, validation, ...).
 
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
@@ -87,7 +87,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-Tsunami.fit!(model, trainer, train_loader, test_loader)
+model, fit_state = Tsunami.fit(model, trainer, train_loader, test_loader)
 ```
 
 ![console output](./assets/readme_output.png)
