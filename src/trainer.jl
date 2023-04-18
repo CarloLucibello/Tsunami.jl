@@ -177,18 +177,22 @@ If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
 See [`fit`](@ref) for more details.
 """
-function fit!(model, args...; kws...)
-    newmodel, fit_state = fit(model, args...; kws...)
+function fit!(model, args...; ckpt_path = nothing, kws...)
+    if ckpt_path !== nothing
+        newmodel, fit_state = fit(ckpt_path, args...; kws...)
+    else
+        newmodel, fit_state = fit(model, args...; kws...)
+    end
     copy!(model, newmodel)
     return fit_state
 end
 
 """
-    fit(model::FluxModule, trainer::Trainer, train_dataloader,
-        [val_dataloader]; [ckpt_path, resume_run]) -> (new_model, fit_state)
+    fit(model, trainer, train_dataloader, [val_dataloader]) -> (new_model, fit_state)
+    fit(ckpt_path, trainer, train_dataloader, [val_dataloader])
 
-Train a `model` using the configuration given by `trainer`.
-If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
+Train `model` using the configuration given by `trainer`.
+If `ckpt_path` is given instead, training is resumed from the checkpoint.
 
 Returns the trained model and a [`FitState`](@ref) object.
 
@@ -196,11 +200,11 @@ See also [`fit!`](@ref) for a mutating version.
 
 # Arguments
 
+- **ckpt\\_path**: Path of the checkpoint from which training is resumed.
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
 - **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit`.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
-- **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
 
 # Examples
 
@@ -210,18 +214,30 @@ trainer = Trainer(max_epochs = 10)
 model, fitstate = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
 ```
 """
+function fit(ckpth_path::AbstractString, trainer, args...; kws...)
+    model, ckpt_fit_state, lr_schedulers, optimisers = load_checkpoint(ckpth_path)
+    trainer.fit_state = ckpt_fit_state
+    trainer.lr_schedulers = lr_schedulers
+    trainer.optimisers = optimisers
+    trainer.fit_state.should_stop = false
+    return fit(model, trainer, args...; kws..., _resuming_from_ckpt = true)
+end
+
+
 function fit(
         model::FluxModule,
         trainer::Trainer,
         train_dataloader,
         val_dataloader = nothing;
-        ckpt_path = nothing,
+        _resuming_from_ckpt = false
     )
     
-    model = deepcopy(model)
-    trainer.fit_state = FitState() # create a new one each time `fit` is called
+    if !_resuming_from_ckpt
+        model = deepcopy(model)
+        trainer.fit_state = FitState()
+    end
     fit_state = trainer.fit_state
-
+    
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
     fit_state.run_dir = run_dir
@@ -229,14 +245,14 @@ function fit(
 
     print_fit_initial_summary(model, trainer)
 
-    fit_state.step = 0
-    if ckpt_path !== nothing # load checkpoint and resume training
-        model, ckpt_fit_state, lr_schedulers, optimisers = load_checkpoint(ckpt_path)
-        start_epoch = ckpt_fit_state.epoch + 1
-        fit_state.step = ckpt_fit_state.step
+    if _resuming_from_ckpt
+        lr_schedulers = trainer.lr_schedulers
+        optimisers = trainer.optimisers 
+        start_epoch = fit_state.epoch + 1
     else # train from scratch
         optimisers, lr_schedulers = configure_optimisers(model, trainer) |> process_out_configure_optimisers
         start_epoch = 1
+        fit_state.step = 0
     end
     fit_state.epoch = start_epoch - 1
 

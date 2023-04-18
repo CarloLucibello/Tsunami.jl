@@ -10,8 +10,10 @@ end
 
 function shortshow(io::IO, x::T) where T
     str = string(T.name.name)
-    print(io, str * "(...)")
+    print(io, str * "()")
 end
+
+container_show(m) = container_show(stdout, m)
 
 function container_show(io::IO, m::T; exclude=[]) where T
     Tname = compact_typename(T)
