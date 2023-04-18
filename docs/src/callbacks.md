@@ -2,11 +2,11 @@
 
 Callbacks are functions that are called at certain points in the training process. They are useful for logging, early stopping, and other tasks. 
 
-Callbacks are passed to the [`Tsunami.fit!`](@ref) function: 
+Callbacks are passed to the [`Tsunami.fit`](@ref) function: 
 
 ```julia
 callback1 = Checkpointer(...)
-fit!(..., callbacks = [callback1, ...])
+fit(..., callbacks = [callback1, ...])
 ```
 
 Callback implement their functionalities thanks to the hooks described in the [Hooks](@ref) section of the documentation.

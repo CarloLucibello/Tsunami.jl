@@ -6,13 +6,9 @@
 ![](https://github.com/CarloLucibello/Tsunami.jl/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/CarloLucibello/Tsunami.jl/branch/main/graph/badge.svg?token=UhgCzsHqhM)](https://codecov.io/gh/CarloLucibello/Tsunami.jl)
 
-A high-level deep learning framework for the Julia language 
-that helps you focus and organize the relevant part of your code
-while removing the boilerplate. 
+A high-level deep learning framework for the Julia language that helps you focus and organize the relevant part of your code while removing the boilerplate. 
 
-Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
-and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/)
-(although [LightningAI](https://www.pytorchlightning.ai/index.html) is not involved in this project).
+Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl) and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/) (although [LightningAI](https://www.pytorchlightning.ai/index.html) is not involved in this project).
 
 
 ## Installation 
@@ -24,8 +20,7 @@ pkg> add Tsunami
 
 ## Usage
 
-Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer`
-train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
+Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer` train the model on your dataset with `Tsunami.fit`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
 
 In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
@@ -86,11 +81,10 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-Tsunami.fit!(model, trainer, train_loader, test_loader)
+model, fit_state = Tsunami.fit(model, trainer, train_loader, test_loader)
 ```
 
-What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and
-and model checkpoints on disk.
+What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and and model checkpoints on disk.
 
 <img src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_output.png">
 
@@ -98,7 +92,7 @@ See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and ch
 
 ## Features
 
-- Use `Tsunami.fit!` instead of implementing a training loop.
+- Use `Tsunami.fit` instead of implementing a training loop.
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
 - Hyperparameters' schedulers.

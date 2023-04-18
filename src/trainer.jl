@@ -1,7 +1,7 @@
 """
     FitState
 
-A type storing the state of execution during a call to [`fit!`](@ref). 
+A type storing the state of execution during a call to [`fit`](@ref). 
 
 A `FitState` object is part of a [`Trainer`](@ref) object.
 
@@ -31,10 +31,10 @@ Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, 
 """
     Trainer(; kws...)
 
-A type storing the training options to be passed to [`fit!`](@ref).
+A type storing the training options to be passed to [`fit`](@ref).
 
 A `Trainer` object also contains a field `fit_state` of type [`FitState`](@ref) mantaining updated information about 
-the fit state during the execution of `fit!`.
+the fit state during the execution of `fit`.
 
 # Constructor Arguments
 
@@ -84,7 +84,7 @@ $FOIL_CONSTRUCTOR_ARGS
 
 Besides most of the constructor arguments, a `Trainer` object also contains the following fields:
 
-- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit!`](@ref).
+- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit`](@ref).
 - **foil**: A [`Foil`](@ref) object.
 - **loggers**: A list of loggers.
 - **lr\\_schedulers**: The learning rate schedulers used for training.
@@ -170,29 +170,12 @@ end
 
 
 """
-    fit!(model::FluxModule, trainer::Trainer, train_dataloader,
-        [val_dataloader]; [ckpt_path, resume_run]) -> FitState
+    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path, ...]) -> fit_state
 
-Train a `model` using the configuration given by `trainer`.
+Mutating version of [`fit`](@ref), copying back the trained model into the input `model`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
-The function will copy back the trained model into the input `model`.
-Use [`fit`](@ref) for a non-mutating version instead, if you want to keep the original `model`.
-
-# Arguments
-
-- **model**: A Flux model subtyping [`FluxModule`](@ref).
-- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
-- **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
-- **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
-- **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
-
-# Examples
-
-```julia
-trainer = Trainer(max_epochs = 10)
-Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
-```
+See [`fit`](@ref) for more details.
 """
 function fit!(model, args...; kws...)
     newmodel, fit_state = fit(model, args...; kws...)
@@ -207,13 +190,14 @@ end
 Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
-`fit` is the same as [`fit!`](@ref), but returns a trained copy of the model instead,
-preserving the original one. Also returns [`FitState`](@ref) object.
+Returns the trained model and a [`FitState`](@ref) object.
+
+See also [`fit!`](@ref) for a mutating version.
 
 # Arguments
 
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
-- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
+- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit`.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed (if given). Default: `nothing`.
@@ -235,7 +219,7 @@ function fit(
     )
     
     model = deepcopy(model)
-    trainer.fit_state = FitState() # create a new one each time fit! is called
+    trainer.fit_state = FitState() # create a new one each time `fit` is called
     fit_state = trainer.fit_state
 
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
@@ -477,7 +461,7 @@ end
 Run the validation loop, calling the [`val_step`](@ref) method on the model for each batch returned by the `dataloader`.
 Returns the aggregated results from the values logged in the `val_step` as a dictionary.
 
-See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
+See also [`Tsunami.test`](@ref) and [`Tsunami.fit`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
     model = setup_batch(trainer.foil, model)

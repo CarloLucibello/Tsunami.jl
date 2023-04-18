@@ -57,7 +57,7 @@ train_dataloader = Flux.DataLoader((X, Y), batchsize=10)
 # Create and Train the model
 model = Model()
 trainer = Trainer(max_epochs=10)
-Tsunami.fit!(model, trainer, train_dataloader)
+model, fit_state = Tsunami.fit(model, trainer, train_dataloader)
 ```
 """
 abstract type FluxModule end
@@ -127,7 +127,7 @@ end
 """
     train_step(model, trainer, batch, [batch_idx])
 
-The method called at each training step during `Tsunami.fit!`.
+The method called at each training step during `Tsunami.fit`.
 It should compute the forward pass of the model and return the loss 
 (a scalar) corresponding to the minibatch `batch`. 
 The optional argument `batch_idx` is the index of the batch in the current epoch.
@@ -135,7 +135,7 @@ The optional argument `batch_idx` is the index of the batch in the current epoch
 Any `Model <: FluxModule` should implement either 
 `train_step(model::Model, trainer, batch)` or `train_step(model::Model, trainer, batch, batch_idx)`.
 
-The training loop in `Tsunami.fit!` approximately looks like this:
+The training loop in `Tsunami.fit` approximately looks like this:
 ```julia
 for epoch in 1:epochs
     for (batch_idx, batch) in enumerate(train_dataloader)
@@ -170,7 +170,7 @@ end
 """
     val_step(model, trainer, batch, [batch_idx])
 
-The method called at each validation step during `Tsunami.fit!`.
+The method called at each validation step during `Tsunami.fit`.
 Tipically used for computing metrcis and statistics on the validation 
 batch `batch`. The optional argument `batch_idx` is the index of the batch in the current 
 validation epoch. 

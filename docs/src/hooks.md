@@ -3,10 +3,10 @@
 Hooks are a way to extend the functionality of Tsunami. They are a way to inject custom code into the FluxModule or
 into a Callback at various points in the training, testing, and validation loops.
 
-At a high level, and omitting function imputs and outputs, a simplified version of the [`Tsunami.fit!`](@ref) method looks like this:
+At a high level, and omitting function imputs and outputs, a simplified version of the [`Tsunami.fit`](@ref) method looks like this:
 
 ```julia
-function fit!()
+function fit()
     configure_optimizers()
     
     for epoch in epochs
