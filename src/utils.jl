@@ -70,9 +70,6 @@ end
 
 @non_differentiable _length(::Any)
 
-function foreach_trainable(f, m)
-    foreach(f, trainable(m))
-end
 
 # Adapted from `setup` implementation in
 # https://github.com/FluxML/Optimisers.jl/blob/master/src/interface.jl
@@ -95,6 +92,7 @@ function foreach_trainable(f, x, ys...)
 end
 
 valueforeach(f, x...) = foreach(f, x...)
+
 valueforeach(f, x::Dict, ys...) = foreach(pairs(x)) do (k, v)
     f(v, (get(y, k, nothing) for y in ys)...)
 end
