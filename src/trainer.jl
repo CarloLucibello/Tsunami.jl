@@ -211,7 +211,12 @@ See also [`fit!`](@ref) for a mutating version.
 ```julia
 model = ...
 trainer = Trainer(max_epochs = 10)
-model, fitstate = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+model, fit_state = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+
+# Resume training from checkpoint
+trainer = Trainer(max_epochs = 20) # train for 10 more epochs
+ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
+model′, fit_state′ = Tsunami.fit(ckpt_path, trainer, train_dataloader, val_dataloader)
 ```
 """
 function fit(ckpth_path::AbstractString, trainer, args...; kws...)
@@ -219,7 +224,6 @@ function fit(ckpth_path::AbstractString, trainer, args...; kws...)
     trainer.fit_state = ckpt_fit_state
     trainer.lr_schedulers = lr_schedulers
     trainer.optimisers = optimisers
-    trainer.fit_state.should_stop = false
     return fit(model, trainer, args...; kws..., _resuming_from_ckpt = true)
 end
 
@@ -237,6 +241,7 @@ function fit(
         trainer.fit_state = FitState()
     end
     fit_state = trainer.fit_state
+    fit_state.should_stop = false
     
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
