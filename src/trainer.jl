@@ -25,6 +25,7 @@ end
 
 Functors.@functor FitState
 
+Base.show(io::IO, fit_state::FitState) = print(io, "FitState()")
 Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, fit_state)
 
 """
@@ -97,7 +98,7 @@ trainer = Trainer(max_epochs = 10,
                   checkpointer = true,
                   logger = true)
 
-Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
+model, fitstate = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 mutable struct Trainer
@@ -175,9 +176,8 @@ end
 Train a `model` using the configuration given by `trainer`.
 If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
 
-The function will copy back the trained parameters into the input `model`.
-Use [`fit`](@ref) for a non-mutating version instead, if you want to keep the original `model`
-or if you modify non-trainable parameters during the fit and don't want to lose the changes.
+The function will copy back the trained model into the input `model`.
+Use [`fit`](@ref) for a non-mutating version instead, if you want to keep the original `model`.
 
 # Arguments
 
@@ -196,10 +196,7 @@ Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 """
 function fit!(model, args...; kws...)
     newmodel, fit_state = fit(model, args...; kws...)
-
-    foreach_trainable(model, newmodel) do x, y
-        x .= y
-    end
+    copy!(model, newmodel)
     return fit_state
 end
 
@@ -224,8 +221,9 @@ preserving the original one. Also returns [`FitState`](@ref) object.
 # Examples
 
 ```julia
+model = ...
 trainer = Trainer(max_epochs = 10)
-model, fit_state = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+model, fitstate = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 function fit(

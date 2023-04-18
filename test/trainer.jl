@@ -30,9 +30,15 @@ end
     nx, ny = io_sizes(model)
     @test all(==(0), model.net[1].bias)
     train_dataloader = make_dataloader(nx, ny)
-    trainer = Trainer(max_epochs=2, logger=false, checkpointer=false, progress_bar=false)
+    trainer = SilentTrainer(max_epochs=2, precision=:f64)
     Tsunami.fit!(model, trainer, train_dataloader)
     @test all(!=(0), model.net[1].bias)
+
+    @testset "also copy state" begin
+        model = TestModule1(Chain(Dense(4, 3, relu), BatchNorm(3), Dense(3, 2)))
+        Tsunami.fit!(model, trainer, train_dataloader)
+        @test all(!=(0), model.net[2].β)
+    end
 end
 
 @testset "checkpoint" begin

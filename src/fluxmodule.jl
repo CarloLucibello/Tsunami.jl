@@ -220,8 +220,7 @@ Shallow copy of all fields of `src` to `dest`.
 function Base.copy!(dest::T1, src::T2) where {T1 <: FluxModule, T2 <: FluxModule}
     @assert fieldnames(T1) == fieldnames(T2) "The two structs have different fields."
     for f in fieldnames(T1)
-        Tdst = typeof(getfield(dest, f))
-        setfield!(dest, f, convert(Tdst, getfield(src, f)))
+        setfield!(dest, f, getfield(src, f))
     end
     return dest
 end
