@@ -188,11 +188,10 @@ function fit!(model, args...; ckpt_path = nothing, kws...)
 end
 
 """
-    fit(model, trainer, train_dataloader, [val_dataloader]) -> (new_model, fit_state)
-    fit(ckpt_path, trainer, train_dataloader, [val_dataloader])
+    fit([ckpt_path,] model, trainer, train_dataloader, [val_dataloader]) -> (new_model, fit_state)
 
 Train `model` using the configuration given by `trainer`.
-If `ckpt_path` is given instead, training is resumed from the checkpoint.
+If `ckpt_path` is given, training is resumed from the checkpoint.
 
 Returns the trained model and a [`FitState`](@ref) object.
 
@@ -216,17 +215,22 @@ model, fit_state = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
 # Resume training from checkpoint
 trainer = Trainer(max_epochs = 20) # train for 10 more epochs
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
-model′, fit_state′ = Tsunami.fit(ckpt_path, trainer, train_dataloader, val_dataloader)
+model′, fit_state′ = Tsunami.fit(ckpt_path, model, trainer, train_dataloader, val_dataloader)
 ```
 """
-function fit(ckpth_path::AbstractString, trainer, args...; kws...)
-    model, ckpt_fit_state, lr_schedulers, optimisers = load_checkpoint(ckpth_path)
-    trainer.fit_state = ckpt_fit_state
-    trainer.lr_schedulers = lr_schedulers
-    trainer.optimisers = optimisers
+function fit(ckpt_path::AbstractString, model::FluxModule, trainer, args...; kws...)
+    ckpt = load_checkpoint(ckpt_path)
+    if haskey(ckpt, :model) # for backward compatibility
+        model = ckpt.model
+    else
+        model = deepcopy(model)
+        Flux.loadmodel!(model, ckpt.model_state)
+    end
+    trainer.fit_state = ckpt.fit_state
+    trainer.lr_schedulers = ckpt.lr_schedulers
+    trainer.optimisers = ckpt.optimisers
     return fit(model, trainer, args...; kws..., _resuming_from_ckpt = true)
 end
-
 
 function fit(
         model::FluxModule,
