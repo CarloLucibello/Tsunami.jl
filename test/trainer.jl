@@ -65,10 +65,12 @@ end
     @test loss < loss0
 
     ckpt = Tsunami.load_checkpoint(bsonpath2)
-    @test ckpt.model isa TestModule1
     @test ckpt.fit_state.epoch == 2
     @test ckpt.fit_state.step == 4
-    @test ckpt.model(x) ≈ ŷ
+
+    model2 = TestModule1()
+    Flux.loadmodel!(model2, ckpt.model_state)
+    @test model2(x) ≈ ŷ
 
     rm(runpath1, recursive=true)
     rm(runpath2, recursive=true)

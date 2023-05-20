@@ -220,13 +220,17 @@ model′, fit_state′ = Tsunami.fit(ckpt_path, trainer, train_dataloader, val_d
 ```
 """
 function fit(ckpth_path::AbstractString, trainer, args...; kws...)
-    model, ckpt_fit_state, lr_schedulers, optimisers = load_checkpoint(ckpth_path)
-    trainer.fit_state = ckpt_fit_state
-    trainer.lr_schedulers = lr_schedulers
-    trainer.optimisers = optimisers
+    ckpt = load_checkpoint(ckpt_path)
+    if haskey(ckpt, :model) # for backward compatibility
+        model = ckpt.model 
+    else
+        Flux.loadmodel!(model, ckpt.model_state)
+    end 
+    trainer.fit_state = ckpt.fit_state
+    trainer.lr_schedulers = ckpt.lr_schedulers
+    trainer.optimisers = ckpt.optimisers
     return fit(model, trainer, args...; kws..., _resuming_from_ckpt = true)
 end
-
 
 function fit(
         model::FluxModule,

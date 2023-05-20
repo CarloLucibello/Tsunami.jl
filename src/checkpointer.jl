@@ -39,7 +39,7 @@ function on_train_epoch_end(cp::Checkpointer, model::FluxModule, trainer)
     filename = "ckpt_epoch=$(epoch)_step=$(step).bson"
     filepath = joinpath(folder, filename)
 
-    ckpt = (model = cpu(model), 
+    ckpt = (model_state = cpu(Flux.state(model)), 
             fit_state = fit_state,
             lr_schedulers = trainer.lr_schedulers,
             optimisers = cpu(trainer.optimisers))
