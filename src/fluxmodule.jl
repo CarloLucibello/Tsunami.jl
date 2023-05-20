@@ -88,13 +88,13 @@ set as the learning rate for the next epoch.
 ```julia
 using Optimisers, ParameterScheduler
 
-function Tsunami.configure_optimisers(model::Model)
+function Tsunami.configure_optimisers(model::Model, trainer)
     return Optimisers.setup(AdamW(1e-3), model)
 end
 
 # Now with a scheduler dropping the learning rate by a factor 10 
 # at epochs [50, 100, 200] starting from the initial value of 1e-2
-function Tsunami.configure_optimisers(model::Model)
+function Tsunami.configure_optimisers(model::Model, trainer)
 
     function lr_scheduler(epoch)
         if epoch <= 50
@@ -113,7 +113,7 @@ function Tsunami.configure_optimisers(model::Model)
 end
 
 # Same as above but using the ParameterScheduler package.
-function Tsunami.configure_optimisers(model::Model)
+function Tsunami.configure_optimisers(model::Model, trainer)
     lr_scheduler = ParameterScheduler.Step(1e-2, 1/10, [50, 50, 100])
     opt = Optimisers.setup(AdamW(), model)
     return lr_scheduler, opt
