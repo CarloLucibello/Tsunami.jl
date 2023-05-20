@@ -219,7 +219,7 @@ ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
 model′, fit_state′ = Tsunami.fit(ckpt_path, trainer, train_dataloader, val_dataloader)
 ```
 """
-function fit(ckpth_path::AbstractString, trainer, args...; kws...)
+function fit(ckpt_path::AbstractString, trainer, args...; kws...)
     ckpt = load_checkpoint(ckpt_path)
     if haskey(ckpt, :model) # for backward compatibility
         model = ckpt.model 
