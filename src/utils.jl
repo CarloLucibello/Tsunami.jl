@@ -50,8 +50,14 @@ Seed the RNGs of both CPU and GPU.
 """
 function seed!(seed::Int)
     Random.seed!(seed)
-    if CUDA.functional()
-        CUDA.seed!(seed)
+    if is_cuda_available()
+        get_cuda_module().seed!(seed)
+    end
+    if is_amdgpu_available()
+        get_amdgpu_module().seed!(seed)
+    end
+    if is_metal_available()
+        get_metal_module().seed!(seed)
     end
 end
 

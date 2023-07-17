@@ -6,7 +6,6 @@ version = "0.1.4"
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Crayons = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -25,11 +24,10 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Adapt = "3"
 BSON = "0.3.6"
-CUDA = "3, 4"
 ChainRulesCore = "1"
 Crayons = "4"
 DataFrames = "1"
-Flux = "0.13.15"
+Flux = "0.14"
 Functors = "0.4"
 HuggingFaceDatasets = "0.3"
 MLDatasets = "0.7"
@@ -39,14 +37,16 @@ ParameterSchedulers = "0.3"
 TensorBoardLogger = "0.1"
 UnPack = "1"
 Zygote = "0.6"
-julia = "1.8"
+julia = "1.9"
 
 [extras]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 HuggingFaceDatasets = "d94b9a45-fdf5-4270-b024-5cbb9ef7117d"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 ParameterSchedulers = "d7d3b36b-41b8-4d0d-a2bf-768c6151755e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [targets]
-test = ["DataFrames", "MLDatasets", "ParameterSchedulers", "Test"]
+test = ["DataFrames", "MLDatasets", "ParameterSchedulers", "Test", "CUDA", "cuDNN"]

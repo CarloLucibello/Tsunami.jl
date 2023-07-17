@@ -408,10 +408,23 @@ function process_out_configure_optimisers(out)
 end
 
 function print_fit_initial_summary(model, trainer)
-    cuda_available = CUDA.functional()
-    use_cuda = is_using_cuda(trainer.foil)
-    str_gpuavail = cuda_available ? "true (CUDA)" : "false"
-    @info "GPU available: $(str_gpuavail), used: $use_cuda"
+    cuda_available = is_cuda_available()
+    amdgpu_available = is_amdgpu_available()
+    metal_available = is_metal_available()
+    if cuda_available
+        str_gpuavail = "true (CUDA)"
+        str_gpuused = is_using_gpu(trainer.foil)
+    elseif amdgpu_available
+        str_gpuavail = "true (AMDGPU)"
+        str_gpuused = is_using_gpu(trainer.foil)
+    elseif metal_available
+        str_gpuavail = "true (Metal)"
+        str_gpuused = is_using_gpu(trainer.foil)
+    else
+        str_gpuavail = "false"
+        str_gpuused = "false"
+    end
+    @info "GPU available: $(str_gpuavail), used: $(str_gpuused)"
     @info "Model Summary:"
     show(stdout, MIME("text/plain"), model)
     println()

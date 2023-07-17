@@ -1,11 +1,10 @@
 module Tsunami
 
 using Adapt
-using Base: @kwdef
+using Base: @kwdef, PkgId, UUID
 import BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
 using Crayons
-using CUDA
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
 using Functors
@@ -21,8 +20,6 @@ using TensorBoardLogger: TBLogger, tb_append
 import TensorBoardLogger as TensorBoardLoggers
 using UnPack: @unpack
 using Zygote
-
-CUDA.allowscalar(false)
 
 include("ProgressMeter/ProgressMeter.jl")
 using .ProgressMeter
@@ -63,6 +60,10 @@ export AbstractCallback
 
 include("checkpointer.jl")
 export Checkpointer, load_checkpoint
+
+include("devices.jl")
+# export FoilCPUDevice, FoilCUDADevice, FoilAMDGPUDevice, FoilMetalDevice, 
+#        is_cuda_available, is_amdgpu_available, is_metal_available
 
 include("foil.jl")
 export Foil
