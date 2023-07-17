@@ -8,7 +8,7 @@ FOIL_CONSTRUCTOR_ARGS ="""
     - `:cuda`: Train on Nvidia gpus using CUDA.jl.
     - `:amdgpu`: Train on AMD gpus using AMDGPU.jl.
     - `:metal`: Train on Apple Silicon hardware using Metal.jl.
-    See also the `devices` option. Default: `:auto`.
+    See also the `devices` option.
 
 - **devices**: Pass an integer `n` to train on `n` devices (only `1` supported at the moment),
     or a list of devices ids to train on specific devices (e.g. `[2]` to train on gpu with idx 2).
