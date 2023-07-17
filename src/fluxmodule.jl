@@ -47,7 +47,7 @@ function Tsunami.train_step(model::Model, batch, batch_idx)
 end
 
 function Tsunami.configure_optimisers(model::Model)
-    return Optimisers.setup(Optimisers.Adam(1e-3), model)
+    return Optimisers.setup(Optimisers.Adam(1f-3), model)
 end
 
 # Prepare the dataset and the DataLoader
@@ -89,7 +89,7 @@ set as the learning rate for the next epoch.
 using Optimisers, ParameterScheduler
 
 function Tsunami.configure_optimisers(model::Model, trainer)
-    return Optimisers.setup(AdamW(1e-3), model)
+    return Optimisers.setup(AdamW(1f-3), model)
 end
 
 # Now with a scheduler dropping the learning rate by a factor 10 
@@ -114,7 +114,7 @@ end
 
 # Same as above but using the ParameterScheduler package.
 function Tsunami.configure_optimisers(model::Model, trainer)
-    lr_scheduler = ParameterScheduler.Step(1e-2, 1/10, [50, 50, 100])
+    lr_scheduler = ParameterScheduler.Step(1f-2, 0.1f0, [50, 50, 100])
     opt = Optimisers.setup(AdamW(), model)
     return lr_scheduler, opt
 end

@@ -140,6 +140,12 @@ function select_device!(device::AbstractFoilDevice, idx_devices::Int)
     @assert idx_devices == 1 "Only one device is supported"
 end
 
+
+function select_device!(device::FoilMetalDevice, idx_devices::Union{Vector{Int}, Tuple})
+    @assert length(idx_devices) == 1 "Only one device is supported"
+    # noop since cannot have more than one metal device
+end
+
 function select_device!(device::AbstractFoilGPUDevice, idx_devices::Union{Vector{Int}, Tuple})
     @assert length(idx_devices) == 1 "Only one device is supported"
     GPUPkg = Base.loaded_modules[device.pkgid]
