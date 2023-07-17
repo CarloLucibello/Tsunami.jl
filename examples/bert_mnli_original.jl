@@ -30,7 +30,7 @@ const bertenc = load_tokenizer("bert-base-uncased"; config = bert_config)
 
 const bert_model = todevice(_bert_model)
 
-const opt_rule = Optimisers.Adam(1e-6)
+const opt_rule = Optimisers.Adam(1f-6)
 const opt = Optimisers.setup(opt_rule, bert_model)
 
 function acc(p, label)

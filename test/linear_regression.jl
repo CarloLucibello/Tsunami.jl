@@ -9,8 +9,8 @@ teacher = LinearModel(N)
 X = randn(Float32, N, M)
 y = teacher(X)
 
-model = LinearModel(N; λ)
-@test model.W isa Matrix{Float32}
+model = LinearModel(N; λ) |> Flux.f64
+@test model.W isa Matrix{Float64}
 @test size(model.W) == (1, N)
 
 trainer = SilentTrainer(max_epochs=1000, devices=[1])
