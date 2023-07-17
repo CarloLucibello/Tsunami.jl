@@ -15,3 +15,4 @@ lightning_logs/
 Manifest.toml
 MNIST/
 tsunami_logs/
+LocalPreferences.toml

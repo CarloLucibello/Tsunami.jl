@@ -15,7 +15,7 @@ end
 
 container_show(m) = container_show(stdout, m)
 
-function container_show(io::IO, m::T; exclude=[]) where T
+function container_show(io::IO, m::T; exclude=[], brief=[]) where T
     Tname = compact_typename(T)
     if get(io, :compact, false)
         return print(io, "$Tname()")
@@ -26,7 +26,11 @@ function container_show(io::IO, m::T; exclude=[]) where T
         f in exclude && continue
         v = getfield(m, f)
         print(io, "\n  $f = ")
-        compact_show(io, v)
+        if f in brief
+            print(io, "...")
+        else
+            compact_show(io, v)
+        end
     end
 end
 

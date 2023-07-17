@@ -171,7 +171,7 @@ end
     val_step(model, trainer, batch, [batch_idx])
 
 The method called at each validation step during `Tsunami.fit`.
-Tipically used for computing metrcis and statistics on the validation 
+Tipically used for computing metrics and statistics on the validation 
 batch `batch`. The optional argument `batch_idx` is the index of the batch in the current 
 validation epoch. 
 
