@@ -25,6 +25,7 @@ Define your model subtyping the `FluxModule` abstract type, implement a few requ
 In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, MLDatasets
+using CUDA # or AMDGPU, Metal, ... for GPU support
 using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
@@ -96,7 +97,7 @@ See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and ch
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
 - Hyperparameters' schedulers.
-- GPU movement.
+- CUDA, AMDGPU, Metal GPU support.
 
 ## Contributions are welcome!
 
