@@ -12,7 +12,7 @@ If `on_epoch` is `true`, the value will be accumulated and logged on each epoch.
 In this case, the default reduction is the `mean` over the batches, which will also
 take into account the batch size.
 If both `on_step` and `on_epoch` are `true`, the values will be logged as 
-`"$(name)_step"` and `"$(name)_epoch"`
+`"<name>_step"` and `"<name>_epoch"`
 
 # Arguments
 

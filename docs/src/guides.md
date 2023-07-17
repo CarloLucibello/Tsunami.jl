@@ -8,6 +8,8 @@ Tsunami supports both CPU and GPU devices. To select a device, use the `accelera
 trainer = Trainer(accelerator = :auto) # default, selects CPU or GPU depending on availability
 trainer = Trainer(accelerator = :cuda) # selects cuda GPU
 ```
+Currently supported accelerators are `:auto`, `:gpu`, `:cuda`, `amdgpu`, `metal`,  and `:cpu`.
+See the [`Trainer`](@ref) documentation for more details.
 
 By default, Tsunami will use the first of the available GPUs and the CPU if no GPUs are present. 
 To select a specific GPU, use the `devices` keyword argument:
