@@ -168,6 +168,8 @@ function Trainer(;
                     fit_state, foil, lr_schedulers, optimisers)
 end
 
+Base.show(io::IO, ::MIME"text/plain", trainer::Trainer) = 
+    container_show(io, trainer, brief=[:metalogger, :optimisers, :callbacks, :loggers])
 
 """
     fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path, ...]) -> fit_state

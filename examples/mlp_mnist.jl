@@ -1,6 +1,10 @@
 using Flux, Optimisers, Tsunami, MLDatasets
 using MLUtils: MLUtils, DataLoader, flatten, mapobs, splitobs
 import ParameterSchedulers
+## Uncomment one of the following lines for GPU support
+# using CUDA
+# using AMDGPU
+# using Metal
 
 mutable struct MLP <: FluxModule
     net
@@ -46,8 +50,8 @@ end
 
 function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, and decay intervals (corresponding to epochs 2 and 4)
-    lr_scheduler = ParameterSchedulers.Step(1e-2, 1/10, [2, 2])
-    opt = Optimisers.setup(Optimisers.Adam(1e-5), m)
+    lr_scheduler = ParameterSchedulers.Step(1f-2, 0.1f0, [2, 2])
+    opt = Optimisers.setup(Optimisers.Adam(1f-5), m)
     return opt, lr_scheduler
 end
 
@@ -65,7 +69,7 @@ model = MLP()
 
 # DRY RUN FOR DEBUGGING
 
-trainer = Trainer(fast_dev_run=true, accelerator=:cpu)
+trainer = Trainer(fast_dev_run=true, accelerator=:auto)
 Tsunami.fit(model, trainer, train_loader, val_loader)
 
 # TRAIN FROM SCRATCH
@@ -74,7 +78,7 @@ Tsunami.seed!(17)
 trainer = Trainer(max_epochs = 3,
                  max_steps = -1,
                  default_root_dir = @__DIR__,
-                 accelerator = :cpu)
+                 accelerator = :auto)
 
 model, fit_state = Tsunami.fit(model, trainer, train_loader, val_loader)
 @assert fit_state.step == 1266
@@ -82,7 +86,7 @@ model, fit_state = Tsunami.fit(model, trainer, train_loader, val_loader)
 # RESUME TRAINING
 trainer = Trainer(max_epochs = 5,
                  default_root_dir = @__DIR__,
-                 accelerator = :cpu,
+                 accelerator = :auto,
                  checkpointer = true,
                  logger = true,
                  )
