@@ -1,10 +1,14 @@
 
 
 FOIL_CONSTRUCTOR_ARGS ="""
-- **accelerator**: Supports passing different accelerator types `(:cpu, :gpu,  :auto)`.
-    Use `:auto` to automatically select a gpu if available.
-    See also the `devices` option.
-    Default: `:auto`.
+- **accelerator**: Supports passing different accelerator types:
+    - `:auto` (default): Automatically select a gpu if available, otherwise fallback on cpu.
+    - `:gpu`: Like `:auto`, but will throw an error if no gpu is available.
+    - `:cpu`: Force using the cpu.
+    - `:cuda`: Train on Nvidia gpus using CUDA.jl.
+    - `:amdgpu`: Train on AMD gpus using AMDGPU.jl.
+    - `:metal`: Train on Apple Silicon hardware using Metal.jl.
+    See also the `devices` option. Default: `:auto`.
 
 - **devices**: Pass an integer `n` to train on `n` devices (only `1` supported at the moment),
     or a list of devices ids to train on specific devices (e.g. `[2]` to train on gpu with idx 2).
