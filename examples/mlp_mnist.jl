@@ -1,7 +1,10 @@
 using Flux, Optimisers, Tsunami, MLDatasets
 using MLUtils: MLUtils, DataLoader, flatten, mapobs, splitobs
 import ParameterSchedulers
-using Metal
+## Uncomment one of the following lines for GPU support
+# using CUDA
+# using AMDGPU
+# using Metal
 
 mutable struct MLP <: FluxModule
     net
@@ -66,7 +69,7 @@ model = MLP()
 
 # DRY RUN FOR DEBUGGING
 
-trainer = Trainer(fast_dev_run=true, accelerator=:metal)
+trainer = Trainer(fast_dev_run=true, accelerator=:auto)
 Tsunami.fit(model, trainer, train_loader, val_loader)
 
 # TRAIN FROM SCRATCH
@@ -75,7 +78,7 @@ Tsunami.seed!(17)
 trainer = Trainer(max_epochs = 3,
                  max_steps = -1,
                  default_root_dir = @__DIR__,
-                 accelerator = :metal)
+                 accelerator = :auto)
 
 model, fit_state = Tsunami.fit(model, trainer, train_loader, val_loader)
 @assert fit_state.step == 1266
@@ -83,7 +86,7 @@ model, fit_state = Tsunami.fit(model, trainer, train_loader, val_loader)
 # RESUME TRAINING
 trainer = Trainer(max_epochs = 5,
                  default_root_dir = @__DIR__,
-                 accelerator = :cpu,
+                 accelerator = :auto,
                  checkpointer = true,
                  logger = true,
                  )
