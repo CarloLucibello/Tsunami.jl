@@ -61,10 +61,6 @@ export AbstractCallback
 include("checkpointer.jl")
 export Checkpointer, load_checkpoint
 
-include("devices.jl")
-# export FoilCPUDevice, FoilCUDADevice, FoilAMDGPUDevice, FoilMetalDevice, 
-#        is_cuda_available, is_amdgpu_available, is_metal_available
-
 include("foil.jl")
 export Foil
 

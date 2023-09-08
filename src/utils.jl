@@ -43,6 +43,15 @@ function dir_with_version(dir)
     return outdir
 end
 
+
+is_cuda_available() = Flux._isfunctional(Flux.FluxCUDADevice(nothing))
+is_amdgpu_available() = Flux._isfunctional(Flux.FluxAMDGPUDevice(nothing))
+is_metal_available() = Flux._isfunctional(Flux.FluxMetalDevice(nothing))
+
+get_cuda_module() = Base.loaded_modules[PkgId(UUID("052768ef-5323-5732-b1bb-66c8b64840ba"), "CUDA")]
+get_amdgpu_module() = Base.loaded_modules[PkgId(UUID("21141c5a-9bdb-4563-92ae-f87d6854732e"), "AMDGPU")]
+get_metal_module() = Base.loaded_modules[PkgId(UUID("dde4c033-4e86-420c-a63e-0dd931031962"), "Metal")]
+
 """
     seed!(seed::Int)
 
