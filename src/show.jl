@@ -1,4 +1,6 @@
-function fluxshow(io::IO, m::MIME"text/plain", x::T) where T
+# Show methods that Flux defines through `@layer` 
+# https://github.com/FluxML/Flux.jl/blob/master/src/layers/show.jl#L4
+function fluxshow(io::IO, m::MIME"text/plain", x::FluxModule)
     if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
         Flux._big_show(io, x)
     elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
@@ -7,6 +9,9 @@ function fluxshow(io::IO, m::MIME"text/plain", x::T) where T
         show(io, x)
     end
 end
+# Don't show Chain(Tuple(...)), always splat that. And ignore Recur's non-trainable state:
+Flux._show_children(x::FluxModule) = _flat_children(trainable(x))
+
 
 function shortshow(io::IO, x::T) where T
     str = string(T.name.name)
