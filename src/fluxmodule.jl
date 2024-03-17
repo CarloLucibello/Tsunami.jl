@@ -6,7 +6,7 @@ A `FluxModule` helps orgainising you code and provides a standard interface for 
 
 A `FluxModule` comes with the functionality provided by `Flux.@layer` 
 (cpu/gpu movement, parameter management, etc.) and the ability to interact with 
-[`Trainer`](@ref) and [`Optimisers`](@ref).
+[`Trainer`](@ref) and `Optimisers.jl`.
 
 You can change the trainables by implementing `Optimisers.trainables`.
 

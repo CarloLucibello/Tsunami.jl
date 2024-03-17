@@ -14,4 +14,5 @@ Tsunami.fit!
 Tsunami.FitState
 Tsunami.test
 Tsunami.validate
+Tsunami.Foil
 ```
