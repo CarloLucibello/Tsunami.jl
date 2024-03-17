@@ -108,3 +108,4 @@ Any help is appreciated!
 
 - [FastAI.jl](https://github.com/FluxML/FastAI.jl)
 - [FluxTraining.jl](https://github.com/FluxML/FluxTraining.jl)
+- [Ignite.jl](https://github.com/jondeuce/Ignite.jl)
