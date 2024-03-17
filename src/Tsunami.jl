@@ -30,8 +30,6 @@ include("utils.jl")
 include("stats.jl")
 # export Stats
 
-include("show.jl")
-
 include("fluxmodule.jl")
 export FluxModule
         #  train_step,
@@ -39,6 +37,8 @@ export FluxModule
         #  test_step,
         #  predict_step,
         #  configure_optimizers
+
+include("show.jl")
 
 include("hooks.jl")
 # export  on_before_update,

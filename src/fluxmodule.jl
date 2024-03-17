@@ -4,7 +4,10 @@
 An abstract type for Flux models.
 A `FluxModule` helps orgainising you code and provides a standard interface for training.
 
-A `FluxModule` comes with `functor` already implemented.
+A `FluxModule` comes with the functionality provided by `Flux.@layer` 
+(cpu/gpu movement, parameter management, etc.) and the ability to interact with 
+[`Trainer`](@ref) and `Optimisers.jl`.
+
 You can change the trainables by implementing `Optimisers.trainables`.
 
 Types inheriting from `FluxModule` have to be mutable. They also
@@ -62,12 +65,15 @@ model, fit_state = Tsunami.fit(model, trainer, train_dataloader)
 """
 abstract type FluxModule end
 
-function Functors.functor(::Type{<:FluxModule}, m::T) where T
+
+function Functors.functor(::Type{T}, m) where {T<:FluxModule}
     childr = (; (f => getfield(m, f) for f in fieldnames(T))...)
     Tstripped = Base.typename(T).wrapper # remove all parameters. From https://discourse.julialang.org/t/stripping-parameter-from-parametric-types/8293/16
-    re = x -> Tstripped(x...)
+    re = Base.splat(Tstripped)
     return childr, re
 end
+
+Adapt.adapt_structure(to, m::FluxModule) = Functors.fmap(Adapt.adapt(to), m)
 
 Base.show(io::IO, mime::MIME"text/plain", m::FluxModule) = fluxshow(io, mime, m)
 Base.show(io::IO, m::FluxModule) = shortshow(io, m)
