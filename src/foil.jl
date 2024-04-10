@@ -122,5 +122,6 @@ function Zygote.pullback(f, x, foil::Foil)
     return fx, () -> unref(pb(one(fx))[1]) # zygote returns a Ref with immutable, so we need to unref it
 end
  
+# TODO remove when Optimisers.jl is able to handle gradients with (nested) Refs
 unref(x::Ref) = x[]
 unref(x) = x
