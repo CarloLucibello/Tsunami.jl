@@ -7,7 +7,7 @@ A `FluxModule` helps orgainising you code and provides a standard interface for 
 A `FluxModule` comes with `functor` already implemented.
 You can change the trainables by implementing `Optimisers.trainables`.
 
-Types inheriting from `FluxModule` have to be mutable. They also
+Types subtyping from `FluxModule` have to be mutable. They also
 have to implement the following methods in order to interact with a [`Trainer`](@ref).
 
 # Required methods
@@ -78,7 +78,7 @@ not_implemented_error(name) = error("You need to implement the method `$(name)`"
     configure_optimisers(model, trainer)
 
 Return an optimiser's state initialized for the `model`.
-It can also return a tuple of `(scheduler, optimiser)`,
+It can also return a tuple of `(optimiser, scheduler)`,
 where `scheduler` is any callable object that takes 
 the current epoch as input and returns a scalar that will be 
 set as the learning rate for the next epoch.
@@ -108,15 +108,15 @@ function Tsunami.configure_optimisers(model::Model, trainer)
         end
     end
     
-    opt = Optimisers.setup(AdamW(), model)
-    return lr_scheduler, opt
+    opt_state = Optimisers.setup(AdamW(), model)
+    return opt_state, lr_scheduler
 end
 
 # Same as above but using the ParameterScheduler package.
 function Tsunami.configure_optimisers(model::Model, trainer)
     lr_scheduler = ParameterScheduler.Step(1f-2, 0.1f0, [50, 50, 100])
-    opt = Optimisers.setup(AdamW(), model)
-    return lr_scheduler, opt
+    opt_state = Optimisers.setup(AdamW(), model)
+    return opt_state, lr_scheduler
 end
 ```
 """
