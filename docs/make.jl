@@ -13,7 +13,7 @@ assets = ["assets/flux.css"]
 makedocs(;
          modules = [Tsunami],
          doctest = true,
-         clean = true,
+         checkdocs = :exports,
          format = Documenter.HTML(; mathengine, prettyurls, assets, sidebar_sitename),
          sitename = "Tsunami.jl",
          pages = [
