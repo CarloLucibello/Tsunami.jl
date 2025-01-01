@@ -1,11 +1,13 @@
 module Tsunami
 
+using Adapt: Adapt
 using Base: @kwdef, PkgId, UUID
 import BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
 using Crayons
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
+using Functors: Functors
 # import ImageMagick # for image logging
 using MLUtils
 using MLDataDevices: gpu_device, cpu_device, CPUDevice, AMDGPUDevice, CUDADevice, MetalDevice
@@ -19,6 +21,7 @@ using TensorBoardLogger: TBLogger, tb_append
 import TensorBoardLogger as TensorBoardLoggers
 using UnPack: @unpack
 using Zygote
+
 
 include("ProgressMeter/ProgressMeter.jl")
 using .ProgressMeter

@@ -54,25 +54,20 @@ function Foil(;
     return Foil(device, fprec, precision) 
 end
 
-const accelerator_symbol_to_string = Dict(
-    :cpu => "CPU",
-    :cuda => "CUDA",
-    :amdgpu => "AMDGPU",
-    :amd => "AMDGPU",
-    :metal => "Metal"
-)
-
 function select_device(accelerator::Symbol, idx_devices)
     if accelerator == :cpu
         device = cpu_device()
-    elseif accelerator ∈ (:gpu, cuda, :amdgpu, :amd, :metal)
+    elseif accelerator ∈ (:gpu, :cuda, :amdgpu, :amd, :metal)
+        if accelerator ∈ (:cuda, :amdgpu, :amd, :metal)
+            @warn "The accelerator arguments :cuda, :amdgpu, :metal are deprecated. Use :gpu instead."
+        end
         idx = flux_device_idx(idx_devices)
         device = gpu_device(idx, force=true)
     elseif accelerator == :auto
         idx = flux_device_idx(idx_devices)
         device = gpu_device(idx)
     else
-        throw(ArgumentError("accelerator must be one of :cpu, :gpu, :auto, :cuda, :amdgpu, :metal"))
+        throw(ArgumentError("accelerator must be one of :cpu, :gpu, :auto"))
     end
     return device
 end

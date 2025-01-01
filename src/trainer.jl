@@ -408,9 +408,9 @@ function process_out_configure_optimisers(out)
 end
 
 function print_fit_initial_summary(model, trainer)
-    cuda_available = is_cuda_available()
-    amdgpu_available = is_amdgpu_available()
-    metal_available = is_metal_available()
+    cuda_available = is_cuda_functional()
+    amdgpu_available = is_amdgpu_functional()
+    metal_available = is_metal_functional()
     if cuda_available
         str_gpuavail = "true (CUDA)"
         str_gpuused = is_using_gpu(trainer.foil)
