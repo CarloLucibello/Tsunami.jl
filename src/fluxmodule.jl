@@ -5,7 +5,7 @@ An abstract type for Flux models.
 A `FluxModule` helps orgainising you code and provides a standard interface for training.
 
 A `FluxModule` comes with the functionality provided by `Flux.@layer` 
-(cpu/gpu movement, parameter management, etc.) and the ability to interact with 
+(pretty printing, etc...) and the ability to interact with 
 [`Trainer`](@ref) and `Optimisers.jl`.
 
 You can change the trainables by implementing `Optimisers.trainables`.
@@ -15,14 +15,14 @@ have to implement the following methods in order to interact with a [`Trainer`](
 
 # Required methods
 
-- [`configure_optimisers`](@ref)`(model, trainer)`
-- [`train_step`](@ref)`(model, trainer, batch, [batch_idx])`
+- [`configure_optimisers`](@ref)`(model, trainer)`.
+- [`train_step`](@ref)`(model, trainer, batch, [batch_idx])`.
 
 # Optional Methods 
 
-- [`val_step`](@ref)`(model, trainer, batch, [batch_idx])`
-- [`test_step`](@ref)`(model, trainer, batch, [batch_idx])`
-- generic [hooks](@ref Hooks)
+- [`val_step`](@ref)`(model, trainer, batch, [batch_idx])`.
+- [`test_step`](@ref)`(model, trainer, batch, [batch_idx])`.
+- generic [hooks](@ref Hooks).
 
 # Examples
 
@@ -83,7 +83,7 @@ set as the learning rate for the next epoch.
 # Examples
 
 ```julia
-using Optimisers, ParameterScheduler
+using Optimisers, ParameterSchedulers
 
 function Tsunami.configure_optimisers(model::Model, trainer)
     return Optimisers.setup(AdamW(1f-3), model)
@@ -109,9 +109,9 @@ function Tsunami.configure_optimisers(model::Model, trainer)
     return opt_state, lr_scheduler
 end
 
-# Same as above but using the ParameterScheduler package.
+# Same as above but using the ParameterSchedulers package.
 function Tsunami.configure_optimisers(model::Model, trainer)
-    lr_scheduler = ParameterScheduler.Step(1f-2, 0.1f0, [50, 50, 100])
+    lr_scheduler = ParameterSchedulers.Step(1f-2, 0.1f0, [50, 50, 100])
     opt_state = Optimisers.setup(AdamW(), model)
     return opt_state, lr_scheduler
 end

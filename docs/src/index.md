@@ -6,8 +6,8 @@ A high-level deep learning framework for the Julia language
 that helps you focus and organize the relevant part of your code
 while removing the boilerplate. 
 
-Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
-and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
+Tsunami is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
+and is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
 
 ## Installation 
 
@@ -34,7 +34,7 @@ using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
 
-mutable struct MLP <: FluxModule
+struct MLP <: FluxModule
     net
 end
 
