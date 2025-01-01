@@ -11,7 +11,8 @@ FOIL_CONSTRUCTOR_ARGS ="""
 
 - **devices**: Pass an integer `n` to train on `n` devices (only `1` supported at the moment),
     or a list of devices ids to train on specific devices (e.g. `[2]` to train on gpu with idx 2).
-    Ids indexing starts from `1`. If `nothing`, will use all available devices. 
+    Ids indexing starts from `1`. If `nothing`, will use the default device 
+    (see `MLDataDevices.gpu_device` documentation). 
     Default: `nothing`.
 
 - **precision**: Supports passing different precision types `(:f16, :f32, :f64)`.
@@ -72,7 +73,7 @@ function select_device(accelerator::Symbol, idx_devices)
     return device
 end
 
-flux_device_idx(idx_devices::Nothing) = 1
+flux_device_idx(idx_devices::Nothing) = nothing
 
 function flux_device_idx(idx_devices::Int)
     @assert idx_devices == 1 "Only one device is supported"
