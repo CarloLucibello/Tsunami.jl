@@ -49,7 +49,7 @@ end
 
 (m::Decoder)(x) = m.layers(x)
 
-mutable struct VAE <: FluxModule
+struct VAE <: FluxModule
     λ::Float64 # L2 regularization parameter
     η::Float64 # learning rate
     β::Float64 # disentanglement parameter
@@ -153,7 +153,7 @@ trainer = Trainer(max_epochs = 10,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu)
 
-model, fit_state = Tsunami.fit(model, trainer, train_loader, val_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TEST
 

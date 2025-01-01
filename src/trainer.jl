@@ -1,7 +1,7 @@
 """
     FitState
 
-A type storing the state of execution during a call to [`fit`](@ref). 
+A type storing the state of execution during a call to [`fit!`](@ref). 
 
 A `FitState` object is part of a [`Trainer`](@ref) object.
 
@@ -29,10 +29,10 @@ Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, 
 """
     Trainer(; kws...)
 
-A type storing the training options to be passed to [`fit`](@ref).
+A type storing the training options to be passed to [`fit!`](@ref).
 
 A `Trainer` object also contains a field `fit_state` of type [`FitState`](@ref) mantaining updated information about 
-the fit state during the execution of `fit`.
+the fit state during the execution of `fit!`.
 
 # Constructor Arguments
 
@@ -82,7 +82,7 @@ $FOIL_CONSTRUCTOR_ARGS
 
 Besides most of the constructor arguments, a `Trainer` object also contains the following fields:
 
-- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit`](@ref).
+- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit!`](@ref).
 - **foil**: A [`Foil`](@ref) object.
 - **loggers**: A list of loggers.
 - **lr\\_schedulers**: The learning rate schedulers used for training.
@@ -96,7 +96,7 @@ trainer = Trainer(max_epochs = 10,
                   checkpointer = true,
                   logger = true)
 
-model, fitstate = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+fitstate = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 mutable struct Trainer
@@ -170,82 +170,54 @@ Base.show(io::IO, ::MIME"text/plain", trainer::Trainer) =
     container_show(io, trainer, brief=[:metalogger, :optimisers, :callbacks, :loggers])
 
 """
-    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path, ...]) -> fit_state
-
-Mutating version of [`fit`](@ref), copying back the trained model into the input `model`.
-If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
-
-See [`fit`](@ref) for more details.
-"""
-function fit!(model, args...; ckpt_path = nothing, kws...)
-    if ckpt_path !== nothing
-        newmodel, fit_state = fit(ckpt_path, args...; kws...)
-    else
-        newmodel, fit_state = fit(model, args...; kws...)
-    end
-    copy!(model, newmodel)
-    return fit_state
-end
-
-"""
-    fit([ckpt_path,] model, trainer, train_dataloader, [val_dataloader]) -> (new_model, fit_state)
+    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path]) -> fit_state
 
 Train `model` using the configuration given by `trainer`.
 If `ckpt_path` is given, training is resumed from the checkpoint.
 
-Returns the trained model and a [`FitState`](@ref) object.
-
-See also [`fit!`](@ref) for a mutating version.
+Return a [`FitState`](@ref) object.
 
 # Arguments
 
-- **ckpt\\_path**: Path of the checkpoint from which training is resumed.
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
-- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit`.
+- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
+- **ckpt\\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
 
 # Examples
 
 ```julia
 model = ...
 trainer = Trainer(max_epochs = 10)
-model, fit_state = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 
 # Resume training from checkpoint
 trainer = Trainer(max_epochs = 20) # train for 10 more epochs
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
-model′, fit_state′ = Tsunami.fit(ckpt_path, model, trainer, train_dataloader, val_dataloader)
+fit_state′ = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader; ckpt_path)
 ```
 """
-function fit(ckpt_path::AbstractString, model::FluxModule, trainer, args...; kws...)
-    ckpt = load_checkpoint(ckpt_path)
-    if haskey(ckpt, :model) # for backward compatibility
-        model = ckpt.model
-    else
-        model = deepcopy(model)
-        Flux.loadmodel!(model, ckpt.model_state)
-    end
-    trainer.fit_state = ckpt.fit_state
-    trainer.lr_schedulers = ckpt.lr_schedulers
-    trainer.optimisers = ckpt.optimisers
-    return fit(model, trainer, args...; kws..., _resuming_from_ckpt = true)
-end
+function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloader=nothing; 
+            ckpt_path = nothing)
+    @assert get_device(model) isa CPUDevice
 
-function fit(
-        model::FluxModule,
-        trainer::Trainer,
-        train_dataloader,
-        val_dataloader = nothing;
-        _resuming_from_ckpt = false
-    )
-    
-    if !_resuming_from_ckpt
-        model = deepcopy(model)
-        trainer.fit_state = FitState()
+    if ckpt_path !== nothing
+        ckpt = load_checkpoint(ckpt_path)
+        Flux.loadmodel!(model, ckpt.model_state)
+        fit_state = ckpt.fit_state
+        lr_schedulers = ckpt.lr_schedulers
+        optimisers = ckpt.optimisers
+        start_epoch = fit_state.epoch + 1
+    else # train from scratch
+        fit_state = FitState()
+        optimisers, lr_schedulers = configure_optimisers(model, trainer) |> process_out_configure_optimisers
+        start_epoch = 1
+        fit_state.step = 0
     end
-    fit_state = trainer.fit_state
+    fit_state.epoch = start_epoch - 1
     fit_state.should_stop = false
+
     
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
@@ -254,29 +226,20 @@ function fit(
 
     print_fit_initial_summary(model, trainer)
 
-    if _resuming_from_ckpt
-        lr_schedulers = trainer.lr_schedulers
-        optimisers = trainer.optimisers 
-        start_epoch = fit_state.epoch + 1
-    else # train from scratch
-        optimisers, lr_schedulers = configure_optimisers(model, trainer) |> process_out_configure_optimisers
-        start_epoch = 1
-        fit_state.step = 0
-    end
-    fit_state.epoch = start_epoch - 1
-
+    # setup could create a copy on device, therefore we keep a reference to the original model
+    model_orig = model
     model, optimisers = setup(trainer.foil, model, optimisers)
-
+    
+    trainer.fit_state = fit_state
     trainer.optimisers = optimisers
     trainer.lr_schedulers = lr_schedulers
  
     if trainer.fast_dev_run
-        check_fluxmodule(model)
         check_train_step(model, trainer, first(train_dataloader))
         if val_dataloader !== nothing
             check_val_step(model, trainer, first(val_dataloader))
         end
-        return model, fit_state
+        return fit_state
     end
 
     val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
@@ -287,8 +250,10 @@ function fit(
         fit_state.should_stop && break
     end
 
-    return model |> cpu, fit_state
+    Flux.loadmodel!(model_orig, Flux.state(model |> cpu))
+    return fit_state
 end
+
 
 function val_loop(model, trainer, val_dataloader; progbar_offset = 0, 
             progbar_keep = true, progbar_print_epoch = false)
@@ -499,7 +464,7 @@ end
 Run the validation loop, calling the [`val_step`](@ref) method on the model for each batch returned by the `dataloader`.
 Returns the aggregated results from the values logged in the `val_step` as a dictionary.
 
-See also [`Tsunami.test`](@ref) and [`Tsunami.fit`](@ref).
+See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
     model = setup(trainer.foil, model)

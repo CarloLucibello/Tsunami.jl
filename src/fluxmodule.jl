@@ -5,24 +5,24 @@ An abstract type for Flux models.
 A `FluxModule` helps orgainising you code and provides a standard interface for training.
 
 A `FluxModule` comes with the functionality provided by `Flux.@layer` 
-(cpu/gpu movement, parameter management, etc.) and the ability to interact with 
+(pretty printing, etc...) and the ability to interact with 
 [`Trainer`](@ref) and `Optimisers.jl`.
 
 You can change the trainables by implementing `Optimisers.trainables`.
 
-Types subtyping from `FluxModule` have to be mutable. They also
-have to implement the following methods in order to interact with a [`Trainer`](@ref).
+Types subtyping from `FluxModule` have to implement the following methods 
+in order to interact with a [`Trainer`](@ref).
 
 # Required methods
 
-- [`configure_optimisers`](@ref)`(model, trainer)`
-- [`train_step`](@ref)`(model, trainer, batch, [batch_idx])`
+- [`configure_optimisers`](@ref)`(model, trainer)`.
+- [`train_step`](@ref)`(model, trainer, batch, [batch_idx])`.
 
 # Optional Methods 
 
-- [`val_step`](@ref)`(model, trainer, batch, [batch_idx])`
-- [`test_step`](@ref)`(model, trainer, batch, [batch_idx])`
-- generic [hooks](@ref Hooks)
+- [`val_step`](@ref)`(model, trainer, batch, [batch_idx])`.
+- [`test_step`](@ref)`(model, trainer, batch, [batch_idx])`.
+- generic [hooks](@ref Hooks).
 
 # Examples
 
@@ -31,7 +31,7 @@ using Flux, Tsunami, Optimisers
 
 # Define a Multilayer Perceptron implementing the FluxModule interface
 
-mutable struct Model <: FluxModule
+struct Model <: FluxModule
     net
 end
 
@@ -42,14 +42,14 @@ end
 
 (model::Model)(x) = model.net(x)
 
-function Tsunami.train_step(model::Model, batch, batch_idx)
+function Tsunami.train_step(model::Model, trainer, batch)
     x, y = batch
     y_hat = model(x)
     loss = Flux.Losses.mse(y_hat, y)
     return loss
 end
 
-function Tsunami.configure_optimisers(model::Model)
+function Tsunami.configure_optimisers(model::Model, trainer)
     return Optimisers.setup(Optimisers.Adam(1f-3), model)
 end
 
@@ -60,7 +60,7 @@ train_dataloader = Flux.DataLoader((X, Y), batchsize=10)
 # Create and Train the model
 model = Model()
 trainer = Trainer(max_epochs=10)
-model, fit_state = Tsunami.fit(model, trainer, train_dataloader)
+fit_state = Tsunami.fit!(model, trainer, train_dataloader)
 ```
 """
 abstract type FluxModule end
@@ -83,7 +83,7 @@ set as the learning rate for the next epoch.
 # Examples
 
 ```julia
-using Optimisers, ParameterScheduler
+using Optimisers, ParameterSchedulers
 
 function Tsunami.configure_optimisers(model::Model, trainer)
     return Optimisers.setup(AdamW(1f-3), model)
@@ -109,22 +109,22 @@ function Tsunami.configure_optimisers(model::Model, trainer)
     return opt_state, lr_scheduler
 end
 
-# Same as above but using the ParameterScheduler package.
+# Same as above but using the ParameterSchedulers package.
 function Tsunami.configure_optimisers(model::Model, trainer)
-    lr_scheduler = ParameterScheduler.Step(1f-2, 0.1f0, [50, 50, 100])
+    lr_scheduler = ParameterSchedulers.Step(1f-2, 0.1f0, [50, 50, 100])
     opt_state = Optimisers.setup(AdamW(), model)
     return opt_state, lr_scheduler
 end
 ```
 """
 function configure_optimisers(model::FluxModule, trainer)
-    not_implemented_error("configure_optimisers")
+    not_implemented_error("configure_optimisers(model, trainer)")
 end
 
 """
     train_step(model, trainer, batch, [batch_idx])
 
-The method called at each training step during `Tsunami.fit`.
+The method called at each training step during `Tsunami.fit!`.
 It should compute the forward pass of the model and return the loss 
 (a scalar) corresponding to the minibatch `batch`. 
 The optional argument `batch_idx` is the index of the batch in the current epoch.
@@ -132,7 +132,7 @@ The optional argument `batch_idx` is the index of the batch in the current epoch
 Any `Model <: FluxModule` should implement either 
 `train_step(model::Model, trainer, batch)` or `train_step(model::Model, trainer, batch, batch_idx)`.
 
-The training loop in `Tsunami.fit` approximately looks like this:
+The training loop in `Tsunami.fit!` approximately looks like this:
 ```julia
 for epoch in 1:epochs
     for (batch_idx, batch) in enumerate(train_dataloader)
@@ -161,13 +161,13 @@ end
 train_step(model::FluxModule, trainer, batch, batch_idx) = train_step(model, trainer, batch)
 
 function train_step(model::FluxModule, trainer, batch)
-    not_implemented_error("train_step")
+    not_implemented_error("train_step(model, trainer, batch)")
 end
 
 """
     val_step(model, trainer, batch, [batch_idx])
 
-The method called at each validation step during `Tsunami.fit`.
+The method called at each validation step during `Tsunami.fit!`.
 Tipically used for computing metrics and statistics on the validation 
 batch `batch`. The optional argument `batch_idx` is the index of the batch in the current 
 validation epoch. 
@@ -220,10 +220,6 @@ function Base.copy!(dest::T1, src::T2) where {T1 <: FluxModule, T2 <: FluxModule
         setfield!(dest, f, getfield(src, f))
     end
     return dest
-end
-
-function check_fluxmodule(m::FluxModule)
-    @assert ismutable(m) "FluxModule has to be a `mutable struct`."
 end
 
 function check_train_step(m::FluxModule, trainer, batch)

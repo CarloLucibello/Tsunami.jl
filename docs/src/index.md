@@ -6,8 +6,8 @@ A high-level deep learning framework for the Julia language
 that helps you focus and organize the relevant part of your code
 while removing the boilerplate. 
 
-Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
-and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
+Tsunami is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl)
+and is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/).
 
 ## Installation 
 
@@ -18,7 +18,7 @@ pkg> add Tsunami
 
 ## Features
 
-- Use `fit` instead of implementing a training loop.
+- Use `Tsunami.fit!` instead of implementing a training loop.
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
 - GPU movement.
@@ -26,7 +26,7 @@ pkg> add Tsunami
 ## Usage Examples
 
 Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer`
-train the model on your dataset with `fit`. Tsunami will handle all of the boilerplate (training loop, logging, gpu movement, validation, ...).
+train the model on your dataset with `fit!`. Tsunami will handle all of the boilerplate (training loop, logging, gpu movement, validation, ...).
 
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, HuggingFaceDatasets, ImageCore
@@ -34,7 +34,7 @@ using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
 
-mutable struct MLP <: FluxModule
+struct MLP <: FluxModule
     net
 end
 
@@ -87,7 +87,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-model, fit_state = Tsunami.fit(model, trainer, train_loader, test_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
 ![console output](./assets/readme_output.png)

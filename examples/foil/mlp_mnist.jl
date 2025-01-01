@@ -1,6 +1,6 @@
 # An example of plain Flux code where only 
 # Foil is used to select the device. 
-# Instead of the `Trainer.fit` function we use a custom training loop.
+# Instead of the `Trainer.fit!` function we use a custom training loop.
 
 using Flux, Optimisers, Tsunami, MLDatasets
 using MLUtils: MLUtils, DataLoader, flatten, mapobs, splitobs

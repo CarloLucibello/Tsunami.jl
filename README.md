@@ -20,7 +20,7 @@ pkg> add Tsunami
 
 ## Usage
 
-Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer` train the model on your dataset with `Tsunami.fit`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
+Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer` train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
 
 In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
@@ -30,7 +30,7 @@ using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
 
-mutable struct MLP <: FluxModule
+struct MLP <: FluxModule
     net
 end
 
@@ -82,7 +82,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-model, fit_state = Tsunami.fit(model, trainer, train_loader, test_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
 What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and and model checkpoints on disk.
@@ -93,7 +93,7 @@ See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and ch
 
 ## Features
 
-- Use `Tsunami.fit` instead of implementing a training loop.
+- Use `Tsunami.fit!` instead of implementing a training loop.
 - Logging (tensorboard).
 - Checkpoints (save and resume training).
 - Hyperparameters' schedulers.

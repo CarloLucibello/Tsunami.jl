@@ -1,9 +1,16 @@
-function fit(ckpt_path::AbstractString, trainer::Trainer, args...; kws...)
-    Base.depwarn("`fit(ckpt_path, trainer, ...)` is deprecated, use `fit(ckpt_path, model, trainer, ...; kws...)` instead.", :fit)
-    ckpt = load_checkpoint(ckpth_path)
-    model = ckpt.model 
-    trainer.fit_state = ckpt.fit_state
-    trainer.lr_schedulers = ckpt.lr_schedulers
-    trainer.optimisers = ckpt.optimisers
-    return fit(model, trainer, args...; kws..., _resuming_from_ckpt = true)
+#### v0.2 DEPRECATIONS #####
+
+function fit(ckpt_path::AbstractString, model::FluxModule, trainer::Trainer, args...; kws...)
+    @warn "Tsunami.fit is deprecated. Use Tsunami.fit! instead."
+    newmodel = deepcopy(model)
+    fit_state = fit!(newmodel, trainer, args...; ckpt_path, kws...)
+    return newmodel, fit_state
 end
+
+function fit(model::FluxModule, trainer::Trainer, args...; kws...)
+    @warn "Tsunami.fit is deprecated. Use Tsunami.fit! instead."
+    newmodel = deepcopy(model)
+    fit_state = fit!(newmodel, trainer, args...; kws...)
+    return newmodel, fit_state
+end
+

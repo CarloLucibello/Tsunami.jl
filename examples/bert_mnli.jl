@@ -17,7 +17,7 @@ using ChainRulesCore
 
 #### MODEL #########
 
-mutable struct Bert{B,E,L} <: FluxModule
+struct Bert{B,E,L} <: FluxModule
     net::B
     tokenizer::E
     labels::L
@@ -71,7 +71,7 @@ function loss(model, input)
 end
 
 ### DATASET ######
-mutable struct Dataset
+struct Dataset
     mnli
     batchsize
     split
@@ -106,4 +106,4 @@ model = Bert(labels)
 
 # :gpu not working yet due to custom gpu movement rules in Transformers.jl
 trainer = Trainer(accelerator=:cpu, max_steps=2, fast_dev_run=false, checkpointer=false, log_every_n_steps=1)
-model, fit_state = Tsunami.fit(model, trainer, train_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader)

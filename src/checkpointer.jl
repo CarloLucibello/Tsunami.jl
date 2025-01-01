@@ -6,7 +6,7 @@ An helper class for saving a [`FluxModule`](@ref) and the fit state.
 The checkpoint is saved as a BSON file with the name `ckpt_epoch=X_step=Y.bson`.
 A symbolic link to the last checkpoint is also created as `ckpt_last.bson`.
 
-A `Checkpointer` is automatically created when `checkpointer = true` is passed to [`fit`](@ref).
+A `Checkpointer` is automatically created when `checkpointer = true` is passed to [`fit!`](@ref).
 
 If `folder` is not specified, the checkpoints are saved in a folder named `checkpoints` in the run directory.
 
@@ -15,7 +15,7 @@ See also: [`load_checkpoint`](@ref).
 # Examples
 ```julia
 checkpointer = Checkpointer()
-Tsunami.fit(..., callbacks = [checkpointer])
+Tsunami.fit!(..., callbacks = [checkpointer])
 ```
 """
 mutable struct Checkpointer <: AbstractCallback
@@ -62,9 +62,17 @@ end
     load_checkpoint(path)
 
 Loads a checkpoint that was saved to `path`. 
-Returns a namedtuple containing the model, the fit state, the lr schedulers and the optimisers.
+Returns a namedtuple containing the model state, the fit state, the lr schedulers and the optimisers.
 
 See also: [`Checkpointer`](@ref).
+
+# Examples
+
+```julia
+ckpt = load_checkpoint("checkpoints/ckpt_last.bson")
+model = MyModel(...)
+Flux.loadmodel!(model, ckpt.model_state)
+``` 
 """
 function load_checkpoint(path)
     BSON.@load path ckpt

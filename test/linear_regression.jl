@@ -14,5 +14,5 @@ model = LinearModel(N; λ)
 @test size(model.W) == (1, N)
 
 trainer = SilentTrainer(max_epochs=1000, devices=[1])
-model, fit_state = Tsunami.fit(model, trainer, [(X, y)])
+fit_state = Tsunami.fit!(model, trainer, [(X, y)])
 @test model.W isa Matrix{Float32} # by default precision is Float32

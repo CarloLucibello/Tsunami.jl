@@ -1,9 +1,9 @@
-mutable struct NotModule
+struct NotModule
     net
 end
 
 ############ TestModule1 ############
-mutable struct TestModule1 <: FluxModule
+struct TestModule1 <: FluxModule
     net
     tuple_field::Tuple{Int, Int}
 end
@@ -29,8 +29,7 @@ io_sizes(m::TestModule1) = 4, 2
 
 ############ LinearModel ############
 
-
-mutable struct LinearModel{Tw, Tm, F} <: FluxModule
+struct LinearModel{Tw, Tm, F} <: FluxModule
     W::Tw
     mask::Tm
     λ::F  # L2 regularization
@@ -63,7 +62,7 @@ end
 
 ###### TBLoggingModuel ######
 
-Base.@kwdef mutable struct TBLoggingModule <: FluxModule
+Base.@kwdef struct TBLoggingModule <: FluxModule
     net = Chain(Dense(4, 3, relu), Dense(3, 2))
     log_on_train_epoch::Bool = true
     log_on_train_step::Bool = true
