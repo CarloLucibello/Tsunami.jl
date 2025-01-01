@@ -67,8 +67,6 @@ abstract type FluxModule end
 
 Flux.@layer FluxModule
 
-# Adapt.adapt_structure(to, m::FluxModule) = Functors.fmap(Adapt.adapt(to), m)
-
 Base.show(io::IO, m::FluxModule) = shortshow(io, m)
 
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
