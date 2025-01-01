@@ -194,7 +194,7 @@ fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 
 # Resume training from checkpoint
 trainer = Trainer(max_epochs = 20) # train for 10 more epochs
-ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
+ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.jld2")
 fit_state′ = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader; ckpt_path)
 ```
 """

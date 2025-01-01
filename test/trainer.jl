@@ -56,18 +56,18 @@ end
     trainer = Trainer(max_epochs=2, logger=false, checkpointer=true, progress_bar=true, default_root_dir=@__DIR__)
     fit_state = Tsunami.fit!(model, trainer, train_dataloader)
     runpath1 = fit_state.run_dir
-    bsonpath1 = joinpath(runpath1, "checkpoints", "ckpt_epoch=2_step=4.bson")
-    @test isfile(bsonpath1)
+    ckptpath1 = joinpath(runpath1, "checkpoints", "ckpt_epoch=2_step=4.jld2")
+    @test isfile(ckptpath1)
     fit_state = Tsunami.fit!(model, trainer, train_dataloader)
     runpath2 = fit_state.run_dir
-    bsonpath2 = joinpath(runpath2, "checkpoints", "ckpt_epoch=2_step=4.bson")
-    @test isfile(bsonpath2)
+    ckptpath2 = joinpath(runpath2, "checkpoints", "ckpt_epoch=2_step=4.jld2")
+    @test isfile(ckptpath2)
 
     ŷ = model(x)
     loss = Flux.Losses.mse(ŷ, y)
     @test loss < loss0
 
-    ckpt = Tsunami.load_checkpoint(bsonpath2)
+    ckpt = Tsunami.load_checkpoint(ckptpath2)
     @test ckpt.fit_state.epoch == 2
     @test ckpt.fit_state.step == 4
 
