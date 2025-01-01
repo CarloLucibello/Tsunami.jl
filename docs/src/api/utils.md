@@ -1,4 +1,8 @@
-# Utils 
+```@meta
+CollapsedDocStrings = true
+```
+
+# Utils
 
 Tsunami provides some utility functions to make your life easier.
 

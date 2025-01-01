@@ -1,8 +1,10 @@
-@testset "abstract type FluxModule" begin
+@testitem "abstract type FluxModule" begin
     @test isabstracttype(FluxModule)
 end
 
-@testset "functor" begin
+@testitem "FluxModule functor" setup=[TsunamiTest] begin
+    using .TsunamiTest
+    using Functors: Functors
     m = TestModule1()
     @test Functors.children(m) == (; net = m.net, tuple_field = m.tuple_field)
 

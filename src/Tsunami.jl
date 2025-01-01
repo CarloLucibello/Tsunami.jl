@@ -68,6 +68,7 @@ export Checkpointer, load_checkpoint
 
 include("foil.jl")
 export Foil
+@compat(public, (setup, setup_batch))
 
 include("trainer.jl")
 export Trainer

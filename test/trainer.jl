@@ -1,4 +1,4 @@
-@testset "Constructor" begin
+@testitem "Trainer Constructor" begin
     trainer = Trainer()
     @test trainer.max_epochs == 1000
     @test trainer.max_steps == -1
@@ -16,7 +16,8 @@
     @test trainer.max_steps == 20
 end
 
-@testset "no val loader" begin
+@testitem "no val loader" setup=[TsunamiTest] begin
+    using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
@@ -24,7 +25,8 @@ end
     Tsunami.fit!(model, trainer, train_dataloader)
 end
 
-@testset "fit! mutates" begin
+@testitem "fit! mutates" setup=[TsunamiTest] begin
+    using .TsunamiTest
     model = TestModule1()
     # model0 = deepcopy(model)
     nx, ny = io_sizes(model)
@@ -41,7 +43,8 @@ end
     end
 end
 
-@testset "checkpoint" begin
+@testitem "checkpoint" setup=[TsunamiTest] begin
+    using .TsunamiTest
     model = TestModule1()
 
     nx, ny = io_sizes(model)
@@ -76,7 +79,8 @@ end
     rm(runpath2, recursive=true)
 end
 
-@testset "fast_dev_run" begin
+@testitem "fast_dev_run" setup=[TsunamiTest] begin
+    using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
@@ -86,7 +90,8 @@ end
     @test fit_state.step == 0
 end
 
-@testset "val_every_n_epochs" begin
+@testitem "val_every_n_epochs" setup=[TsunamiTest] begin
+    using .TsunamiTest
     # TODO test properly
     model = TestModule1()
     nx, ny = io_sizes(model)
@@ -96,7 +101,8 @@ end
     @test fit_state.epoch == 2 
 end
 
-@testset "generic dataloader" begin
+@testitem "generic dataloader" setup=[TsunamiTest] begin
+    using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
     train_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
@@ -106,7 +112,8 @@ end
     @test fit_state.epoch == 2
 end
 
-@testset "Tsunami.test" begin
+@testitem "Tsunami.test" setup=[TsunamiTest] begin
+    using .TsunamiTest
     struct TestModuleTest <: FluxModule; dummy; end 
     function Tsunami.test_step(::TestModuleTest, trainer, batch, batch_idx)
         Tsunami.log(trainer, "a", 1)
@@ -120,7 +127,8 @@ end
     @test res["b"] == 2.0
 end
 
-@testset "Tsunami.validate" begin
+@testitem "Tsunami.validate" setup=[TsunamiTest] begin
+    using .TsunamiTest
     struct TestModuleVal <: FluxModule; dummy; end 
 
     function Tsunami.val_step(::TestModuleVal, trainer, batch, batch_idx)
