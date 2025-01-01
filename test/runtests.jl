@@ -32,6 +32,10 @@ end
    include("trainer.jl") 
 end
 
+@testset "Foil" begin
+   include("foil.jl") 
+end
+
 @testset "Linear Regression" begin
    include("linear_regression.jl") 
 end

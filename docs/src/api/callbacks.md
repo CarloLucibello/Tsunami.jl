@@ -1,3 +1,7 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # Callbacks
 
 Callbacks are functions that are called at certain points in the training process. They are useful for logging, early stopping, and other tasks. 

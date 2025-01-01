@@ -1,3 +1,7 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # Hooks 
 
 Hooks are a way to extend the functionality of Tsunami. They are a way to inject custom code into the FluxModule or
