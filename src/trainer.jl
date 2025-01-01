@@ -170,44 +170,36 @@ Base.show(io::IO, ::MIME"text/plain", trainer::Trainer) =
     container_show(io, trainer, brief=[:metalogger, :optimisers, :callbacks, :loggers])
 
 """
-    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path, ...]) -> fit_state
-
-Mutating version of [`fit`](@ref), copying back the trained model into the input `model`.
-If `ckpt_path` is not `nothing`, training is resumed from the checkpoint.
-
-See [`fit`](@ref) for more details.
-
-    fit([ckpt_path,] model, trainer, train_dataloader, [val_dataloader]) -> (new_model, fit_state)
+    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path]) -> fit_state
 
 Train `model` using the configuration given by `trainer`.
 If `ckpt_path` is given, training is resumed from the checkpoint.
 
-Returns the trained model and a [`FitState`](@ref) object.
-
-See also [`fit!`](@ref) for a mutating version.
+Return a [`FitState`](@ref) object.
 
 # Arguments
 
-- **ckpt\\_path**: Path of the checkpoint from which training is resumed.
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
 - **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit`.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
+- **ckpt\\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
 
 # Examples
 
 ```julia
 model = ...
 trainer = Trainer(max_epochs = 10)
-model, fit_state = Tsunami.fit(model, trainer, train_dataloader, val_dataloader)
+fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 
 # Resume training from checkpoint
 trainer = Trainer(max_epochs = 20) # train for 10 more epochs
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
-model′, fit_state′ = Tsunami.fit(ckpt_path, model, trainer, train_dataloader, val_dataloader)
+fit_state′ = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader; ckpt_path)
 ```
 """
-function fit!(model::FluxModule, trainer::Trainer, args...; ckpt_path = nothing, kws...)
+function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloader=nothing; 
+            ckpt_path = nothing)
     @assert get_device(model) isa CPUDevice
 
     if ckpt_path !== nothing
