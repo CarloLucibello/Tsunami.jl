@@ -1,19 +1,7 @@
-# Show methods that Flux defines through `@layer` 
-# https://github.com/FluxML/Flux.jl/blob/master/src/layers/show.jl#L4
-function fluxshow(io::IO, m::MIME"text/plain", x)
-    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
-        Flux._big_show(io, x)
-    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
-        Flux._layer_show(io, x)
-    else
-        show(io, x)
-    end
-end
-# Don't show Chain(Tuple(...)), always splat that. And ignore Recur's non-trainable state:
-Flux._show_children(x::FluxModule) = Flux._flat_children(trainable(x))
 
 
 function shortshow(io::IO, x::T) where T
+    # Tstripped = Base.typename(T).wrapper # remove all parameters. From https://discourse.julialang.org/t/stripping-parameter-from-parametric-types/8293/16
     str = string(T.name.name)
     print(io, str * "()")
 end

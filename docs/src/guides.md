@@ -6,17 +6,19 @@ Tsunami supports both CPU and GPU devices. To select a device, use the `accelera
 
 ```julia
 trainer = Trainer(accelerator = :auto) # default, selects CPU or GPU depending on availability
-trainer = Trainer(accelerator = :cuda) # selects cuda GPU
+trainer = Trainer(accelerator = :gpu) # forces selection to GPU, errors if no GPU is available
 ```
-Currently supported accelerators are `:auto`, `:gpu`, `:cuda`, `amdgpu`, `metal`,  and `:cpu`.
+Currently supported accelerators are `:auto`, `:gpu`, and `:cpu`.
 See the [`Trainer`](@ref) documentation for more details.
 
 By default, Tsunami will use the first of the available GPUs and the CPU if no GPUs are present. 
 To select a specific GPU, use the `devices` keyword argument:
 
 ```julia
-trainer = Trainer(devices = [0])
+trainer = Trainer(devices = [1])
 ```
+
+Devices are indexed starting from 1, as in the `MLDataDevices.get_device` method used by Flux.
 
 ## Selecting trainable components
 
@@ -56,7 +58,7 @@ end
 
 Gradient clipping is a technique that allows you to limit the range or the norm of the gradients. This is useful to prevent exploding gradients and improve training stability.
 
-Optimisers.jl supports gradient clipping with the `ClipNorm` and `ClipValue` rule:
+Optimisers.jl supports gradient clipping with the `ClipNorm` and `ClipGrad` rule:
 
 ```
     ClipGrad(δ = 10f0)

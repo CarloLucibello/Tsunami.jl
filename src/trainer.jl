@@ -23,8 +23,6 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
     should_stop::Bool = false
 end
 
-Functors.@functor FitState
-
 # Base.show(io::IO, fit_state::FitState) = print(io, "FitState()")
 Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, fit_state)
 
