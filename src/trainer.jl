@@ -465,7 +465,7 @@ end
 Run the validation loop, calling the [`val_step`](@ref) method on the model for each batch returned by the `dataloader`.
 Returns the aggregated results from the values logged in the `val_step` as a dictionary.
 
-See also [`Tsunami.test`](@ref) and [`Tsunami.fit`](@ref).
+See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
     model = setup(trainer.foil, model)
