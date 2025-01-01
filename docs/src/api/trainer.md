@@ -1,3 +1,7 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # Trainer
 
 The [`Trainer`](@ref) struct is the main entry point for training a model. It is responsible for managing the training loop, logging, and checkpointing. It is also responsible for managing the [`FitState`](@ref Tsunami.FitState) struct, which contains the state of the training loop. 
@@ -13,5 +17,5 @@ Tsunami.fit!
 Tsunami.FitState
 Tsunami.test
 Tsunami.validate
-Tsunami.Foil
 ```
+
