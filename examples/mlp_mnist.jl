@@ -6,8 +6,8 @@ import ParameterSchedulers
 # using AMDGPU
 # using Metal
 
-mutable struct MLP <: FluxModule
-    net
+struct MLP{T} <: FluxModule
+    net::T
 end
 
 function MLP()

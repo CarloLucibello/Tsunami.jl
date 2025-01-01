@@ -17,7 +17,7 @@ using ChainRulesCore
 
 #### MODEL #########
 
-mutable struct Bert{B,E,L} <: FluxModule
+struct Bert{B,E,L} <: FluxModule
     net::B
     tokenizer::E
     labels::L
@@ -71,7 +71,7 @@ function loss(model, input)
 end
 
 ### DATASET ######
-mutable struct Dataset
+struct Dataset
     mnli
     batchsize
     split

@@ -49,7 +49,7 @@ end
 
 (m::Decoder)(x) = m.layers(x)
 
-mutable struct VAE <: FluxModule
+struct VAE <: FluxModule
     λ::Float64 # L2 regularization parameter
     η::Float64 # learning rate
     β::Float64 # disentanglement parameter

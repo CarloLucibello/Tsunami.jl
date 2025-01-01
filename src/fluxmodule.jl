@@ -10,8 +10,8 @@ A `FluxModule` comes with the functionality provided by `Flux.@layer`
 
 You can change the trainables by implementing `Optimisers.trainables`.
 
-Types subtyping from `FluxModule` have to be mutable. They also
-have to implement the following methods in order to interact with a [`Trainer`](@ref).
+Types subtyping from `FluxModule` have to implement the following methods 
+in order to interact with a [`Trainer`](@ref).
 
 # Required methods
 
@@ -220,10 +220,6 @@ function Base.copy!(dest::T1, src::T2) where {T1 <: FluxModule, T2 <: FluxModule
         setfield!(dest, f, getfield(src, f))
     end
     return dest
-end
-
-function check_fluxmodule(m::FluxModule)
-    @assert ismutable(m) "FluxModule has to be a `mutable struct`."
 end
 
 function check_train_step(m::FluxModule, trainer, batch)

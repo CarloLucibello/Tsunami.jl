@@ -235,7 +235,6 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
     trainer.lr_schedulers = lr_schedulers
  
     if trainer.fast_dev_run
-        check_fluxmodule(model)
         check_train_step(model, trainer, first(train_dataloader))
         if val_dataloader !== nothing
             check_val_step(model, trainer, first(val_dataloader))
