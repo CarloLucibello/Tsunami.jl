@@ -23,8 +23,6 @@ A `FitState` object is part of a [`Trainer`](@ref) object.
     should_stop::Bool = false
 end
 
-Functors.@functor FitState
-
 # Base.show(io::IO, fit_state::FitState) = print(io, "FitState()")
 Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, fit_state)
 
@@ -410,9 +408,9 @@ function process_out_configure_optimisers(out)
 end
 
 function print_fit_initial_summary(model, trainer)
-    cuda_available = is_cuda_available()
-    amdgpu_available = is_amdgpu_available()
-    metal_available = is_metal_available()
+    cuda_available = is_cuda_functional()
+    amdgpu_available = is_amdgpu_functional()
+    metal_available = is_metal_functional()
     if cuda_available
         str_gpuavail = "true (CUDA)"
         str_gpuused = is_using_gpu(trainer.foil)
@@ -459,7 +457,7 @@ Dict{String, Float64} with 1 entry:
 ```
 """
 function test(model::FluxModule, trainer::Trainer, dataloader)
-    model = setup_batch(trainer.foil, model)
+    model = setup(trainer.foil, model)
     return test_loop(model, trainer, dataloader; progbar_keep=true)
 end
 
@@ -504,6 +502,6 @@ Returns the aggregated results from the values logged in the `val_step` as a dic
 See also [`Tsunami.test`](@ref) and [`Tsunami.fit`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
-    model = setup_batch(trainer.foil, model)
+    model = setup(trainer.foil, model)
     return val_loop(model, trainer, dataloader; progbar_keep=true)
 end

@@ -43,10 +43,9 @@ function dir_with_version(dir)
     return outdir
 end
 
-
-is_cuda_available() = Flux._isfunctional(Flux.FluxCUDADevice(nothing))
-is_amdgpu_available() = Flux._isfunctional(Flux.FluxAMDGPUDevice(nothing))
-is_metal_available() = Flux._isfunctional(Flux.FluxMetalDevice(nothing))
+is_cuda_functional() = MLDataDevices.functional(CUDADevice)
+is_amdgpu_functional() = MLDataDevices.functional(AMDGPUDevice)
+is_metal_functional() = MLDataDevices.functional(MetalDevice)
 
 get_cuda_module() = Base.loaded_modules[PkgId(UUID("052768ef-5323-5732-b1bb-66c8b64840ba"), "CUDA")]
 get_amdgpu_module() = Base.loaded_modules[PkgId(UUID("21141c5a-9bdb-4563-92ae-f87d6854732e"), "AMDGPU")]
@@ -59,13 +58,13 @@ Seed the RNGs of both CPU and GPU.
 """
 function seed!(seed::Int)
     Random.seed!(seed)
-    if is_cuda_available()
+    if is_cuda_functional()
         get_cuda_module().seed!(seed)
     end
-    if is_amdgpu_available()
+    if is_amdgpu_functional()
         get_amdgpu_module().seed!(seed)
     end
-    if is_metal_available()
+    if is_metal_functional()
         get_metal_module().seed!(seed)
     end
 end

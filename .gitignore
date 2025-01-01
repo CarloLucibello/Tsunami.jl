@@ -16,3 +16,4 @@ Manifest.toml
 MNIST/
 tsunami_logs/
 LocalPreferences.toml
+/test.jl

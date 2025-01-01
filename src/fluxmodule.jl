@@ -65,17 +65,8 @@ model, fit_state = Tsunami.fit(model, trainer, train_dataloader)
 """
 abstract type FluxModule end
 
+Flux.@layer FluxModule
 
-function Functors.functor(::Type{T}, m) where {T<:FluxModule}
-    childr = (; (f => getfield(m, f) for f in fieldnames(T))...)
-    Tstripped = Base.typename(T).wrapper # remove all parameters. From https://discourse.julialang.org/t/stripping-parameter-from-parametric-types/8293/16
-    re = Base.splat(Tstripped)
-    return childr, re
-end
-
-Adapt.adapt_structure(to, m::FluxModule) = Functors.fmap(Adapt.adapt(to), m)
-
-Base.show(io::IO, mime::MIME"text/plain", m::FluxModule) = fluxshow(io, mime, m)
 Base.show(io::IO, m::FluxModule) = shortshow(io, m)
 
 not_implemented_error(name) = error("You need to implement the method `$(name)`")
