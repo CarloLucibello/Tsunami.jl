@@ -3,6 +3,7 @@ module Tsunami
 using Base: @kwdef, PkgId, UUID
 import BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
+using Compat: @compat
 using Crayons
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
@@ -26,35 +27,38 @@ include("ProgressMeter/ProgressMeter.jl")
 using .ProgressMeter
 
 include("utils.jl")
-# export accuracy
+@compat(public, accuracy)
 
 include("stats.jl")
 # export Stats
 
 include("fluxmodule.jl")
 export FluxModule
-        #  train_step,
-        #  val_step,
-        #  test_step,
-        #  predict_step,
-        #  configure_optimizers
+@compat(public, (train_step,
+                 val_step,
+                 test_step,
+                 predict_step,
+                 configure_optimisers,
+                ))
 
 include("show.jl")
 
 include("hooks.jl")
-# export  on_before_update,
-#         on_before_backprop,
-#         on_train_epoch_start,
-#         on_train_epoch_end,
-#         on_val_epoch_start,
-#         on_val_epoch_end
-#         on_test_epoch_start,
-#         on_test_epoch_end,
+@compat(public, (on_before_update,
+                 on_before_backprop,
+                 on_train_epoch_start,
+                 on_train_epoch_end,
+                 on_val_epoch_start,
+                 on_val_epoch_end,
+                 on_test_epoch_start,
+                 on_test_epoch_end,
+                ))
 
 
 include("loggers/metalogger.jl") # export MetaLogger
-include("loggers/tensorboard.jl") # export TensorBoardLogger
 
+include("loggers/tensorboard.jl")
+@compat(public, (TensorBoardLogger,))
 
 include("callbacks.jl")
 export AbstractCallback
@@ -69,7 +73,7 @@ include("trainer.jl")
 export Trainer
 
 include("log.jl")
-# export log
+@compat(public, (log,))
 
 include("deprecated.jl")
 
