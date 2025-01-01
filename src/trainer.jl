@@ -1,7 +1,7 @@
 """
     FitState
 
-A type storing the state of execution during a call to [`fit`](@ref). 
+A type storing the state of execution during a call to [`fit!`](@ref). 
 
 A `FitState` object is part of a [`Trainer`](@ref) object.
 
@@ -29,10 +29,10 @@ Base.show(io::IO, ::MIME"text/plain", fit_state::FitState) = container_show(io, 
 """
     Trainer(; kws...)
 
-A type storing the training options to be passed to [`fit`](@ref).
+A type storing the training options to be passed to [`fit!`](@ref).
 
 A `Trainer` object also contains a field `fit_state` of type [`FitState`](@ref) mantaining updated information about 
-the fit state during the execution of `fit`.
+the fit state during the execution of `fit!`.
 
 # Constructor Arguments
 
@@ -82,7 +82,7 @@ $FOIL_CONSTRUCTOR_ARGS
 
 Besides most of the constructor arguments, a `Trainer` object also contains the following fields:
 
-- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit`](@ref).
+- **fit\\_state**: A [`FitState`](@ref) object storing the state of execution during a call to [`fit!`](@ref).
 - **foil**: A [`Foil`](@ref) object.
 - **loggers**: A list of loggers.
 - **lr\\_schedulers**: The learning rate schedulers used for training.
@@ -180,7 +180,7 @@ Return a [`FitState`](@ref) object.
 # Arguments
 
 - **model**: A Flux model subtyping [`FluxModule`](@ref).
-- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit`.
+- **trainer**: A [`Trainer`](@ref) object storing the configuration options for `fit!`.
 - **train\\_dataloader**: An iterator over the training dataset, typically a `Flux.DataLoader`.
 - **val\\_dataloader**: An iterator over the validation dataset, typically a `Flux.DataLoader`. Default: `nothing`.
 - **ckpt\\_path**: Path of the checkpoint from which training is resumed. Default: `nothing`.
