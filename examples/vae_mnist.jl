@@ -153,7 +153,7 @@ trainer = Trainer(max_epochs = 10,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu)
 
-model, fit_state = Tsunami.fit(model, trainer, train_loader, val_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TEST
 

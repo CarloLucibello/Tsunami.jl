@@ -87,7 +87,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-model, fit_state = Tsunami.fit(model, trainer, train_loader, test_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
 ![console output](./assets/readme_output.png)

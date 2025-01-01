@@ -31,7 +31,7 @@ using Flux, Tsunami, Optimisers
 
 # Define a Multilayer Perceptron implementing the FluxModule interface
 
-mutable struct Model <: FluxModule
+struct Model <: FluxModule
     net
 end
 
@@ -42,14 +42,14 @@ end
 
 (model::Model)(x) = model.net(x)
 
-function Tsunami.train_step(model::Model, batch, batch_idx)
+function Tsunami.train_step(model::Model, trainer, batch)
     x, y = batch
     y_hat = model(x)
     loss = Flux.Losses.mse(y_hat, y)
     return loss
 end
 
-function Tsunami.configure_optimisers(model::Model)
+function Tsunami.configure_optimisers(model::Model, trainer)
     return Optimisers.setup(Optimisers.Adam(1f-3), model)
 end
 
@@ -60,7 +60,7 @@ train_dataloader = Flux.DataLoader((X, Y), batchsize=10)
 # Create and Train the model
 model = Model()
 trainer = Trainer(max_epochs=10)
-model, fit_state = Tsunami.fit(model, trainer, train_dataloader)
+fit_state = Tsunami.fit!(model, trainer, train_dataloader)
 ```
 """
 abstract type FluxModule end
@@ -118,7 +118,7 @@ end
 ```
 """
 function configure_optimisers(model::FluxModule, trainer)
-    not_implemented_error("configure_optimisers")
+    not_implemented_error("configure_optimisers(model, trainer)")
 end
 
 """
@@ -161,7 +161,7 @@ end
 train_step(model::FluxModule, trainer, batch, batch_idx) = train_step(model, trainer, batch)
 
 function train_step(model::FluxModule, trainer, batch)
-    not_implemented_error("train_step")
+    not_implemented_error("train_step(model, trainer, batch)")
 end
 
 """

@@ -30,7 +30,7 @@ using MLUtils: DataLoader, flatten, mapobs
 
 ## Define the model 
 
-mutable struct MLP <: FluxModule
+struct MLP <: FluxModule
     net
 end
 
@@ -82,7 +82,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-model, fit_state = Tsunami.fit(model, trainer, train_loader, test_loader)
+fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
 What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and and model checkpoints on disk.
