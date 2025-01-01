@@ -457,7 +457,7 @@ Dict{String, Float64} with 1 entry:
 ```
 """
 function test(model::FluxModule, trainer::Trainer, dataloader)
-    model = setup_batch(trainer.foil, model)
+    model = setup(trainer.foil, model)
     return test_loop(model, trainer, dataloader; progbar_keep=true)
 end
 
@@ -502,6 +502,6 @@ Returns the aggregated results from the values logged in the `val_step` as a dic
 See also [`Tsunami.test`](@ref) and [`Tsunami.fit`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
-    model = setup_batch(trainer.foil, model)
+    model = setup(trainer.foil, model)
     return val_loop(model, trainer, dataloader; progbar_keep=true)
 end

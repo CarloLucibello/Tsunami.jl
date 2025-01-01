@@ -91,12 +91,15 @@ to_precision(foil::Foil, x) = x |> foil.fprec
 
 is_using_gpu(foil::Foil) = !(foil.device isa CPUDevice)
 
-function setup(foil::Foil, model, optimisers)
-    model = model |> to_precision(foil) |> to_device(foil)
+function setup(foil::Foil, model::FluxModule)
+    return model |> to_precision(foil) |> to_device(foil)
+end
+
+function setup(foil::Foil, model::FluxModule, optimisers)
+    model = setup(foil, model)
     optimisers = optimisers |> to_precision(foil) |> to_device(foil)
     return model, optimisers
 end
-
 function setup_batch(foil::Foil, batch)
     return batch |> to_precision(foil) |> to_device(foil)
 end
