@@ -1,4 +1,5 @@
-@testset "on_before_update" begin
+@testitem "on_before_update" setup=[TsunamiTest] begin
+    using .TsunamiTest
     out = []
 
     struct OnBeforeUpdateCbk end
@@ -16,7 +17,8 @@
     @test size(out[1].net.layers[1].weight) == (3, 4)
 end
 
-@testset "on_train_epoch_start and on_train_epoch_end" begin
+@testitem "on_train_epoch_start and on_train_epoch_end" setup=[TsunamiTest] begin
+    using .TsunamiTest
     out = []
 
     struct TrainEpochCbk end
@@ -36,7 +38,8 @@ end
 end
 
 
-@testset "on_val_epoch_start and on_val_epoch_end" begin
+@testitem "on_val_epoch_start and on_val_epoch_end" setup=[TsunamiTest] begin
+    using .TsunamiTest
     out = []
 
     struct ValEpochCbk end
@@ -58,7 +61,9 @@ end
     @test out == [1, 2, 1, 2, 1, 2, 1, 2]
 end
 
-@testset "on_test_epoch_start and on_test_epoch_end" begin
+@testitem "on_test_epoch_start and on_test_epoch_end" setup=[TsunamiTest] begin
+    using .TsunamiTest
+
     out = []
 
     struct TestEpochCbk end
@@ -77,7 +82,8 @@ end
     @test out == [1, 2]
 end
 
-@testset "on_before_backprop" begin
+@testitem "on_before_backprop" setup=[TsunamiTest] begin
+    using .TsunamiTest
     out = []
 
     struct BeforePullbackCbk end
