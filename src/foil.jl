@@ -92,10 +92,6 @@ to_precision(foil::Foil, x) = x |> foil.fprec
 
 is_using_gpu(foil::Foil) = !(foil.device isa CPUDevice)
 
-function setup(foil::Foil, model)
-    return model |> to_precision(foil) |> to_device(foil)
-end
-
 """
     setup(foil::Foil, model, optimisers)
 
@@ -110,6 +106,17 @@ function setup(foil::Foil, model, optimisers)
     return model, optimisers
 end
 
+function setup(foil::Foil, model)
+    return model |> to_precision(foil) |> to_device(foil)
+end
+
+
+"""
+    setup_batch(foil::Foil, batch)
+
+Setup the batch for training sending it to the device and setting the precision.
+This function is called internally by [`Tsunami.fit!`](@ref).
+"""
 function setup_batch(foil::Foil, batch)
     return batch |> to_precision(foil) |> to_device(foil)
 end
