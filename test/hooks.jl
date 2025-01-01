@@ -9,7 +9,7 @@
     end
     trainer = SilentTrainer(max_epochs=1, callbacks=[OnBeforeUpdateCbk()])
     model = TestModule1()
-    train_dataloader = make_dataloader(io_sizes(model)..., 10, 5)
+    train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.fit!(model, trainer, train_dataloader)
     @test length(out) == 2
     @test out[1] isa NamedTuple
@@ -32,7 +32,7 @@ end
     end
     trainer = SilentTrainer(max_epochs=2, callbacks=[TrainEpochCbk()])
     model = TestModule1()
-    train_dataloader = make_dataloader(io_sizes(model)..., 10, 5)
+    train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.fit!(model, trainer, train_dataloader)
     @test out == [1, 2, 1, 2]
 end
@@ -53,7 +53,7 @@ end
     end
     trainer = SilentTrainer(max_epochs=2, callbacks=[ValEpochCbk()])
     model = TestModule1()
-    train_dataloader = make_dataloader(io_sizes(model)..., 10, 5)
+    train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.fit!(model, trainer, train_dataloader, train_dataloader)
     @test out == [1, 2, 1, 2, 1, 2]
 
@@ -77,7 +77,7 @@ end
     end
     trainer = SilentTrainer(max_epochs=2, callbacks=[TestEpochCbk()])
     model = TestModule1()
-    train_dataloader = make_dataloader(io_sizes(model)..., 10, 5)
+    train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.test(model, trainer, train_dataloader)
     @test out == [1, 2]
 end
@@ -89,15 +89,15 @@ end
     struct BeforePullbackCbk end
     
     function Tsunami.on_before_backprop(::BeforePullbackCbk, model, trainer, loss)
-        push!(out, loss)
+        push!(out, 1)
     end
     function Tsunami.on_before_update(::BeforePullbackCbk, model, trainer, grad)
-        @show grad
+        push!(out, 2)
     end
 
     trainer = SilentTrainer(max_epochs=2, callbacks=[BeforePullbackCbk()])
     model = TestModule1()
-    train_dataloader = make_dataloader(io_sizes(model)..., 10, 5)
+    train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.fit!(model, trainer, train_dataloader)
-    @test out == [1, 1]
+    @test out == [1, 2, 1, 2, 1, 2, 1, 2]
 end
