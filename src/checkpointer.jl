@@ -15,7 +15,7 @@ See also: [`load_checkpoint`](@ref).
 # Examples
 ```julia
 checkpointer = Checkpointer()
-Tsunami.fit(..., callbacks = [checkpointer])
+Tsunami.fit!(..., callbacks = [checkpointer])
 ```
 """
 mutable struct Checkpointer <: AbstractCallback
