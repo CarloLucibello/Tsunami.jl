@@ -1,5 +1,5 @@
 using TestItemRunner
-
+using Test
 
 ## Uncomment below and in test_module.jl to change the default test settings
 # ENV["GNN_TEST_CPU"] = "false"
