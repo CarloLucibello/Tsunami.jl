@@ -36,6 +36,8 @@ the fit state during the execution of `fit!`.
 
 # Constructor Arguments
 
+- **autodiff**: The automatic differentiation engine to use. 
+                Possible values are `:zygote` and `:enzyme` . Default: `:zygote`.
 - **callbacks**: Pass a single or a list of callbacks. Default `nothing`.
 - **checkpointer**: If `true`, enable checkpointing.
                     Default: `true`.
@@ -50,8 +52,8 @@ the fit state during the execution of `fit!`.
              Default: `50`.
 
 - **logger**: If `true` use tensorboard for logging.
-            Every output of the `train_step` will be logged every 50 steps.
-            See also `log_every_n_steps`.
+            Every output of the `train_step` will be logged every 50 steps by default.
+            Set `log_every_n_steps` to change this.
             Default: `true`.
 
 - **max\\_epochs**: Stop training once this number of epochs is reached. 
@@ -96,10 +98,11 @@ trainer = Trainer(max_epochs = 10,
                   checkpointer = true,
                   logger = true)
 
-fitstate = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
+fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 mutable struct Trainer
+    autodiff::Symbol
     callbacks::Vector
     default_root_dir::AbstractString
     fast_dev_run::Bool
@@ -117,7 +120,8 @@ mutable struct Trainer
     optimisers
 end
 
-function Trainer(; 
+function Trainer(;
+            autodiff = :zygote,
             callbacks = [],
             checkpointer = true,
             default_root_dir = pwd(),
@@ -161,7 +165,8 @@ function Trainer(;
         metalogger = MetaLogger(loggers)
     end
     
-    return Trainer(callbacks, default_root_dir, fast_dev_run, log_every_n_steps, loggers, metalogger, 
+    return Trainer(autodiff, callbacks, default_root_dir, fast_dev_run, 
+                    log_every_n_steps, loggers, metalogger, 
                     max_epochs, max_steps, progress_bar, val_every_n_epochs, 
                     fit_state, foil, lr_schedulers, optimisers)
 end

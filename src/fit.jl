@@ -58,6 +58,9 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
     # setup could create a copy on device, therefore we keep a reference to the original model
     model_orig = model
     model, optimisers = setup(trainer.foil, model, optimisers)
+    if trainer.autodiff == :enzyme
+        model = EnzymeCore.Duplicated(model)
+    end
     
     trainer.fit_state = fit_state
     trainer.optimisers = optimisers
@@ -83,8 +86,9 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
     return fit_state
 end
 
+val_loop(m::EnzymeCore.Duplicated, args...; kws...) = val_loop(m.val, args...; kws...)
 
-function val_loop(model, trainer, val_dataloader; progbar_offset = 0, 
+function val_loop(model::FluxModule, trainer::Trainer, val_dataloader; progbar_offset = 0, 
             progbar_keep = true, progbar_print_epoch = false)
     val_dataloader === nothing && return
     fit_state = trainer.fit_state
@@ -117,7 +121,7 @@ function val_loop(model, trainer, val_dataloader; progbar_offset = 0,
     return val_results
 end
 
-function train_loop(model, trainer, train_dataloader, val_dataloader)
+function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
     @unpack fit_state = trainer
     
     fit_state.stage = :training
@@ -149,7 +153,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
 
         hook(on_before_update, model, trainer, grad)
 
-        Optimisers.update!(trainer.optimisers, model, grad)
+        update!(trainer.optimisers, model, grad)
 
         if fit_state.step == trainer.max_steps
             fit_state.should_stop = true
@@ -186,6 +190,11 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
         end
     end
 end
+
+update!(optimisers, m::EnzymeCore.Duplicated, grad) = update!(optimisers, m.val, grad)
+update!(optimisers, m::FluxModule, grad) = Optimisers.update!(optimisers, m, grad)
+
+pullback_train_step(m::EnzymeCore.Duplicated, args...) = pullback_train_step(m.val, args...)
 
 function pullback_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
     loss, z_pb = Zygote.pullback(model) do model

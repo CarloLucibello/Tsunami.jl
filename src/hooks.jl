@@ -1,3 +1,5 @@
+hook(f, model::EnzymeCore.Duplicated, args...) = hook(f, model.val, args...)
+
 function hook(f, model::FluxModule, trainer::Trainer, args...)
     f(model, trainer, args...)
     for callback in trainer.callbacks

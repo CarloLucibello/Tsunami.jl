@@ -5,6 +5,8 @@ using BSON: BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
 using Compat: @compat
 using Crayons
+using EnzymeCore: EnzymeCore
+using Enzyme: Enzyme
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
 # import ImageMagick # for image logging

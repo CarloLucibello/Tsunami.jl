@@ -1,4 +1,5 @@
 @testitem "Trainer Constructor" begin
+    using MLDataDevices
     trainer = Trainer()
     @test trainer.max_epochs == 1000
     @test trainer.max_steps == -1
@@ -14,6 +15,9 @@
     trainer = Trainer(max_epochs=10, max_steps=20)
     @test trainer.max_epochs == 10
     @test trainer.max_steps == 20
+
+    trainer = Trainer(accelerator=:cpu)
+    @test trainer.foil.device isa CPUDevice
 end
 
 @testitem "no val loader" setup=[TsunamiTest] begin
