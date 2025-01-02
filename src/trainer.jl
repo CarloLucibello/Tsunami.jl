@@ -250,7 +250,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         fit_state.should_stop && break
     end
 
-    Flux.loadmodel!(model_orig, Flux.state(model |> cpu))
+    Flux.loadmodel!(model_orig, Flux.state(model))
     return fit_state
 end
 

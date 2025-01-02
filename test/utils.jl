@@ -19,3 +19,12 @@ end
     @test x ≈ y
 end
 
+@testitem "loadmodel! can load state on gpu" tags=[:gpu] begin
+    using Flux
+    model_orig = Chain(Dense(10, 5, relu), Dense(5, 2))
+    dev = gpu_device(force=true)
+    model = model_orig |> gpu
+    model[1].weight .= 1.0
+    Flux.loadmodel!(model_orig, Flux.state(model))
+    @test model_orig[1].weight ≈ collect(model[1].weight)
+end
