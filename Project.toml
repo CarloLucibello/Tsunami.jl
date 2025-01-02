@@ -1,7 +1,7 @@
 name = "Tsunami"
 uuid = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
 authors = "Carlo Lucibello"
-version = "0.2.0-DEV"
+version = "0.2.0"
 
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
