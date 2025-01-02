@@ -194,7 +194,15 @@ end
 update!(optimisers, m::EnzymeCore.Duplicated, grad) = update!(optimisers, m.val, grad)
 update!(optimisers, m::FluxModule, grad) = Optimisers.update!(optimisers, m, grad)
 
-pullback_train_step(m::EnzymeCore.Duplicated, args...) = pullback_train_step(m.val, args...)
+function pullback_train_step(m::EnzymeCore.Duplicated,  trainer::Trainer, batch, batch_idx::Int)
+    Enzyme.make_zero!(m.dval)
+    ad = Enzyme.set_runtime_activity(Enzyme.ReverseWithPrimal)
+    ret = Enzyme.autodiff(ad, Enzyme.Const(train_step), Enzyme.Active, 
+            model, Enzyme.Const(trainer), Enzyme.Const(batch), Enzyme.Const(batch_idx))
+    
+    pb = () -> m.dval
+    return ret[2], pb
+end
 
 function pullback_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
     loss, z_pb = Zygote.pullback(model) do model
