@@ -120,21 +120,3 @@ This function is called internally by [`Tsunami.fit!`](@ref).
 function setup_batch(foil::Foil, batch)
     return batch |> to_precision(foil) |> to_device(foil)
 end
-
-function Zygote.gradient(f, x, foil::Foil)
-   return Zygote.gradient(f, x)[1] 
-end
-
-function Zygote.withgradient(f, x, foil::Foil)
-    fx, gs = Zygote.withgradient(f, x)
-    return fx, gs[1] 
-end
-
-function Zygote.pullback(f, x, foil::Foil)
-    fx, pb = Zygote.pullback(f, x)
-    return fx, () -> unref(pb(one(fx))[1]) # zygote returns a Ref with immutable, so we need to unref it
-end
- 
-# TODO remove when Optimisers.jl is able to handle gradients with (nested) Refs
-unref(x::Ref) = x[]
-unref(x) = x

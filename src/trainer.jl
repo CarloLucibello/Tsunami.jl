@@ -312,10 +312,7 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
         
         batch = setup_batch(trainer.foil, batch)
         
-        loss, pb = pullback(model, trainer.foil) do model
-            loss = train_step(model, trainer, batch, batch_idx)
-            return loss
-        end
+        loss, pb = pullback_train_step(model, trainer, batch, batch_idx)
 
         hook(on_before_backprop, model, trainer, loss)
         
@@ -360,6 +357,20 @@ function train_loop(model, trainer, train_dataloader, val_dataloader)
         end
     end
 end
+
+function pullback_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
+    loss, z_pb = Zygote.pullback(model) do model
+        loss = train_step(model, trainer, batch, batch_idx)
+        return loss
+    end
+    # zygote returns a Ref with immutable, so we need to unref it
+    pb = () -> unref(z_pb(1)[1])
+    return loss, pb
+end
+
+# TODO remove when Optimisers.jl is able to handle gradients with (nested) Refs
+unref(x::Ref) = x[]
+unref(x) = x
 
 function process_out_configure_optimisers(out::Tuple)
     opt, lr_scheduler = out

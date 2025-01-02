@@ -1,4 +1,4 @@
-function hook(f, model, trainer, args...)
+function hook(f, model::FluxModule, trainer::Trainer, args...)
     f(model, trainer, args...)
     for callback in trainer.callbacks
         f(callback, model, trainer, args...)
