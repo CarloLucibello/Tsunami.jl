@@ -1,7 +1,30 @@
 @testmodule TsunamiTest begin
 
+using Pkg
 
 ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
+
+## Uncomment below to change the default test settings
+# ENV["TSUNAMI_TEST_CUDA"] = "true"
+# ENV["TSUNAMI_TEST_AMDGPU"] = "true"
+ENV["TSUNAMI_TEST_Metal"] = "true"
+
+to_test(backend) = get(ENV, "TSUNAMI_TEST_$(backend)", "false") == "true"
+has_dependecies(pkgs) = all(pkg -> haskey(Pkg.project().dependencies, pkg), pkgs)
+deps_dict = Dict(:CUDA => ["CUDA", "cuDNN"], :AMDGPU => ["AMDGPU"], :Metal => ["Metal"])
+
+for (backend, deps) in deps_dict
+    if to_test(backend)
+        if !has_dependecies(deps)
+            Pkg.add(deps)
+        end
+        @eval using $backend
+        if backend == :CUDA
+            @eval using cuDNN
+        end
+        @eval $backend.allowscalar(false)
+    end
+end
 
 using Reexport: @reexport
 using Test
