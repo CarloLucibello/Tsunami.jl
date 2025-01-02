@@ -1,6 +1,6 @@
 # Guides 
 
-## Selecting a backend
+## Selecting a GPU backend
 
 Tsunami supports both CPU and GPU devices. To select a device, use the `accelerator` and `devices` keyword arguments in the `Trainer` constructor.
 
@@ -20,13 +20,6 @@ trainer = Trainer(devices = [1])
 
 Devices are indexed starting from 1, as in the `MLDataDevices.get_device` method used by Flux.
 
-## Selecting trainable components
-
-TODO
-
-## Freezing parameters
-
-TODO
 
 ## Gradient accumulation
 
@@ -83,7 +76,3 @@ function Tsunami.configure_optimisers(model::Model, trainer)
     return opt_state
 end
 ```
-
-## Mixed precision training
-
-TODO
