@@ -1,9 +1,9 @@
 @testitem "Tsunami.seed!" begin
     using Random
     Tsunami.seed!(17)
-    x = rand(10)
+    x = rand(2)
     Random.seed!(17)
-    y = rand(10)
+    y = rand(2)
     @test x ≈ y
 end
 

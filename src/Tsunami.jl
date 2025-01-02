@@ -27,11 +27,24 @@ using Zygote
 include("ProgressMeter/ProgressMeter.jl")
 using .ProgressMeter
 
-include("utils.jl")
-@compat(public, accuracy)
-
 include("stats.jl")
 # export Stats
+
+include("loggers/metalogger.jl") # export MetaLogger
+
+include("loggers/tensorboard.jl")
+@compat(public, (TensorBoardLogger,))
+
+include("foil.jl")
+export Foil
+@compat(public, (setup, setup_batch))
+
+include("trainer.jl")
+export Trainer
+@compat(public, (FitState,))
+
+include("utils.jl")
+@compat(public, accuracy)
 
 include("fluxmodule.jl")
 export FluxModule
@@ -55,24 +68,14 @@ include("hooks.jl")
                  on_test_epoch_end,
                 ))
 
-
-include("loggers/metalogger.jl") # export MetaLogger
-
-include("loggers/tensorboard.jl")
-@compat(public, (TensorBoardLogger,))
-
 include("callbacks.jl")
 export AbstractCallback
 
 include("checkpointer.jl")
 export Checkpointer, load_checkpoint
 
-include("foil.jl")
-export Foil
-@compat(public, (setup, setup_batch))
-
-include("trainer.jl")
-export Trainer
+include("fit.jl")
+@compat(public, (fit!,))
 
 include("log.jl")
 @compat(public, (log,))
