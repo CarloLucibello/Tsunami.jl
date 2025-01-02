@@ -9,6 +9,7 @@ using EnzymeCore: EnzymeCore
 using Enzyme: Enzyme
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
+using Functors: Functors
 # import ImageMagick # for image logging
 using JLD2: JLD2
 using MLUtils

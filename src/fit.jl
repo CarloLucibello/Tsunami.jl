@@ -194,15 +194,27 @@ end
 update!(optimisers, m::EnzymeCore.Duplicated, grad) = update!(optimisers, m.val, grad)
 update!(optimisers, m::FluxModule, grad) = Optimisers.update!(optimisers, m, grad)
 
-function pullback_train_step(m::EnzymeCore.Duplicated,  trainer::Trainer, batch, batch_idx::Int)
-    Enzyme.make_zero!(m.dval)
+function pullback_train_step(model::EnzymeCore.Duplicated,  trainer::Trainer, batch, batch_idx::Int)
+    make_zero!(model.dval)
     ad = Enzyme.set_runtime_activity(Enzyme.ReverseWithPrimal)
     ret = Enzyme.autodiff(ad, Enzyme.Const(train_step), Enzyme.Active, 
             model, Enzyme.Const(trainer), Enzyme.Const(batch), Enzyme.Const(batch_idx))
     
-    pb = () -> m.dval
+    pb = () -> model.dval
     return ret[2], pb
 end
+
+# We can't use Enzyme.make_zero! to reset Duplicated, as it complains about e.g. LayerNorm having immutable differentiable fields
+make_zero!(model) = Functors.fmapstructure(make_zero_inner!, model)
+
+function make_zero_inner!(x::AbstractArray{<:Number})
+  Optimisers.isnumeric(x) || return
+  Optimisers.maywrite(x) || error("can't handle this")
+  fill!(x, zero(eltype(x)))
+  nothing
+end
+
+make_zero_inner!(x) = nothing  # any other Functors leaf type
 
 function pullback_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
     loss, z_pb = Zygote.pullback(model) do model
