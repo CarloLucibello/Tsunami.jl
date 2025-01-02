@@ -91,7 +91,7 @@ trainer = Trainer(max_epochs = 5,
                  logger = true,
                  )
 
-ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.bson")
+ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.jld2")
 model = MLP()
 fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
 @assert fit_state.step == 2110

@@ -1,13 +1,14 @@
 module Tsunami
 
 using Base: @kwdef, PkgId, UUID
-import BSON
+using BSON: BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
 using Compat: @compat
 using Crayons
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
 # import ImageMagick # for image logging
+using JLD2: JLD2
 using MLUtils
 using MLDataDevices: get_device, gpu_device, cpu_device, 
                  CPUDevice, AMDGPUDevice, CUDADevice, MetalDevice

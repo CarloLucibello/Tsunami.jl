@@ -3,8 +3,8 @@
     Checkpointer(folder = nothing) <: AbstractCallback
 
 An helper class for saving a [`FluxModule`](@ref) and the fit state.
-The checkpoint is saved as a BSON file with the name `ckpt_epoch=X_step=Y.bson`.
-A symbolic link to the last checkpoint is also created as `ckpt_last.bson`.
+The checkpoint is saved as a JLD@ file with the name `ckpt_epoch=X_step=Y.jld2`.
+A symbolic link to the last checkpoint is also created as `ckpt_last.jld2`.
 
 A `Checkpointer` is automatically created when `checkpointer = true` is passed to [`fit!`](@ref).
 
@@ -36,7 +36,7 @@ function on_train_epoch_end(cp::Checkpointer, model::FluxModule, trainer)
         folder = joinpath(run_dir, "checkpoints")
     end
     mkpath(folder)
-    filename = "ckpt_epoch=$(epoch)_step=$(step).bson"
+    filename = "ckpt_epoch=$(epoch)_step=$(step).jld2"
     filepath = joinpath(folder, filename)
 
     ckpt = (model_state = cpu(Flux.state(model)), 
@@ -44,14 +44,14 @@ function on_train_epoch_end(cp::Checkpointer, model::FluxModule, trainer)
             lr_schedulers = trainer.lr_schedulers,
             optimisers = cpu(trainer.optimisers))
 
-    BSON.@save filepath ckpt=ckpt
+    JLD2.jldsave(filepath; ckpt)
 
     if cp.last_ckpt !== nothing
         rm(cp.last_ckpt)
     end
     cp.last_ckpt = filepath
 
-    linklast = joinpath(folder, "ckpt_last.bson") 
+    linklast = joinpath(folder, "ckpt_last.jld2") 
     rm(linklast, force=true)
     symlink(filepath, linklast)
     
@@ -69,13 +69,19 @@ See also: [`Checkpointer`](@ref).
 # Examples
 
 ```julia
-ckpt = load_checkpoint("checkpoints/ckpt_last.bson")
+ckpt = load_checkpoint("checkpoints/ckpt_last.jld2")
 model = MyModel(...)
 Flux.loadmodel!(model, ckpt.model_state)
 ``` 
 """
 function load_checkpoint(path)
-    BSON.@load path ckpt
+    if endswith(path, "bson")
+        # TODO remove in Tsunami v0.3
+        @warn "BSON checkpoints support is deprecated and will be removed in the future. Save them as JLD2 files." maxlog=1
+        BSON.@load path ckpt
+    else
+        ckpt = JLD2.load(path, "ckpt")
+    end 
     return ckpt
 end
 
