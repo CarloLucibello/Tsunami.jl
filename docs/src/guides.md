@@ -20,6 +20,16 @@ trainer = Trainer(devices = [1])
 
 Devices are indexed starting from 1, as in the `MLDataDevices.get_device` method used by Flux.
 
+## Selecting an automatic differentiation engine
+
+[Zygote](https://fluxml.ai/Zygote.jl/stable/) is the default Automatic Differentiation (AD) engine in Tsunami,
+used for computing gradients during training. [Enzyme](https://enzymead.github.io/Enzyme.jl/stable/) is an alternative AD engine that can sometimes provide faster performance and differentiate through mutating functions.
+
+To select an AD engine, use the `autodiff` keyword argument in the `Trainer` constructor:
+
+```julia
+trainer = Trainer(autodiff = :enzyme) # options are :zygote (default) and :enzyme
+```
 
 ## Gradient accumulation
 
