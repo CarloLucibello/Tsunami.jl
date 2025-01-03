@@ -49,7 +49,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
     end
     fit_state.epoch = start_epoch - 1
     fit_state.should_stop = false
-
+    trainer.fit_state = fit_state
     
     tsunami_dir = joinpath(trainer.default_root_dir, "tsunami_logs")
     run_dir = dir_with_version(joinpath(tsunami_dir, "run"))
@@ -65,7 +65,6 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         model = EnzymeCore.Duplicated(model)
     end
     
-    trainer.fit_state = fit_state
     trainer.optimisers = optimisers
     trainer.lr_schedulers = lr_schedulers
  
@@ -247,10 +246,11 @@ function print_fit_initial_summary(model, trainer)
         str_gpuavail = "false"
         str_gpuused = "false"
     end
-    @info "GPU available: $(str_gpuavail), used: $(str_gpuused)"
+    @info "GPUs available: $(str_gpuavail), used: $(str_gpuused)"
     @info "Model Summary:"
     show(stdout, MIME("text/plain"), model)
     println()
+    @info "Run Directory: $(trainer.fit_state.run_dir)"
 end
 
 """

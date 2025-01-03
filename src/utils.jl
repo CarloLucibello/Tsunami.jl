@@ -19,8 +19,8 @@ accuracy(ŷ::AbstractMatrix, y::AbstractMatrix) = mean(onecold(ŷ) .== onecold
 #     return num / den
 # end
 
-
-@non_differentiable accuracy(::Any...)
+ChainRulesCore.@non_differentiable accuracy(::Any...)
+EnzymeCore.EnzymeRules.inactive_noinl(::typeof(accuracy), args...) = nothing
 
 roundval(x::Float64) = round(x, sigdigits=3)
 roundval(x::AbstractFloat) = roundval(Float64(x))
@@ -75,8 +75,8 @@ function _length(x)
     end
 end
 
-@non_differentiable _length(::Any)
-EnzymeCore.EnzymeRules.inactive(::typeof(_length), args...) = nothing
+ChainRulesCore.@non_differentiable _length(::Any)
+EnzymeCore.EnzymeRules.inactive_noinl(::typeof(_length), args...) = nothing
 
 
 # Adapted from `setup` implementation in

@@ -30,14 +30,15 @@ using Reexport: @reexport
 using Test
 using DataFrames: DataFrames, DataFrame
 using Enzyme: Enzyme
+using MLUtils: MLUtils
 @reexport using Tsunami
 @reexport using Flux
 @reexport using Optimisers
 
 export SilentTrainer, 
-      NotModule, TestModule1, LinearModel, TBLoggingModule, io_sizes,
-      make_regression_dataset, make_dataloader, read_tensorboard_logs_asdf,
-      DataFrames, DataFrame, Enzyme
+      NotModule, TestModule1, LinearModel, TBLoggingModule, MLP,
+      io_sizes, make_regression_dataset, make_dataloader, read_tensorboard_logs_asdf,
+      DataFrames, DataFrame, Enzyme, MLUtils
 
 
 const SilentTrainer = (args...; kws...) -> Trainer(args...; kws..., logger=false, checkpointer=false, progress_bar=false)
@@ -135,28 +136,35 @@ struct MLP{T} <: FluxModule
     mode::Symbol
 end
 
-function MLP(din::Int, dout::Int, mode::Symbol)
-    @assert mode in (:regression, :classification)
-    net = Chain(Dense(din, 64, relu), Dense(64, dout))
+function MLP(din, dout, mode)
+    @assert mode in (:classification, :regression)
+    net = Chain(Dense(din => 128, relu), Dense(128 => dout))
     return MLP(net, mode)
 end
 
-(m::MLP)(x) = m.net(x)
+(model::MLP)(x) = model.net(MLUtils.flatten(x))
 
-function Tsunami.train_step(m::MLP, trainer, batch, batch_idx)
+function loss_and_accuracy(model::MLP, batch)
     x, y = batch
-    ŷ = m(x)
-    if MLP.mode == :classification
-        loss = Flux.logitcrossentropy(ŷ, y)
-    else
+    ŷ = model(x)
+    if model.mode == :regression
         loss = Flux.mse(ŷ, y)
+        return loss, loss
+    else
+        loss, acc = Flux.logitcrossentropy(ŷ, y), Tsunami.accuracy(ŷ, y)
+        return loss, acc
     end
+end
+
+function Tsunami.train_step(model::MLP, trainer, batch)
+    loss, acc = loss_and_accuracy(model, batch)
+    Tsunami.log(trainer, "train/loss", loss, prog_bar=true)
+    Tsunami.log(trainer, "train/accuracy", acc, prog_bar=true)
     return loss
 end
 
-function Tsunami.configure_optimisers(m::MLP, trainer)
-    return Optimisers.setup(Optimisers.Adam(1f-3), m)
-end
+Tsunami.configure_optimisers(model::MLP, trainer) = 
+    Optimisers.setup(Optimisers.AdamW(1e-3), model)
 
 ###### TBLoggingModuel ######
 

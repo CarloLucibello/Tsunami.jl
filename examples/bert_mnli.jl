@@ -12,7 +12,7 @@ using Transformers.Datasets: GLUE
 # using HuggingFaceDatasets
 
 using Flux, Tsunami
-using  Optimisers: Optimisers, Adam
+using Optimisers: Optimisers, Adam
 using ChainRulesCore
 
 #### MODEL #########
