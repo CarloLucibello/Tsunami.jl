@@ -31,9 +31,9 @@ pkg> add Tsunami
 
 ## Usage
 
-Define your model subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer` train the model on your dataset with `Tsunami.fit!`. Tsunami will handle all of the boilerplate (training loop, loggin, gpu movement, validation, ...).
+Define your model by subtyping the `FluxModule` abstract type, implement a few required methods, then let the `Trainer` train the model on your dataset with `Tsunami.fit!`. Tsunami will handle the boilerplate (training loop, logging, gpu movement, validation, ...).
 
-In the following script we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
+In the following script, we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, MLDatasets
 using CUDA # or AMDGPU, Metal, ... for GPU support
