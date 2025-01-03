@@ -209,19 +209,6 @@ function test_step(model::FluxModule, trainer, batch)
     return nothing 
 end
 
-"""
-    copy!(dest::FluxModule, src::FluxModule)
-
-Shallow copy of all fields of `src` to `dest`.
-"""
-function Base.copy!(dest::T1, src::T2) where {T1 <: FluxModule, T2 <: FluxModule}
-    @assert fieldnames(T1) == fieldnames(T2) "The two structs have different fields."
-    for f in fieldnames(T1)
-        setfield!(dest, f, getfield(src, f))
-    end
-    return dest
-end
-
 check_train_step(m::EnzymeCore.Duplicated, args...) = check_train_step(m.val, args...)
 
 function check_train_step(m::FluxModule, trainer, batch)

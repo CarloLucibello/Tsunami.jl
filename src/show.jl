@@ -31,13 +31,13 @@ function compact_show(io::IO, x)
     show(IOContext(io, :limit => true, :compact => true), x)
 end
 
-"""
-    compact_typename(x::T) -> String
-    compact_typename(T) -> String
+# """
+#     compact_typename(x::T) -> String
+#     compact_typename(T) -> String
 
-Return a compact string representation of the type `T` of `x`.
-Keep only the name and `T`'s parameters, discarding their own parameters.
-"""
+# Return a compact string representation of the type `T` of `x`.
+# Keep only the name and `T`'s parameters, discarding their own parameters.
+# """
 compact_typename(x::T) where T = compact_typename(T)
 
 function compact_typename(T::DataType)
