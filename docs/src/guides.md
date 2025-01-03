@@ -18,7 +18,7 @@ To select a specific GPU, use the `devices` keyword argument:
 trainer = Trainer(devices = [1])
 ```
 
-Devices are indexed starting from 1, as in the `MLDataDevices.get_device` method used by Flux.
+Devices are indexed starting from 1, as in the `MLDataDevices.gpu_device` method used by Flux.
 
 ## Selecting an automatic differentiation engine
 

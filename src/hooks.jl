@@ -19,8 +19,8 @@ on_before_update(cb, model, trainer, grad) = nothing
 """
     on_before_backprop([callback,] model, trainer, loss)
 
-Called after the model's forward, where also the pullback is computed, 
-but before the call to the pullback (the backward pass).
+Called after the model's forward, where also the pullback is created, 
+but before the call to the pullback (the backward pass computing the gradient).
 """
 on_before_backprop(model, trainer, loss) = nothing
 on_before_backprop(cb, model, trainer, loss) = nothing

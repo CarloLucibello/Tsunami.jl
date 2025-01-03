@@ -146,10 +146,10 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
         batch = setup_batch(trainer.foil, batch)
         
         loss, pb = pullback_train_step(model, trainer, batch, batch_idx)
-
         hook(on_before_backprop, model, trainer, loss)
-        
         grad = pb()
+        ## Alternative directly computing the gradient
+        # loss, grad = gradient_train_step(model, trainer, batch, batch_idx)
 
         hook(on_before_update, model, trainer, grad)
 
@@ -205,7 +205,7 @@ function pullback_train_step(model::FluxModule, trainer::Trainer, batch, batch_i
 end
 
 function gradient_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
-    loss, z_grad = Zygote.gradient(model) do model
+    loss, z_grad = Zygote.withgradient(model) do model
         loss = train_step(model, trainer, batch, batch_idx)
         return loss
     end

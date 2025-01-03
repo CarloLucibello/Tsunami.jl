@@ -10,7 +10,7 @@ into a Callback at various points in the training, testing, and validation loops
 At a high level, and omitting function imputs and outputs, a simplified version of the [`Tsunami.fit!`](@ref) method looks like this:
 
 ```julia
-function fit()
+function fit!()
     configure_optimizers()
     
     for epoch in epochs
@@ -25,9 +25,9 @@ function train_loop()
     for batch in train_dataloader
         on_train_batch_start()
         batch = transfer_batch_to_device(batch)
-        loss, pb = pullback(m -> train_step(model, batch),  model)
+        loss, pb = pullback(m -> train_step(m, batch),  model)
         on_before_backprop()
-        grad = pb(1)
+        grad = pb()
         on_before_update()
         update!(opt_state, model, grad)
         on_train_batch_end()

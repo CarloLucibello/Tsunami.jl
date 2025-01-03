@@ -5,23 +5,18 @@ using Enzyme
 using Functors: Functors
 using Optimisers: Optimisers
 
-# function Tsunami.pullback_train_step(model::Duplicated,  trainer::Trainer, batch, batch_idx::Int)
-#     make_zero!(model.dval)
-#     ad = Enzyme.set_runtime_activity(Enzyme.ReverseSplitWithPrimal)
-#     args = (model, Const(trainer), Const(batch), Const(batch_idx))
-#     forward, reverse = autodiff_thunk(ad, Const{typeof(train_step)}, Active, map(typeof, args)...)
-#     tape, loss, _  = forward(Const(train_step), args...)
-#     pb = () -> reverse(Const(train_step), args..., one(loss), tape)
-#     return loss, pb
-# end
-
-function Tsunami.pullback_train_step(model::Duplicated, trainer::Trainer, batch, batch_idx::Int)
+function Tsunami.pullback_train_step(model::Duplicated,  trainer::Trainer, batch, batch_idx::Int)
     make_zero!(model.dval)
-    ad = Enzyme.set_runtime_activity(ReverseWithPrimal)
+    ad = Enzyme.set_runtime_activity(ReverseSplitWithPrimal)
+    # ad = ReverseSplitWithPrimal
     args = (model, Const(trainer), Const(batch), Const(batch_idx))
-    ret = Enzyme.autodiff(ad, Const(train_step), Active, args...)
-    pb = () -> model.dval
-    return ret[2], pb
+    forward, reverse = autodiff_thunk(ad, Const{typeof(train_step)}, Active, map(typeof, args)...)
+    tape, loss, _ = forward(Const(train_step), args...)
+    function pb()
+        reverse(Const(train_step), args..., one(loss), tape)
+        return model.dval
+    end
+    return loss, pb
 end
 
 function Tsunami.gradient_train_step(model::Duplicated, trainer::Trainer, batch, batch_idx::Int)
@@ -36,10 +31,10 @@ end
 make_zero!(model) = Functors.fmapstructure(make_zero_inner!, model)
 
 function make_zero_inner!(x::AbstractArray{<:Number})
-  Optimisers.isnumeric(x) || return
-  Optimisers.maywrite(x) || error("can't handle this")
-  fill!(x, zero(eltype(x)))
-  nothing
+    Optimisers.isnumeric(x) || return
+    Optimisers.maywrite(x) || error("can't handle this")
+    fill!(x, zero(eltype(x)))
+    nothing
 end
 
 make_zero_inner!(x) = nothing  # any other Functors leaf type
