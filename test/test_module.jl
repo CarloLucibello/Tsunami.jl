@@ -35,8 +35,8 @@ using Enzyme: Enzyme
 @reexport using Optimisers
 
 export SilentTrainer, 
-      NotModule, TestModule1, LinearModel, TBLoggingModule, io_sizes,
-      make_regression_dataset, make_dataloader, read_tensorboard_logs_asdf,
+      NotModule, TestModule1, LinearModel, TBLoggingModule, MLP,
+      io_sizes, make_regression_dataset, make_dataloader, read_tensorboard_logs_asdf,
       DataFrames, DataFrame, Enzyme
 
 
@@ -146,11 +146,12 @@ end
 function Tsunami.train_step(m::MLP, trainer, batch, batch_idx)
     x, y = batch
     ŷ = m(x)
-    if MLP.mode == :classification
+    if m.mode == :classification
         loss = Flux.logitcrossentropy(ŷ, y)
     else
         loss = Flux.mse(ŷ, y)
     end
+    Tsunami.log(trainer, "train/loss", loss; prog_bar=true)
     return loss
 end
 
