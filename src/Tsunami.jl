@@ -2,7 +2,7 @@ module Tsunami
 
 using Base: @kwdef, PkgId, UUID
 using BSON: BSON
-using ChainRulesCore: ChainRulesCore, @non_differentiable
+using ChainRulesCore: ChainRulesCore
 using Compat: @compat
 using Crayons
 using EnzymeCore: EnzymeCore

@@ -86,5 +86,5 @@ function log(trainer::Trainer, name::AbstractString, value;
     end
 end
 
-@non_differentiable log(::Any...)
+ChainRulesCore.@non_differentiable log(::Any...)
 EnzymeCore.EnzymeRules.inactive(::typeof(log), args...; kws...) = nothing

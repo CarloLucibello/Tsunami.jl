@@ -86,9 +86,9 @@ function set_run_dir!(metalogger::MetaLogger, run_dir)
     end
 end
 
-@non_differentiable log_epoch(::Any...)
-EnzymeCore.EnzymeRules.inactive(::typeof(log_epoch), args...; kws...) = nothing
-@non_differentiable log_step(::Any...)
-EnzymeCore.EnzymeRules.inactive(::typeof(log_step), args...; kws...) = nothing
-@non_differentiable accumulate_epoch!(::Any...)
-EnzymeCore.EnzymeRules.inactive(::typeof(accumulate_epoch!), args...; kws...) = nothing
+ChainRulesCore.@non_differentiable log_epoch(::Any...)
+EnzymeCore.EnzymeRules.inactive_noinl(::typeof(log_epoch), args...; kws...) = nothing
+ChainRulesCore.@non_differentiable log_step(::Any...)
+EnzymeCore.EnzymeRules.inactive_noinl(::typeof(log_step), args...; kws...) = nothing
+ChainRulesCore.@non_differentiable accumulate_epoch!(::Any...)
+EnzymeCore.EnzymeRules.inactive_noinl(::typeof(accumulate_epoch!), args...; kws...) = nothing

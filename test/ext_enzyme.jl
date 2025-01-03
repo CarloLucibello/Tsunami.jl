@@ -30,3 +30,30 @@ end
     trainer = SilentTrainer(max_epochs=10, autodiff=:enzyme, accelerator=:cpu)
     Tsunami.fit!(model, trainer, train_loader)
 end
+
+@testitem "mlp fashion mnist enzyme" setup=[TsunamiTest] begin
+    using .TsunamiTest
+    using MLUtils: DataLoader, mapobs, getobs
+    using MLDatasets
+
+    function mnist_transform(batch)
+        x, y = batch
+        y = Flux.onehotbatch(y, 0:9)
+        return (x, y)
+    end
+
+    train_data = FashionMNIST(split=:train)
+    train_data = mapobs(mnist_transform, train_data)[:]
+    train_loader = DataLoader(train_data, batchsize=128, shuffle=true)
+
+    test_data = FashionMNIST(split=:test)
+    test_data = mapobs(mnist_transform, test_data)[:]
+    test_loader = DataLoader(test_data, batchsize=128)
+
+    model = MLP(28*28, 10, :classification)
+    trainer = SilentTrainer(max_epochs=5, autodiff=:enzyme, accelerator=:cpu)
+    Tsunami.fit!(model, trainer, train_loader)
+    n = 100
+    x, y = getobs(train_data, 1:n)
+    @test Tsunami.accuracy(model(x), y) > 0.9
+end
