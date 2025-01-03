@@ -6,7 +6,6 @@ using ChainRulesCore: ChainRulesCore, @non_differentiable
 using Compat: @compat
 using Crayons
 using EnzymeCore: EnzymeCore
-using Enzyme: Enzyme
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
 using Functors: Functors

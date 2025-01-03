@@ -121,7 +121,7 @@ mutable struct Trainer
 end
 
 function Trainer(;
-            autodiff = :zygote,
+            autodiff::Symbol = :zygote,
             callbacks = [],
             checkpointer = true,
             default_root_dir = pwd(),
@@ -135,7 +135,13 @@ function Trainer(;
             val_every_n_epochs = 1,
             foil_kws...
          )
-    
+    if autodiff == :zygote
+        is_loaded(:Zygote) || throw(ArgumentError("Zygote.jl must be loaded to use autodiff=:zygote. Run `using Zygote`."))
+    elseif autodiff == :enzyme
+        is_loaded(:Enzyme) || throw(ArgumentError("Enzyme.jl must be loaded to use autodiff=:enzyme. Run `using Enzyme`."))
+    else
+        throw(ArgumentError("autodiff must be either :zygote or :enzyme"))
+    end
 
     fit_state = FitState()
     foil = Foil(; foil_kws...)

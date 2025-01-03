@@ -1,5 +1,6 @@
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"

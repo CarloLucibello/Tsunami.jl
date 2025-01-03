@@ -29,6 +29,7 @@ end
 using Reexport: @reexport
 using Test
 using DataFrames: DataFrames, DataFrame
+using Enzyme: Enzyme
 @reexport using Tsunami
 @reexport using Flux
 @reexport using Optimisers
@@ -36,7 +37,7 @@ using DataFrames: DataFrames, DataFrame
 export SilentTrainer, 
       NotModule, TestModule1, LinearModel, TBLoggingModule, io_sizes,
       make_regression_dataset, make_dataloader, read_tensorboard_logs_asdf,
-      DataFrames, DataFrame
+      DataFrames, DataFrame, Enzyme
 
 
 const SilentTrainer = (args...; kws...) -> Trainer(args...; kws..., logger=false, checkpointer=false, progress_bar=false)
