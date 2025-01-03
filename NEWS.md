@@ -1,11 +1,11 @@
 # Tsunami Release Notes
 
-# v0.2 - December 2024
+## v0.2 - 2024-12-03
 
-Breaking changes:
+**Breaking changes:**
 - Devices indexing now starts from 1, as in `MLDataDevices.gpu_device`.
 
-Highlights:
+**Highlights:**
 - Updated to Flux v0.16.
 - Models (i.e. subtypes of `FluxModule`) are now not required to be mutable.
 - `Tsunami.fit` is deprecated in favour of `Tsunami.fit!`.
