@@ -1,6 +1,12 @@
 # Tsunami Release Notes
 
-## v0.2 - 2025-01-03
+## v0.2.1 
+
+**Highlights:**
+- Users should no longer assume that `fit!` returns a `FitState` object. 
+  In the future, `fit!` will return nothing. The `FitState` object can be accessed via `trainer.fit_state`.
+
+## v0.2.0 - 2025-01-03
 
 **Breaking changes:**
 - Devices indexing now starts from 1, as in `MLDataDevices.gpu_device`.

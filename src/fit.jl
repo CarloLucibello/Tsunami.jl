@@ -1,10 +1,12 @@
 """
-    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path]) -> fit_state
+    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path])
 
 Train `model` using the configuration given by `trainer`.
 If `ckpt_path` is given, training is resumed from the checkpoint.
 
-Return a [`FitState`](@ref) object.
+After the fit, `trainer.fit_state` will contain the final state of the training.
+
+See also [`Trainer`](@ref) and [`FitState`](@ref).
 
 # Arguments
 
