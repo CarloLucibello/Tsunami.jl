@@ -27,13 +27,8 @@ roundval(x::AbstractFloat) = roundval(Float64(x))
 roundval(x::Int) = x
 roundval(x::NamedTuple) = map(roundval, x)
 
-
-"""
-    dir_with_version(dir::String)
-
-Append a version number to `dir`.
-"""
-function dir_with_version(dir)
+# Append a version number to `dir`.
+function dir_with_version(dir::String)
     i = 1
     outdir = dir * "_$i"
     while isdir(outdir)
@@ -71,11 +66,7 @@ function seed!(seed::Int)
     end
 end
 
-"""
-    _length(x) -> Int
-
-Return the length of `x` if defined, otherwise return -1.
-"""
+# Return the length of `x` if defined, otherwise return -1.
 function _length(x)
     try
         return length(x)

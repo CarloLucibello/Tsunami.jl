@@ -409,11 +409,6 @@ function speedstring(sec_per_iter)
     return " >100  d/it"
 end
 
-"""
-    rewind(p::AbstractProgress)
-
-Rewinds the cursor to the beginning of the progress bar.
-"""
 function rewind(p::AbstractProgress)
     print(p.output, "\r\u1b[A" ^ (p.offset + p.numprintedvalues))
 end
