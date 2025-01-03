@@ -8,6 +8,8 @@ mathengine = MathJax3()
 sidebar_sitename = true
 assets = ["assets/flux.css"]
 
+cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"), force = true)
+
 makedocs(;
     modules = [Tsunami],
     doctest = true,
@@ -33,5 +35,7 @@ makedocs(;
         ],
     ]
 )
+
+rm(joinpath(@__DIR__, "src", "index.md"), force = true)
 
 deploydocs(repo = "github.com/CarloLucibello/Tsunami.jl.git")

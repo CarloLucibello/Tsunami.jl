@@ -5,8 +5,10 @@ using BSON: BSON
 using ChainRulesCore: ChainRulesCore, @non_differentiable
 using Compat: @compat
 using Crayons
+using EnzymeCore: EnzymeCore
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
+using Functors: Functors
 # import ImageMagick # for image logging
 using JLD2: JLD2
 using MLUtils
@@ -27,11 +29,24 @@ using Zygote
 include("ProgressMeter/ProgressMeter.jl")
 using .ProgressMeter
 
-include("utils.jl")
-@compat(public, accuracy)
-
 include("stats.jl")
 # export Stats
+
+include("loggers/metalogger.jl") # export MetaLogger
+
+include("loggers/tensorboard.jl")
+@compat(public, (TensorBoardLogger,))
+
+include("foil.jl")
+export Foil
+@compat(public, (setup, setup_batch))
+
+include("trainer.jl")
+export Trainer
+@compat(public, (FitState,))
+
+include("utils.jl")
+@compat(public, accuracy)
 
 include("fluxmodule.jl")
 export FluxModule
@@ -55,24 +70,14 @@ include("hooks.jl")
                  on_test_epoch_end,
                 ))
 
-
-include("loggers/metalogger.jl") # export MetaLogger
-
-include("loggers/tensorboard.jl")
-@compat(public, (TensorBoardLogger,))
-
 include("callbacks.jl")
 export AbstractCallback
 
 include("checkpointer.jl")
 export Checkpointer, load_checkpoint
 
-include("foil.jl")
-export Foil
-@compat(public, (setup, setup_batch))
-
-include("trainer.jl")
-export Trainer
+include("fit.jl")
+@compat(public, (fit!,))
 
 include("log.jl")
 @compat(public, (log,))

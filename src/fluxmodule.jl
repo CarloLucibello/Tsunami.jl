@@ -222,12 +222,16 @@ function Base.copy!(dest::T1, src::T2) where {T1 <: FluxModule, T2 <: FluxModule
     return dest
 end
 
+check_train_step(m::EnzymeCore.Duplicated, args...) = check_train_step(m.val, args...)
+
 function check_train_step(m::FluxModule, trainer, batch)
     batch = setup_batch(trainer.foil, batch)
     out = train_step(m, trainer, batch, 1)
     losserrmsg = "The output of `train_step` has to be a scalar."
     @assert out isa Number losserrmsg
 end
+
+check_val_step(m::EnzymeCore.Duplicated, args...) = check_val_step(m.val, args...)
 
 function check_val_step(m::FluxModule, trainer, batch)
     batch = setup_batch(trainer.foil, batch)

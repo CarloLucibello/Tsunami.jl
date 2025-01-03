@@ -11,9 +11,20 @@ A high-level deep learning framework for the Julia language that helps you focus
 Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl) and it is heavily inspired by [pytorch-lightning](https://pytorch-lightning.readthedocs.io/en/latest/) (although [LightningAI](https://www.pytorchlightning.ai/index.html) is not involved in this project).
 
 
+## Features
+
+- Use `Tsunami.fit!` instead of implementing a training loop.
+- Logging (tensorboard).
+- Checkpoints (save and resume training).
+- Hyperparameters' schedulers.
+- CUDA, AMDGPU, and Metal GPU support.
+- Progress bars.
+- Nice organization of your code.
+- Automatic Differentiation through Zygote or Enzyme.
+
 ## Installation 
 
-Install Tsunami with 
+Install Tsunami using the Julia package manager:
 ```julia
 pkg> add Tsunami
 ```
@@ -91,13 +102,6 @@ What follows is the final output of the script. The script will train the model 
 
 See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and check the [examples](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) folder to learn more.
 
-## Features
-
-- Use `Tsunami.fit!` instead of implementing a training loop.
-- Logging (tensorboard).
-- Checkpoints (save and resume training).
-- Hyperparameters' schedulers.
-- CUDA, AMDGPU, Metal GPU support.
 
 ## Contributions are welcome!
 

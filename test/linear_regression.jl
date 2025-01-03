@@ -38,3 +38,22 @@ end
     @test model.W isa Matrix{Float32} # by default precision is Float32
     @test Flux.mse(model(X), y) < 1e-1
 end
+
+@testitem "linear regression enzyme" setup=[TsunamiTest] begin
+    using .TsunamiTest
+    N = 1000
+    α = 0.5
+    λ = 1f-5 / round(Int, N * α)
+
+    M = round(Int, N * α)
+    teacher = LinearModel(N)
+    X = randn(Float32, N, M)
+    y = teacher(X)
+
+    model = LinearModel(N; λ)
+    trainer = SilentTrainer(max_epochs=1000, autodiff=:enzyme, accelerator=:cpu)
+    @test trainer.foil.device isa CPUDevice
+    fit_state = Tsunami.fit!(model, trainer, [(X, y)])
+    @test model.W isa Matrix{Float32}
+    @test Flux.mse(model(X), y) < 1e-1
+end

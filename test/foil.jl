@@ -1,5 +1,7 @@
 @testitem "Foil constructor" begin
+    using MLDataDevices
     foil = Foil(accelerator=:cpu, precision=:f32, devices=nothing)
+    @test foil.device isa CPUDevice
     @test foil isa Foil
 end
 

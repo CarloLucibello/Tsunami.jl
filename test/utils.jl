@@ -1,13 +1,13 @@
 @testitem "Tsunami.seed!" begin
     using Random
     Tsunami.seed!(17)
-    x = rand(10)
+    x = rand(2)
     Random.seed!(17)
-    y = rand(10)
+    y = rand(2)
     @test x ≈ y
 end
 
-@testitem "Tsunami.seed! GPU" tags=[:gpu] begin
+@testitem "GPU Tsunami.seed!" tags=[:gpu] begin
     using Random
     using MLDataDevices
     dev = gpu_device(force=true)
@@ -19,3 +19,12 @@ end
     @test x ≈ y
 end
 
+@testitem "GPU loadmodel! can load state on gpu" tags=[:gpu] begin
+    using Flux
+    model_orig = Chain(Dense(10, 5, relu), Dense(5, 2))
+    dev = gpu_device(force=true)
+    model = model_orig |> dev
+    model[1].weight .= 1f0
+    Flux.loadmodel!(model_orig, Flux.state(model))
+    @test model_orig[1].weight ≈ collect(model[1].weight)
+end
