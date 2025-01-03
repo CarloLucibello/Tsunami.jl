@@ -14,7 +14,7 @@
     @test model.W isa Matrix{Float32}
     @test size(model.W) == (1, N)
     trainer = SilentTrainer(max_epochs=1000)
-    fit_state = Tsunami.fit!(model, trainer, [(X, y)])
+    Tsunami.fit!(model, trainer, [(X, y)])
     @test model.W isa Matrix{Float32} # by default precision is Float32
     @test Flux.mse(model(X), y) < 1e-1
 end
@@ -34,7 +34,7 @@ end
     @test model.W isa Matrix{Float32}
     @test size(model.W) == (1, N)
     trainer = SilentTrainer(max_epochs=100, accelerator=:gpu)
-    fit_state = Tsunami.fit!(model, trainer, [(X, y)])
+    Tsunami.fit!(model, trainer, [(X, y)])
     @test model.W isa Matrix{Float32} # by default precision is Float32
     @test Flux.mse(model(X), y) < 1e-1
 end
@@ -53,7 +53,7 @@ end
     model = LinearModel(N; λ)
     trainer = SilentTrainer(max_epochs=1000, autodiff=:enzyme, accelerator=:cpu)
     @test trainer.foil.device isa CPUDevice
-    fit_state = Tsunami.fit!(model, trainer, [(X, y)])
+    Tsunami.fit!(model, trainer, [(X, y)])
     @test model.W isa Matrix{Float32}
     @test Flux.mse(model(X), y) < 1e-1
 end

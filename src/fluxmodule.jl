@@ -60,7 +60,7 @@ train_dataloader = Flux.DataLoader((X, Y), batchsize=10)
 # Create and Train the model
 model = Model()
 trainer = Trainer(max_epochs=10)
-fit_state = Tsunami.fit!(model, trainer, train_dataloader)
+Tsunami.fit!(model, trainer, train_dataloader)
 ```
 """
 abstract type FluxModule end

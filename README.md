@@ -36,20 +36,21 @@ Define your model by subtyping the `FluxModule` abstract type, implement a few r
 In the following script, we train a Multilayer Perceptron on the FashionMNIST dataset using Tsunami:
 ```julia
 using Flux, Optimisers, Statistics, Tsunami, MLDatasets
-using CUDA # or AMDGPU, Metal, ... for GPU support
 using MLUtils: DataLoader, flatten, mapobs
+## uncomment one of the following for GPU acceleration
+# using CUDA
+# using AMDGPU
+# using Metal
 
 ## Define the model 
 
-struct MLP <: FluxModule
-    net
+struct MLP{T} <: FluxModule
+    net::T
 end
 
-MLP() = MLP(Chain(flatten,
-                Dense(28^2 => 512, relu), 
-                Dense(512 => 10)))
+MLP() = MLP(Chain(Dense(28^2 => 512, relu), Dense(512 => 10)))
 
-(model::MLP)(x) = model.net(x)
+(model::MLP)(x) = model.net(flatten(x))
 
 function loss_and_accuracy(model::MLP, batch)
     x, y = batch
@@ -93,7 +94,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 model = MLP()
 trainer = Trainer(max_epochs=5)
-fit_state = Tsunami.fit!(model, trainer, train_loader, test_loader)
+Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
 What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and and model checkpoints on disk.

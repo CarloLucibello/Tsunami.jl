@@ -1,10 +1,12 @@
 """
-    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path]) -> fit_state
+    fit!(model, trainer, train_dataloader, [val_dataloader]; [ckpt_path])
 
 Train `model` using the configuration given by `trainer`.
 If `ckpt_path` is given, training is resumed from the checkpoint.
 
-Return a [`FitState`](@ref) object.
+After the fit, `trainer.fit_state` will contain the final state of the training.
+
+See also [`Trainer`](@ref) and [`FitState`](@ref).
 
 # Arguments
 
@@ -19,11 +21,12 @@ Return a [`FitState`](@ref) object.
 ```julia
 model = ...
 trainer = Trainer(max_epochs = 10)
-fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
+Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
+run_dir = trainer.fit_state.run_dir
 
 # Resume training from checkpoint
 trainer = Trainer(max_epochs = 20) # train for 10 more epochs
-ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.jld2")
+ckpt_path = joinpath(run_dir, "checkpoints", "ckpt_last.jld2")
 fit_state′ = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader; ckpt_path)
 ```
 """
