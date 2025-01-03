@@ -7,7 +7,7 @@ ENV["DATADEPS_ALWAYS_ACCEPT"] = true # for MLDatasets in examples
 ## Uncomment below to change the default test settings
 # ENV["TSUNAMI_TEST_CUDA"] = "true"
 # ENV["TSUNAMI_TEST_AMDGPU"] = "true"
-ENV["TSUNAMI_TEST_Metal"] = "true"
+# ENV["TSUNAMI_TEST_Metal"] = "true"
 
 to_test(backend) = get(ENV, "TSUNAMI_TEST_$(backend)", "false") == "true"
 has_dependecies(pkgs) = all(pkg -> haskey(Pkg.project().dependencies, pkg), pkgs)
