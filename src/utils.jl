@@ -76,6 +76,7 @@ function _length(x)
 end
 
 @non_differentiable _length(::Any)
+EnzymeCore.EnzymeRules.inactive(::typeof(_length), args...) = nothing
 
 
 # Adapted from `setup` implementation in

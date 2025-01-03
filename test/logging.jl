@@ -10,13 +10,13 @@
     model = TBLoggingModule(log_on_train_step=true, log_on_train_epoch=true)
     trainer = Trainer(max_epochs=4, log_every_n_steps=1)
     train_dataloader = make_regression_dataset(io_sizes(model)..., batch_sizes)
-    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
-
-    events = Tsunami.read_tensorboard_logs(fit_state.run_dir)
+    Tsunami.fit!(model, trainer, train_dataloader)
+    run_dir = trainer.fit_state.run_dir
+    events = Tsunami.read_tensorboard_logs(run_dir)
     @test events isa Vector{Tuple{String, Int64, <:Any}} 
     @test count(x -> x[1] == "train/loss_step", events) == 8
 
-    df = read_tensorboard_logs_asdf(fit_state.run_dir)
+    df = read_tensorboard_logs_asdf(run_dir)
     @test "train/loss_step" ∈ names(df)
     @test "train/loss_epoch" ∈ names(df)
     @test "train/loss" ∉ names(df)

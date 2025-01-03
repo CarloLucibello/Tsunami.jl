@@ -58,12 +58,12 @@ end
     loss0 = Flux.Losses.mse(ŷ0, y)
 
     trainer = Trainer(max_epochs=2, logger=false, checkpointer=true, progress_bar=true, default_root_dir=@__DIR__)
-    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
-    runpath1 = fit_state.run_dir
+    Tsunami.fit!(model, trainer, train_dataloader)
+    runpath1 = trainer.fit_state.run_dir
     ckptpath1 = joinpath(runpath1, "checkpoints", "ckpt_epoch=2_step=4.jld2")
     @test isfile(ckptpath1)
-    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
-    runpath2 = fit_state.run_dir
+    Tsunami.fit!(model, trainer, train_dataloader)
+    runpath2 = trainer.fit_state.run_dir
     ckptpath2 = joinpath(runpath2, "checkpoints", "ckpt_epoch=2_step=4.jld2")
     @test isfile(ckptpath2)
 
@@ -89,9 +89,9 @@ end
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
     trainer = SilentTrainer(max_epochs=2, fast_dev_run=true)
-    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
-    @test fit_state.epoch == 0
-    @test fit_state.step == 0
+    Tsunami.fit!(model, trainer, train_dataloader)
+    @test trainer.fit_state.epoch == 0
+    @test trainer.fit_state.step == 0
 end
 
 @testitem "val_every_n_epochs" setup=[TsunamiTest] begin
@@ -101,8 +101,8 @@ end
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
     trainer = SilentTrainer(max_epochs=2, val_every_n_epochs=2)
-    fit_state = Tsunami.fit!(model, trainer, train_dataloader)
-    @test fit_state.epoch == 2 
+    Tsunami.fit!(model, trainer, train_dataloader)
+    @test trainer.fit_state.epoch == 2 
 end
 
 @testitem "generic dataloader" setup=[TsunamiTest] begin
@@ -112,8 +112,8 @@ end
     train_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
     val_dataloader = [(rand(Float32, nx, 2), rand(Float32, ny, 2))]
     trainer = SilentTrainer(max_epochs = 2)
-    fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
-    @test fit_state.epoch == 2
+    Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
+    @test trainer.fit_state.epoch == 2
 end
 
 @testitem "Tsunami.test" setup=[TsunamiTest] begin

@@ -128,6 +128,36 @@ function Tsunami.configure_optimisers(model::LinearModel, trainer)
     return Optimisers.setup(Optimisers.Adam(1f-1), model)
 end
 
+###### MLP ######
+
+struct MLP{T} <: FluxModule
+    net::T
+    mode::Symbol
+end
+
+function MLP(din::Int, dout::Int, mode::Symbol)
+    @assert mode in (:regression, :classification)
+    net = Chain(Dense(din, 64, relu), Dense(64, dout))
+    return MLP(net, mode)
+end
+
+(m::MLP)(x) = m.net(x)
+
+function Tsunami.train_step(m::MLP, trainer, batch, batch_idx)
+    x, y = batch
+    ŷ = m(x)
+    if MLP.mode == :classification
+        loss = Flux.logitcrossentropy(ŷ, y)
+    else
+        loss = Flux.mse(ŷ, y)
+    end
+    return loss
+end
+
+function Tsunami.configure_optimisers(m::MLP, trainer)
+    return Optimisers.setup(Optimisers.Adam(1f-3), m)
+end
+
 ###### TBLoggingModuel ######
 
 Base.@kwdef struct TBLoggingModule <: FluxModule

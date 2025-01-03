@@ -55,6 +55,10 @@ function Foil(;
     return Foil(device, fprec, precision) 
 end
 
+function Base.show(io::IO, foil::Foil)
+    print(io, "Foil($(foil.device), $(foil.precision))")
+end
+
 function select_device(accelerator::Symbol, idx_devices)
     if accelerator == :cpu
         device = cpu_device()

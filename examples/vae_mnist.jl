@@ -153,7 +153,7 @@ trainer = Trainer(max_epochs = 10,
                  default_root_dir = @__DIR__,
                  accelerator = :cpu)
 
-fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
+Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # TEST
 
@@ -179,4 +179,4 @@ x̂ = reshape(x̂, 28, 28, nimgs) |> toimg
 plot(getobs(x̂, 1), showaxis=false, grid=false)
 savefig("sample.png")
 
-# run(`tensorboard --logdir=examples/tsunami_logs/$(fit_state.run_dir)`)
+# run(`tensorboard --logdir=examples/tsunami_logs/$(trainer.fit_state.run_dir)`)

@@ -80,8 +80,8 @@ trainer = Trainer(max_epochs = 3,
                  default_root_dir = @__DIR__,
                  accelerator = :auto)
 
-fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader)
-@assert fit_state.step == 1266
+Tsunami.fit!(model, trainer, train_loader, val_loader)
+@assert trainer.fit_state.step == 1266
 
 # RESUME TRAINING
 trainer = Trainer(max_epochs = 5,
@@ -93,8 +93,8 @@ trainer = Trainer(max_epochs = 5,
 
 ckpt_path = joinpath(fit_state.run_dir, "checkpoints", "ckpt_last.jld2")
 model = MLP()
-fit_state = Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
-@assert fit_state.step == 2110
+Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
+@assert trainer.fit_state.step == 2110
 
 # TEST
 test_results = Tsunami.test(model, trainer, test_loader)

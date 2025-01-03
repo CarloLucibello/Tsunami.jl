@@ -98,7 +98,7 @@ trainer = Trainer(max_epochs = 10,
                   checkpointer = true,
                   logger = true)
 
-fit_state = Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
+Tsunami.fit!(model, trainer, train_dataloader, val_dataloader)
 ```
 """
 mutable struct Trainer
