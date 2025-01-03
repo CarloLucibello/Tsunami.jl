@@ -4,6 +4,7 @@ authors = "Carlo Lucibello"
 version = "0.2.0"
 
 [deps]
+BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -32,6 +33,7 @@ Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 TsunamiEnzymeExt = "Enzyme"
 
 [compat]
+BFloat16s = "0.5.0"
 BSON = "0.3.6"
 ChainRulesCore = "1"
 Compat = "4.16"

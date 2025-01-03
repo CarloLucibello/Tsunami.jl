@@ -148,3 +148,13 @@ end
     @test res["a"] == 1
     @test res["b"] == 2.0
 end
+
+@testitem "precision bf16" setup=[TsunamiTest] begin
+    using .TsunamiTest
+    model = TestModule1()
+    nx, ny = io_sizes(model)
+    train_dataloader = make_dataloader(nx, ny)
+    trainer = Trainer(max_epochs=2, precision=:bf16)
+    Tsunami.fit!(model, trainer, train_dataloader)
+    # TODO test properly
+end
