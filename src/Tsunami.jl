@@ -1,6 +1,7 @@
 module Tsunami
 
 using Base: @kwdef, PkgId, UUID
+using BFloat16s: BFloat16
 using BSON: BSON
 using ChainRulesCore: ChainRulesCore
 using Compat: @compat

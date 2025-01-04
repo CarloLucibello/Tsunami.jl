@@ -15,7 +15,8 @@ FOIL_CONSTRUCTOR_ARGS ="""
     (see `MLDataDevices.gpu_device` documentation). 
     Default: `nothing`.
 
-- **precision**: Supports passing different precision types `(:f16, :f32, :f64)`.
+- **precision**: Supports passing different precision types `(:bf16, :f16, :f32, :f64)`, 
+    where `:bf16` is BFloat16, `:f16` is Float16, `:f32` is Float32, and `:f64` is Float64.
     Default: `:f32`.
 """
 
@@ -44,12 +45,14 @@ function Foil(;
 
     fprec = if precision == :f16
                 f16
+            elseif precision == :bf16
+                bf16
             elseif precision == :f32
                 f32
             elseif precision == :f64
                 f64
             else
-                throw(ArgumentError("precision must be one of :f16, :f32, :f64"))
+                throw(ArgumentError("precision must be one of :bf16, :f16, :f32, :f64"))
             end
 
     return Foil(device, fprec, precision) 
@@ -58,6 +61,9 @@ end
 function Base.show(io::IO, foil::Foil)
     print(io, "Foil($(foil.device), $(foil.precision))")
 end
+
+# TODO: remove this when https://github.com/FluxML/Flux.jl/issues/2573
+bf16(x) = Flux._paramtype(BFloat16, x)
 
 function select_device(accelerator::Symbol, idx_devices)
     if accelerator == :cpu
