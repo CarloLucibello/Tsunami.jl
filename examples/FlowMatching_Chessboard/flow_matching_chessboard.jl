@@ -11,7 +11,8 @@ using Statistics, Random
 using Tsunami, Flux, Optimisers
 using Plots, ConcreteStructs
 using MLUtils
-using Metal
+using Enzyme
+using CUDA, cuDNN
 
 # ## Data Generation
 
@@ -29,45 +30,15 @@ end
 
 # Let's visualize a data sample.
 
-data = inf_train_gen(1000)
-
-scatter(data[1,:], data[2,:], xlim=(-2,2), ylim=(-2,2),
-    markersize=3, legend=false, widen=false, framestyle=:box)
-
-# We also define a generator of points for the moon dataset.
-
-function make_moons(n_samples::Int = 100, noise = 0.1, shuffle::Bool = true)
-    n_samples_out = n_samples ÷ 2
-    n_samples_in = n_samples - n_samples_out
-
-    outer_circ_x = cos.(range(0, π, length=n_samples_out))
-    outer_circ_y = sin.(range(0, π, length=n_samples_out))
-    inner_circ_x = 1 .- cos.(range(0, π, length=n_samples_in))
-    inner_circ_y = 1 .- sin.(range(0, π, length=n_samples_in)) .- 0.5
-
-    X = vcat(hcat(outer_circ_x', inner_circ_x'), hcat(outer_circ_y', inner_circ_y'))
-    y = vcat(zeros(Int, n_samples_out), ones(Int, n_samples_in))
-
-    if shuffle
-        perm = randperm(n_samples)
-        X = X[:, perm]
-        y = y[perm]
-    end
-
-    if noise !== nothing
-        X += noise * randn(size(X))
-    end
-
-    return X, y
+function plot_checkboard(points)
+    scatter(points[1,:], points[2,:], xlim=(-2,2), ylim=(-2,2),
+        markersize=3, legend=false, widen=false, framestyle=:box)
 end
 
-data = make_moons(1000, 0.1)
+data = inf_train_gen(1000)
+plot_checkboard(data)
 
-scatter(data[1][1,:], data[1][2,:], xlim=(-2,3), ylim=(-2,3),
-    markersize=3, legend=false, widen=false, framestyle=:box)
-
-# ## Model
-
+# ## Model Definition
 @concrete struct FlowModel <: FluxModule
     net
     hparams
@@ -107,18 +78,18 @@ function Tsunami.train_step(m::FlowModel, trainer, batch, batch_idx)
 end
 
 function train(; lr = 1e-4, batch_size = 256, iterations = 50000, hidden_dim = 512)
-    # train_loader = (inf_train_gen(batch_size) for _ in 1:iterations)
-    train_loader = (make_moons(batch_size, 0.05)[1] for _ in 1:iterations)
+    train_loader = (inf_train_gen(batch_size) for _ in 1:iterations)
+    # train_loader = (make_moons(batch_size, 0.05)[1] for _ in 1:iterations)
     
     model = FlowModel(; input_dim=2, hidden_dim, lr)
-    trainer = Trainer(max_epochs=1, log_every_n_steps=50, accelerator=:gpu)
+    trainer = Trainer(max_epochs=1, log_every_n_steps=50, accelerator=:auto, autodiff=:enzyme)
     Tsunami.fit!(model, trainer, train_loader)
     return model
 end
 
 # Let's train the model.
 
-m = train(lr=1e-2, hidden_dim=64)
+model = train(lr=1e-3, hidden_dim=512, batch_size=4096, iterations=20000)
 
 # ## Sampling
 
@@ -129,17 +100,14 @@ function step(m::FlowModel, x_t::AbstractMatrix, t_start::Number, t_end::Number)
     return @. x_t + vhalf * (t_end - t_start)
 end
 
-function sample(m::FlowModel, x0::AbstractMatrix, n_steps::Int)
-    ts = Float32.(range(0, 1, length=n_steps+1))
-    x = x0
-    for i in 1:n_steps
+function sample(m::FlowModel; n::Int , steps::Int)
+    x = randn(Float32, 2, n)
+    ts = Float32.(range(0, 1, length=steps+1))
+    for i in 1:steps
         x = step(m, x, ts[i], ts[i+1])
     end
     return x
 end
 
-
-samples = sample(m, randn(Float32, 2, 1000), 10)
-
-scatter(samples[1,:], samples[2,:], xlim=(-2,3), ylim=(-2,3),
-    markersize=3, legend=false, widen=false, framestyle=:box)
+samples = sample(m, n=1000, steps=10)
+plot_checkboard(samples)
