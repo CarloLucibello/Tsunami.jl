@@ -20,5 +20,5 @@ if TEST_GPU
 end
 
 @testset "Examples" begin
-   include(joinpath(@__DIR__, "..", "examples/mlp_mnist.jl"))
+   include(joinpath(@__DIR__, "..", "examples/MLP_MNIST/mlp_mnist.jl"))
 end
