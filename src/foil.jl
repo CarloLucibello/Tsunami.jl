@@ -43,6 +43,7 @@ function Foil(;
     
     device = select_device(accelerator, devices)
 
+    # These functions convert floating point arrays but preserve integer arrays
     fprec = if precision == :f16
                 f16
             elseif precision == :bf16
@@ -120,13 +121,9 @@ function setup(foil::Foil, model)
     return model |> to_precision(foil) |> to_device(foil)
 end
 
-
-"""
-    setup_batch(foil::Foil, batch)
-
-Setup the batch for training sending it to the device and setting the precision.
-This function is called internally by [`Tsunami.fit!`](@ref).
-"""
-function setup_batch(foil::Foil, batch)
-    return batch |> to_precision(foil) |> to_device(foil)
+function setup_iterator(foil::Foil, iterator)
+    iterator = Iterators.map(to_precision(foil), iterator)
+    return MLDataDevices.DeviceIterator(foil.device, iterator)
 end
+
+setup_iterator(::Foil, iterator::Nothing) = nothing

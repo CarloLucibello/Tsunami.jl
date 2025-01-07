@@ -65,6 +65,10 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         model = EnzymeCore.Duplicated(model)
     end
     
+    # setup loaders 
+    train_dataloader = setup_iterator(trainer.foil, train_dataloader)
+    val_dataloader = setup_iterator(trainer.foil, val_dataloader)
+    
     trainer.optimisers = optimisers
     trainer.lr_schedulers = lr_schedulers
  
@@ -106,7 +110,6 @@ function val_loop(model::FluxModule, trainer::Trainer, val_dataloader; progbar_o
 
         hook(on_val_batch_start, model, trainer, batch, batch_idx)
 
-        batch = setup_batch(trainer.foil, batch)
         val_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
@@ -145,15 +148,9 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
         
         hook(on_train_batch_start, model, trainer, batch, batch_idx)
         
-        batch = setup_batch(trainer.foil, batch)
+        out, grad = gradient_train_step(model, trainer, batch, batch_idx)
         
-        loss, pb = pullback_train_step(model, trainer, batch, batch_idx)
-        hook(on_before_backprop, model, trainer, loss)
-        grad = pb()
-        ## Alternative directly computing the gradient
-        # loss, grad = gradient_train_step(model, trainer, batch, batch_idx)
-
-        hook(on_before_update, model, trainer, grad)
+        hook(on_before_update, model, trainer, out, grad)
 
         update!(trainer.optimisers, model, grad)
 
@@ -168,7 +165,7 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
             keep = fit_state.should_stop || fit_state.epoch == trainer.max_epochs
         )
 
-        hook(on_train_batch_end, model, trainer)
+        hook(on_train_batch_end, model, trainer, out)
         
         fit_state.should_stop && break
     end
@@ -196,22 +193,14 @@ end
 update!(optimisers, m::EnzymeCore.Duplicated, grad) = update!(optimisers, m.val, grad)
 update!(optimisers, m::FluxModule, grad) = Optimisers.update!(optimisers, m, grad)
 
-function pullback_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
-    loss, z_pb = Zygote.pullback(model) do model
-        loss = train_step(model, trainer, batch, batch_idx)
-        return loss
-    end
-    # zygote returns a Ref with immutable, so we need to unref it
-    pb = () -> unref(z_pb(one(loss))[1])
-    return loss, pb
-end
-
 function gradient_train_step(model::FluxModule, trainer::Trainer, batch, batch_idx::Int)
+    local out
     loss, z_grad = Zygote.withgradient(model) do model
-        loss = train_step(model, trainer, batch, batch_idx)
+        out = train_step(model, trainer, batch, batch_idx)
+        loss = process_out_step(out)
         return loss
     end
-    return loss, unref(z_grad[1])
+    return out, unref(z_grad[1])
 end
 
 # TODO remove when Optimisers.jl is able to handle gradients with (nested) Refs
@@ -228,6 +217,9 @@ function process_out_configure_optimisers(out)
     lr_scheduler = nothing
     return opt, lr_scheduler
 end
+
+process_out_step(loss::Number) = loss
+process_out_step(out::NamedTuple) = out.loss
 
 function print_fit_initial_summary(model, trainer)
     cuda_available = is_cuda_functional()
@@ -281,6 +273,7 @@ Dict{String, Float64} with 1 entry:
 """
 function test(model::FluxModule, trainer::Trainer, dataloader)
     model = setup(trainer.foil, model)
+    dataloader = setup_iterator(trainer.foil, dataloader)
     return test_loop(model, trainer, dataloader; progbar_keep=true)
 end
 
@@ -291,7 +284,6 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
 
     hook(on_test_epoch_start, model, trainer)
 
-
     testprogressbar = Progress(_length(dataloader); desc="Testing: ", 
                                 showspeed=true, enabled=trainer.progress_bar, 
                                 color=:green, offset=progbar_offset, keep=progbar_keep)
@@ -300,12 +292,11 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
 
         hook(on_test_batch_start, model, trainer, batch, batch_idx)
 
-        batch = setup_batch(trainer.foil, batch)
         test_step(model, trainer, batch, batch_idx)
+
         ProgressMeter.next!(testprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
-                valuecolor = :green
-                )
+                valuecolor = :green)
 
         hook(on_test_batch_end, model, trainer)
     end

@@ -14,3 +14,9 @@ function fit(model::FluxModule, trainer::Trainer, args...; kws...)
     return newmodel, trainer.fit_state
 end
 
+function setup_batch(foil::Foil, batch)
+    @warn "setup_batch is deprecated. Setup the dataloader with the Foil instead."
+    return batch |> to_precision(foil) |> to_device(foil)
+end
+
+

@@ -53,6 +53,25 @@ on_test_epoch_start(cb, model, trainer) = nothing
     on_train_epoch_end([callback,] model, trainer)
 
 Called at the end of each training epoch.
+
+To access all batch outputs at the end of the epoch, 
+you can cache step outputs as an attribute of the model and access them in this hook:
+
+```julia
+struct Callback
+    training_step_outputs::Vector{Float32}
+    # other fields...
+end
+
+function Tsunami.train_step(model::MyModel, trainer, batch)
+    ...
+    return (loss = loss, accuracy = accuracy)
+end
+
+function Tsunami.on_train_batch_end(cb, model, trainer, out)
+    push!(cb.training_step_outputs, model.training_step_outputs)
+end
+```
 """ 
 on_train_epoch_end(model, trainer) = nothing
 on_train_epoch_end(cb, model, trainer) = nothing

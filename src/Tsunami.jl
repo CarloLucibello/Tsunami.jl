@@ -40,7 +40,7 @@ include("loggers/tensorboard.jl")
 
 include("foil.jl")
 export Foil
-@compat(public, (setup, setup_batch))
+@compat(public, (setup,))
 
 include("trainer.jl")
 export Trainer

@@ -145,6 +145,13 @@ for epoch in 1:epochs
 end
 ```
 
+The output can be either a scalar or a named tuple:
+
+- If a scalar is returned, it is assumed to be the loss.
+- If a named tuple is returned, it has to contain the `loss` field. 
+
+The output can be accessed in hooks such as [`on_before_update`](@ref) or [`on_train_batch_end`](@ref).
+
 # Examples
 
 ```julia
@@ -212,7 +219,6 @@ end
 check_train_step(m::EnzymeCore.Duplicated, args...) = check_train_step(m.val, args...)
 
 function check_train_step(m::FluxModule, trainer, batch)
-    batch = setup_batch(trainer.foil, batch)
     out = train_step(m, trainer, batch, 1)
     losserrmsg = "The output of `train_step` has to be a scalar."
     @assert out isa Number losserrmsg
@@ -221,7 +227,6 @@ end
 check_val_step(m::EnzymeCore.Duplicated, args...) = check_val_step(m.val, args...)
 
 function check_val_step(m::FluxModule, trainer, batch)
-    batch = setup_batch(trainer.foil, batch)
     val_step(m, trainer, batch, 1)
     @assert true
 end
