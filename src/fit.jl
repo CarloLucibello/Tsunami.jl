@@ -77,7 +77,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         if val_dataloader !== nothing
             check_val_step(model, trainer, first(val_dataloader))
         end
-        return fit_state
+        return nothing
     end
 
     val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
@@ -89,7 +89,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
     end
 
     Flux.loadmodel!(model_orig, Flux.state(model))
-    return fit_state
+    return nothing
 end
 
 val_loop(m::EnzymeCore.Duplicated, args...; kws...) = val_loop(m.val, args...; kws...)
@@ -106,16 +106,15 @@ function val_loop(model::FluxModule, trainer::Trainer, val_dataloader; progbar_o
     valprogressbar = Progress(_length(val_dataloader); desc=progbar_desc, 
         showspeed=true, enabled=trainer.progress_bar, color=:green, offset=progbar_offset, keep=progbar_keep)
     for (batch_idx, batch) in enumerate(val_dataloader)
-        fit_state.batchsize = MLUtils.numobs(batch)
-
+        fit_state.batchsize = MLUtils.numobs(batch)       
         hook(on_val_batch_start, model, trainer, batch, batch_idx)
 
-        val_step(model, trainer, batch, batch_idx)
+        out = val_step(model, trainer, batch, batch_idx)
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
                 valuecolor = :green)
 
-        hook(on_val_batch_end, model, trainer)
+        hook(on_val_batch_end, model, trainer, out, batch, batch_idx)
     end
 
     fit_state.stage = :val_epoch_end
@@ -145,7 +144,7 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
     for (batch_idx, batch) in enumerate(train_dataloader)
         fit_state.step += 1
         fit_state.batchsize = MLUtils.numobs(batch)
-        
+
         hook(on_train_batch_start, model, trainer, batch, batch_idx)
         
         out, grad = gradient_train_step(model, trainer, batch, batch_idx)
@@ -165,7 +164,7 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
             keep = fit_state.should_stop || fit_state.epoch == trainer.max_epochs
         )
 
-        hook(on_train_batch_end, model, trainer, out)
+        hook(on_train_batch_end, model, trainer, out, batch, batch_idx)
         
         fit_state.should_stop && break
     end
@@ -292,13 +291,13 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
 
         hook(on_test_batch_start, model, trainer, batch, batch_idx)
 
-        test_step(model, trainer, batch, batch_idx)
+        out = test_step(model, trainer, batch, batch_idx)
 
         ProgressMeter.next!(testprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
                 valuecolor = :green)
 
-        hook(on_test_batch_end, model, trainer)
+        hook(on_test_batch_end, model, trainer, out, batch, batch_idx)
     end
 
     fit_state.stage = :test_epoch_end

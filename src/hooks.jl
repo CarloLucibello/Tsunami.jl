@@ -17,15 +17,6 @@ on_before_update(model, trainer, grad) = nothing
 on_before_update(cb, model, trainer, grad) = nothing
 
 """
-    on_before_backprop([callback,] model, trainer, loss)
-
-Called after the model's forward, where also the pullback is created, 
-but before the call to the pullback (the backward pass computing the gradient).
-"""
-on_before_backprop(model, trainer, loss) = nothing
-on_before_backprop(cb, model, trainer, loss) = nothing
-
-"""
     on_train_epoch_start([callback,] model, trainer)
 
 Called at the beginning of each training epoch.
@@ -57,6 +48,10 @@ Called at the end of each training epoch.
 To access all batch outputs at the end of the epoch, 
 you can cache step outputs as an attribute of the model and access them in this hook:
 
+See also [`on_train_epoch_start`](@ref).
+
+# Examples 
+
 ```julia
 struct Callback
     training_step_outputs::Vector{Float32}
@@ -68,8 +63,16 @@ function Tsunami.train_step(model::MyModel, trainer, batch)
     return (loss = loss, accuracy = accuracy)
 end
 
-function Tsunami.on_train_batch_end(cb, model, trainer, out)
-    push!(cb.training_step_outputs, model.training_step_outputs)
+function Tsunami.on_train_epoch_start(cb::Callback, model, trainer)
+    empty!(cb.training_step_outputs)
+end
+
+function Tsunami.on_train_batch_end(cb::Callback, model, trainer, out, batch, batch_idx)
+    push!(cb.training_step_outputs, out.accuracy)
+end
+
+function Tsunami.on_train_epoch_end(cb::Callback, model, trainer)
+    println("Mean accuracy: ", mean(cb.training_step_outputs))
 end
 ```
 """ 
@@ -117,26 +120,29 @@ on_test_batch_start(model, trainer, batch, batch_idx) = nothing
 on_test_batch_start(cb, model, trainer, batch, batch_idx) = nothing
 
 """
-    on_train_batch_end([callback,] model, trainer)
+    on_train_batch_end([callback,] model, trainer, out, batch, batch_idx)
 
-Called at the end of each training batch.
+Called at the end of each iteration in the training loop.
+`out` is the output of [`train_step`](@ref).
 """
-on_train_batch_end(model, trainer) = nothing
-on_train_batch_end(cb, model, trainer) = nothing
-
-"""
-    on_val_batch_end([callback,] model, trainer)
-
-Called at the end of each validation batch.
-"""
-on_val_batch_end(model, trainer) = nothing
-on_val_batch_end(cb, model, trainer) = nothing
+on_train_batch_end(model, trainer, out, batch, batch_idx) = nothing
+on_train_batch_end(cb, model, trainer, out, batch, batch_idx) = nothing
 
 """
-    on_test_batch_end([callback,] model, trainer)
+    on_val_batch_end([callback,] model, trainer, out, batch, batch_idx)
 
-Called at the end of each test batch.
+Called at the end of each iteration in the validation loop.
+`out` is the output of [`val_step`](@ref).
 """
-on_test_batch_end(model, trainer) = nothing
-on_test_batch_end(cb, model, trainer) = nothing
+on_val_batch_end(model, trainer, out, batch, batch_idx) = nothing
+on_val_batch_end(cb, model, trainer, out, batch, batch_idx) = nothing
+
+"""
+    on_test_batch_end([callback,] model, trainer, out, batch, batch_idx)
+
+Called at the end of each iteration in the test loop.
+`out` is the output of [`test_step`](@ref).
+"""
+on_test_batch_end(model, trainer, out, batch, batch_idx) = nothing
+on_test_batch_end(cb, model, trainer, out, batch, batch_idx) = nothing
 

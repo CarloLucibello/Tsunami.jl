@@ -19,4 +19,15 @@ function setup_batch(foil::Foil, batch)
     return batch |> to_precision(foil) |> to_device(foil)
 end
 
+##### v0.3 DEPRECATIONS #####
+#TODO deprecate properly
+on_train_batch_end(model, trainer) = nothing
+on_train_batch_end(cb, model, trainer) = nothing
+on_val_batch_end(model, trainer) = nothing
+on_val_batch_end(cb, model, trainer) = nothing
+on_test_batch_end(model, trainer) = nothing
+on_test_batch_end(cb, model, trainer) = nothing
+on_before_backprop(model, trainer, loss) = nothing
+on_before_backprop(cb, model, trainer, loss) = nothing
+
 

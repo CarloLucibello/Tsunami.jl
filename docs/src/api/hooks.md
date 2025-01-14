@@ -27,7 +27,7 @@ function train_loop()
         out, grad = out_and_gradient(train_step, model, trainer, batch, batch_idx)
         on_before_update(out, grad)
         update!(opt_state, model, grad)
-        on_train_batch_end(out)
+        on_train_batch_end(out, batch, batch_idx)
         if should_check_val
             val_loop()
         end
@@ -38,10 +38,10 @@ end
 function val_loop()
     on_val_epoch_start()
     for (batch, batch_idx) in val_dataloader
-        on_val_batch_start()
         batch = transfer_batch_to_device(batch)
+        on_val_batch_start(batch, batch_idx)
         out = val_step(model, trainer, batch, batch_idx)
-        on_val_batch_end(out)
+        on_val_batch_end(out, batch, batch_idx)
     end
     on_val_epoch_end()
 end
@@ -52,7 +52,6 @@ Each `on_something` hook takes as input the model and the trainer.
 ## Hooks API
 
 ```@docs
-Tsunami.on_before_backprop
 Tsunami.on_before_update
 Tsunami.on_train_batch_start
 Tsunami.on_train_batch_end
