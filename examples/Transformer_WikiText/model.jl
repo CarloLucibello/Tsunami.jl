@@ -1,4 +1,4 @@
-using AutoStructs
+using AutoStructs: @structdef # for conveniently prototyping struct
 using Flux: Flux, Embedding, MultiHeadAttention, LayerNorm, Dense, Chain, gelu
 using Tsunami
 using LinearAlgebra, Random, Statistics
