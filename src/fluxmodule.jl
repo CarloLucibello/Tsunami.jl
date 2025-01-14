@@ -182,6 +182,9 @@ validation epoch.
 A `Model <: FluxModule` should implement either 
 `val_step(model::Model, trainer, batch)` or `val_step(model::Model, trainer, batch, batch_idx)`.
 
+Optionally, the method can return a scalar or a named tuple, to be used in hooks such as 
+[`on_val_batch_end`](@ref).
+
 See also [`train_step`](@ref).
 
 # Examples

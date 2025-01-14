@@ -37,8 +37,9 @@ end
     @test all(==(0), model.net[1].bias)
     train_dataloader = make_dataloader(nx, ny)
     trainer = SilentTrainer(max_epochs=2, precision=:f64)
-    Tsunami.fit!(model, trainer, train_dataloader)
+    res = Tsunami.fit!(model, trainer, train_dataloader)
     @test all(!=(0), model.net[1].bias)
+    @test res === nothing
 
     @testset "also copy state" begin
         model = TestModule1(Chain(Dense(4, 3, relu), BatchNorm(3), Dense(3, 2)))
