@@ -8,13 +8,14 @@ function hook(f, model::FluxModule, trainer::Trainer, args...)
 end
 
 """
-    on_before_update([callback,] model, trainer, grad)
+    on_before_update([callback,] model, trainer, out, grad)
 
 Called before the call to `Optimisers.update!` that 
 applies the gradient `grad` to update the `model`'s parameters.
+`out` is the output of the last call to [`train_step`](@ref).
 """
-on_before_update(model, trainer, grad) = nothing
-on_before_update(cb, model, trainer, grad) = nothing
+on_before_update(model, trainer, out, grad) = nothing
+on_before_update(cb, model, trainer, out, grad) = nothing
 
 """
     on_train_epoch_start([callback,] model, trainer)
