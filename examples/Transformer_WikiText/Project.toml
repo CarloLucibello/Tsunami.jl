@@ -1,0 +1,5 @@
+[deps]
+AutoStructs = "2e0df379-9877-4907-ab94-cd881f8d985b"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
+Tsunami = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
