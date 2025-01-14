@@ -155,7 +155,7 @@ end
     model = TestModule1()
     nx, ny = io_sizes(model)
     train_dataloader = make_dataloader(nx, ny)
-    trainer = Trainer(max_epochs=2, precision=:bf16)
+    trainer = Trainer(max_epochs=2, precision=:bf16, accelerator=:cpu)
     Tsunami.fit!(model, trainer, train_dataloader)
     # TODO test properly
 end
