@@ -23,8 +23,17 @@ function Tsunami.gradient_train_step(model::Duplicated, trainer::Trainer, batch,
     make_zero!(model.dval)
     ad = Enzyme.set_runtime_activity(ReverseWithPrimal)
     args = (model, Const(trainer), Const(batch), Const(batch_idx))
-    ret = Enzyme.autodiff(ad, Const(train_step), Active, args...)
-    return ret[2], model.dval
+
+    out = Ref{Any}() # TODO crashes if I set `local out` instead of Ref
+    function f(model, trainer, batch, batch_idx)
+        out[] = train_step(model, trainer, batch, batch_idx)
+        loss = Tsunami.process_out_step(out[])
+        return loss
+    end
+
+    ret = Enzyme.autodiff(ad, Const(f), Active, args...)
+    # return ret[2], model.dval
+    return out[], model.dval
 end
 
 # We can't use Enzyme.make_zero! to reset Duplicated, as it complains about e.g. LayerNorm having immutable differentiable fields

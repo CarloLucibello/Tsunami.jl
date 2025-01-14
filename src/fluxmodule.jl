@@ -223,8 +223,10 @@ check_train_step(m::EnzymeCore.Duplicated, args...) = check_train_step(m.val, ar
 
 function check_train_step(m::FluxModule, trainer, batch)
     out = train_step(m, trainer, batch, 1)
-    losserrmsg = "The output of `train_step` has to be a scalar."
-    @assert out isa Number losserrmsg
+    @assert out isa Union{Number,NamedTuple} "The output of `train_step` has to be a scalar or named tuple."
+    if out isa NamedTuple
+        @assert haskey(out, :loss) "A named tuple output of `train_step` has to contain the `loss` field."
+    end
 end
 
 check_val_step(m::EnzymeCore.Duplicated, args...) = check_val_step(m.val, args...)

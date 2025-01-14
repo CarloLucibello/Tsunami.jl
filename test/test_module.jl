@@ -122,7 +122,7 @@ function Tsunami.train_step(model::LinearModel, trainer, batch, batch_idx)
     # Zygote.ignore_derivatives() do
     #     @show loss_data loss_reg
     # end
-    return loss_data + loss_reg
+    return (; loss = loss_data + loss_reg, loss_data, loss_reg)
 end
 
 function Tsunami.configure_optimisers(model::LinearModel, trainer)
