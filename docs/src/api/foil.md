@@ -9,5 +9,4 @@ The [`Foil`](@ref) is a minimalistic version of the [`Trainer`](@ref) that allow
 ```@docs
 Foil
 Tsunami.setup
-Tsunami.setup_batch
 ```

@@ -40,7 +40,7 @@ include("loggers/tensorboard.jl")
 
 include("foil.jl")
 export Foil
-@compat(public, (setup, setup_batch))
+@compat(public, (setup,))
 
 include("trainer.jl")
 export Trainer
@@ -62,7 +62,6 @@ include("show.jl")
 
 include("hooks.jl")
 @compat(public, (on_before_update,
-                 on_before_backprop,
                  on_train_epoch_start,
                  on_train_epoch_end,
                  on_val_epoch_start,

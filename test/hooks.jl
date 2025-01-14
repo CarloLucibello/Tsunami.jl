@@ -1,20 +1,23 @@
 @testitem "on_before_update" setup=[TsunamiTest] begin
     using .TsunamiTest
-    out = []
-
-    struct OnBeforeUpdateCbk end
     
-    function Tsunami.on_before_update(::OnBeforeUpdateCbk, model, trainer, grad)
-        push!(out, grad)
+    Base.@kwdef struct OnBeforeUpdateCbk 
+        res = []
     end
-    trainer = SilentTrainer(max_epochs=1, callbacks=[OnBeforeUpdateCbk()])
+    
+    function Tsunami.on_before_update(cb::OnBeforeUpdateCbk, model, trainer, out, grad)
+        push!(cb.res, grad)
+    end
+
+    cb = OnBeforeUpdateCbk()
+    trainer = SilentTrainer(max_epochs=1, callbacks=[cb])
     model = TestModule1()
     train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.fit!(model, trainer, train_dataloader)
-    @test length(out) == 2
-    @test out[1] isa NamedTuple
-    @test out[2] isa NamedTuple
-    @test size(out[1].net.layers[1].weight) == (3, 4)
+    @test length(cb.res) == 2
+    @test cb.res[1] isa NamedTuple
+    @test cb.res[2] isa NamedTuple
+    @test size(cb.res[1].net.layers[1].weight) == (3, 4)
 end
 
 @testitem "on_train_epoch_start and on_train_epoch_end" setup=[TsunamiTest] begin
@@ -82,22 +85,25 @@ end
     @test out == [1, 2]
 end
 
-@testitem "on_before_backprop" setup=[TsunamiTest] begin
+@testitem "on_train_batch_start and on_train_batch_end" setup=[TsunamiTest] begin
     using .TsunamiTest
-    out = []
-
-    struct BeforePullbackCbk end
     
-    function Tsunami.on_before_backprop(::BeforePullbackCbk, model, trainer, loss)
-        push!(out, 1)
+    Base.@kwdef struct OnBatchCbk 
+        res = []
     end
-    function Tsunami.on_before_update(::BeforePullbackCbk, model, trainer, grad)
-        push!(out, 2)
+    
+    function Tsunami.on_train_batch_start(cb::OnBatchCbk, model, trainer, batch, batch_idx)
+        push!(cb.res, batch_idx)
+    end
+    function Tsunami.on_train_batch_end(cb::OnBatchCbk, model, trainer, out, batch, batch_idx)
+        @test out isa Number
+        push!(cb.res, batch_idx)
     end
 
-    trainer = SilentTrainer(max_epochs=2, callbacks=[BeforePullbackCbk()])
+    cb = OnBatchCbk()
+    trainer = SilentTrainer(max_epochs=2, callbacks=[cb])
     model = TestModule1()
     train_dataloader = make_dataloader(io_sizes(model)..., n=10, bs=5)
     Tsunami.fit!(model, trainer, train_dataloader)
-    @test out == [1, 2, 1, 2, 1, 2, 1, 2]
+    @test cb.res == [1, 1, 2, 2, 1, 1, 2, 2]
 end

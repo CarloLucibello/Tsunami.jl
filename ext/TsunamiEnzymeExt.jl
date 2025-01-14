@@ -5,26 +5,35 @@ using Enzyme
 using Functors: Functors
 using Optimisers: Optimisers
 
-function Tsunami.pullback_train_step(model::Duplicated,  trainer::Trainer, batch, batch_idx::Int)
-    make_zero!(model.dval)
-    ad = Enzyme.set_runtime_activity(ReverseSplitWithPrimal)
-    # ad = ReverseSplitWithPrimal
-    args = (model, Const(trainer), Const(batch), Const(batch_idx))
-    forward, reverse = autodiff_thunk(ad, Const{typeof(train_step)}, Active, map(typeof, args)...)
-    tape, loss, _ = forward(Const(train_step), args...)
-    function pb()
-        reverse(Const(train_step), args..., one(loss), tape)
-        return model.dval
-    end
-    return loss, pb
-end
+# function Tsunami.pullback_train_step(model::Duplicated,  trainer::Trainer, batch, batch_idx::Int)
+#     make_zero!(model.dval)
+#     ad = Enzyme.set_runtime_activity(ReverseSplitWithPrimal)
+#     # ad = ReverseSplitWithPrimal
+#     args = (model, Const(trainer), Const(batch), Const(batch_idx))
+#     forward, reverse = autodiff_thunk(ad, Const{typeof(train_step)}, Active, map(typeof, args)...)
+#     tape, loss, _ = forward(Const(train_step), args...)
+#     function pb()
+#         reverse(Const(train_step), args..., one(loss), tape)
+#         return model.dval
+#     end
+#     return loss, pb
+# end
 
 function Tsunami.gradient_train_step(model::Duplicated, trainer::Trainer, batch, batch_idx::Int)
     make_zero!(model.dval)
     ad = Enzyme.set_runtime_activity(ReverseWithPrimal)
     args = (model, Const(trainer), Const(batch), Const(batch_idx))
-    ret = Enzyme.autodiff(ad, Const(train_step), Active, args...)
-    return ret[2], model.dval
+
+    out = Ref{Any}() # TODO crashes if I set `local out` instead of Ref
+    function f(model, trainer, batch, batch_idx)
+        out[] = train_step(model, trainer, batch, batch_idx)
+        loss = Tsunami.process_out_step(out[])
+        return loss
+    end
+
+    ret = Enzyme.autodiff(ad, Const(f), Active, args...)
+    # return ret[2], model.dval
+    return out[], model.dval
 end
 
 # We can't use Enzyme.make_zero! to reset Duplicated, as it complains about e.g. LayerNorm having immutable differentiable fields

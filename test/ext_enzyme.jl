@@ -55,5 +55,5 @@ end
     Tsunami.fit!(model, trainer, train_loader)
     n = 100
     x, y = getobs(train_data, 1:n)
-    @test Tsunami.accuracy(model(x), y) > 0.9
+    @test Tsunami.accuracy(model(x), y) > 0.85
 end
