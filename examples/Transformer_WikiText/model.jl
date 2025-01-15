@@ -50,7 +50,7 @@ Flux.@layer TransformerBlock
 
 function (block::TransformerBlock)(x, mask)
     x = x .+ block.mha(block.mha_norm(x); mask)[1]
-    x = x .+ block.ffwd(block.ffwd_norm(x))[1]
+    x = x .+ block.ffwd(block.ffwd_norm(x))
     return x
 end
 
