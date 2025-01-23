@@ -1,10 +1,21 @@
 # Tsunami Release Notes
 
-## v0.2.1 
+
+
+## v0.3.0 
+
+**Breaking changes:**
+- `fit!` returns `nothing` instead of a `FitState` object. The `FitState` object can be accessed via `trainer.fit_state`.
+- `on_before_pullback` has been removed. Use `on_train_batch_start` instead.
+- `on_*_batch_start` now receives the batch on device.
+- Some of the hooks now take more inputs.
 
 **Highlights:**
-- Users should no longer assume that `fit!` returns a `FitState` object. 
-  In the future, `fit!` will return nothing. The `FitState` object can be accessed via `trainer.fit_state`.
+
+- Now Tsunami uses `MLDataDevices.DeviceIterator` to wrap dataloaders for more efficient device memory management.
+
+- `training_step`, `validation_step`, and `test_step` can now return a named tuple
+  for flebility. One of the fields of the named tuple should be `loss` which is used to compute the loss value.
 
 ## v0.2.0 - 2025-01-03
 
