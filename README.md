@@ -97,12 +97,11 @@ trainer = Trainer(max_epochs=5)
 Tsunami.fit!(model, trainer, train_loader, test_loader)
 ```
 
-What follows is the final output of the script. The script will train the model on CUDA gpus if available and will also write tensorboard logs and and model checkpoints on disk.
+What follows is the final output of the script. The script will train the model on GPU if available and will also write tensorboard logs and and model checkpoints to disk.
 
-<img src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_output.png">
+![]("https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_training.gif")
 
 See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and check the [examples](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) folder to learn more.
-
 
 ## Contributions are welcome!
 
