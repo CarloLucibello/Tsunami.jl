@@ -2,8 +2,8 @@ using TestItemRunner
 using Test
 
 ## Uncomment below and in test_module.jl to change the default test settings
-ENV["TSUNAMI_TEST_CPU"] = "false"
-ENV["TSUNAMI_TEST_CUDA"] = "true"
+# ENV["TSUNAMI_TEST_CPU"] = "false"
+# ENV["TSUNAMI_TEST_CUDA"] = "true"
 # ENV["TSUNAMI_TEST_AMDGPU"] = "true"
 # ENV["TSUNAMI_TEST_Metal"] = "true"
 
