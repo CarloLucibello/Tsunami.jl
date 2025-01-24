@@ -147,8 +147,8 @@ function Trainer(;
     foil = Foil(; foil_kws...)
     lr_schedulers = nothing
     optimisers = nothing
-    loggers = copy(loggers)  # copy to avoid mutating the original list
-    callbacks = copy(callbacks)
+    loggers = copy(Any[loggers...])     # Copy to avoid mutating the original list
+    callbacks = copy(Any[callbacks...]) # Also make sure we can push any object to the list
 
     if checkpointer && !any(x -> x isa Checkpointer, callbacks)
         push!(callbacks, Checkpointer())

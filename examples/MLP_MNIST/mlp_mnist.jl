@@ -1,5 +1,6 @@
 # # MNIST MLP Example
-# This example demonstrates how to train a simple MLP model on the MNIST dataset using Tsunami.
+# This example demonstrates how to train a simple MLP model 
+# for image classification on the MNIST dataset using Tsunami.
 
 # ## Setup
 using Flux, Optimisers, Tsunami, MLDatasets
