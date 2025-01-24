@@ -45,4 +45,4 @@ trainer = Trainer(..., callbacks = [MyCallback()])
 
 See the implementation of [`Checkpointer`](@ref) and the 
 [Hooks](@ref) section of the documentation for more information
-on how to write custom callbacks. Also, the [https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples](examples) folder contains some examples of custom callbacks. 
+on how to write custom callbacks. Also, the [examples](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) folder contains some examples of custom callbacks. 
