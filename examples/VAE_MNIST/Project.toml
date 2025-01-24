@@ -1,0 +1,24 @@
+[deps]
+ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Tsunami = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
+
+
+[compat]
+Flux = "0.16"
+ImageShow = "0.3"
+LinearAlgebra = "1"
+MLDatasets = "0.7"
+MLUtils = "0.4"
+Optimisers = "0.4"
+Random = "1"
+Statistics = "1"
+Tsunami = "0.3"

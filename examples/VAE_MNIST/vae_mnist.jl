@@ -1,28 +1,38 @@
+# # Variational Autoencoder on Fashion MNIST dataset
+# This example demonstrates how to train a Variational Autoencoder (VAE) on the Fashion MNIST dataset using Tsunami.
+
+# ## Setup
+
 using Optimisers: Optimisers, AdamW
 using Tsunami
 using MLDatasets
 using MLUtils: MLUtils, DataLoader, flatten, mapobs, getobs, splitobs, randn_like
 using Statistics, Random, LinearAlgebra
 import ParameterSchedulers
-using Plots
+using ImageShow, Plots
 using Flux
 using Flux: logitbinarycrossentropy
-## Uncomment one of the following lines for GPU support
-# using CUDA
-# using AMDGPU
-# using Metal
+using ConcreteStructs: @concrete
 
+# Uncomment one of the following lines for GPU support
 
-struct Encoder <: FluxModule
-    backbone::Chain
-    mean_head::Dense
-    var_head::Dense
+## using CUDA
+## using AMDGPU
+## using Metal
+
+# ## Model Definition
+
+@concrete struct Encoder
+    backbone
+    mean_head
+    var_head
 end
+
+Flux.@layer Encoder
 
 function Encoder(; input_dim, hidden_dim, latent_dim)
     backbone = Chain(Dense(input_dim => hidden_dim, relu), 
-                     Dense(hidden_dim => hidden_dim, relu)
-                    )
+                     Dense(hidden_dim => hidden_dim, relu))
 
     mean_head = Dense(hidden_dim => latent_dim)
     var_head = Dense(hidden_dim => latent_dim)
@@ -36,9 +46,11 @@ function (m::Encoder)(x)
     return μ, logσ²
 end
 
-struct Decoder <: FluxModule
-    layers::Chain
+@concrete struct Decoder
+    layers
 end
+
+Flux.@layer Decoder
 
 function Decoder(; latent_dim, hidden_dim, input_dim)
     layers = Chain(Dense(latent_dim => hidden_dim, relu), 
@@ -129,54 +141,58 @@ function Tsunami.test_step(model::VAE, trainer, batch)
     Tsunami.log(trainer, "kl_loss/test", kl_loss)
 end
 
+# ## Callbacks
 
-train_data = mapobs(batch -> flatten(batch[1]), MNIST(:train))
+struct SaveImgsCallback end
+
+function sample(model::VAE, nimgs::Int)
+    z = randn(Float32, latent_dim, nimgs)
+    x̂ = sigmoid.(model.decoder(z))
+    imgs = reshape(x̂, 28, 28, nimgs)
+    return MLDatasets.convert2image(FashionMNIST, imgs)
+end
+
+function Tsunami.on_train_epoch_end(::SaveImgsCallback, model::VAE, trainer)
+    imgs = sample(model, 10)
+    plot([plot(getobs(imgs, i)) for i=1:10]..., layout=(1,10), 
+        framestyle=:none, axis=nothing, margin=0Plots.mm,
+        size=(1000, 100))
+    fit_state = trainer.fit_state
+    savefig(joinpath(fit_state.run_dir, "samples_epoch=$(fit_state.epoch).png"))
+end
+
+
+# ## Data Preparation
+
+train_data = mapobs(batch -> flatten(batch[1]), FashionMNIST(:train))
 train_data, val_data = splitobs(train_data, at = 0.9)
-test_data = mapobs(batch -> flatten(batch[1]), MNIST(:test))
+test_data = mapobs(batch -> flatten(batch[1]), FashionMNIST(:test))
 
 train_loader = DataLoader(train_data, batchsize=128, shuffle=true)
 val_loader = DataLoader(val_data, batchsize=128, shuffle=true)
 test_loader = DataLoader(test_data, batchsize=128)
 
-# CREATE MODEL
-
+# ## Training
 
 latent_dim = 64
 hidden_dim = 512
 λ = 1e-4                # regularization paramater
 model = VAE(; input_dim = 28*28, latent_dim, hidden_dim, η = 1e-3, β = 1.0)
 
-# TRAIN
-
 trainer = Trainer(max_epochs = 10,
                  max_steps = -1,
                  default_root_dir = @__DIR__,
-                 accelerator = :cpu)
+                 accelerator = :cpu,
+                 callbacks = [SaveImgsCallback()])
 
 Tsunami.fit!(model, trainer, train_loader, val_loader)
 
-# TEST
+# ## Evaluation
+
+# ### Test Likelihood
 
 test_results = Tsunami.test(model, trainer, test_loader)
 
-# ONE GRADIENT STEP
-x = first(train_loader)
-g = gradient(model -> Tsunami.train_step(model, trainer, x, 1), model)[1]
-opt_state, lr_scheduler = Tsunami.configure_optimisers(model, trainer)
-Optimisers.update!(opt_state, model, g)
+# ### Sampling
 
-# SAMPLE IMAGES
-using ImageShow, Plots
-using Plots: px, mm
-
-toimg(x::AbstractArray{<:Number}) = MLDatasets.convert2image(MNIST, x)
-
-nimgs = 10
-z = randn(latent_dim, nimgs)
-x̂ = sigmoid.(model.decoder(z))
-x̂ = reshape(x̂, 28, 28, nimgs) |> toimg
-
-plot(getobs(x̂, 1), showaxis=false, grid=false)
-savefig("sample.png")
-
-# run(`tensorboard --logdir=examples/tsunami_logs/$(trainer.fit_state.run_dir)`)
+imgs = sample(model, 10)

@@ -1,10 +1,19 @@
+# # MNIST MLP Example
+# This example demonstrates how to train a simple MLP model 
+# for image classification on the MNIST dataset using Tsunami.
+
+# ## Setup
 using Flux, Optimisers, Tsunami, MLDatasets
 using MLUtils: MLUtils, DataLoader, flatten, mapobs, splitobs
 import ParameterSchedulers
-## Uncomment one of the following lines for GPU support
-# using CUDA
-# using AMDGPU
-# using Metal
+
+# Uncomment one of the following lines for GPU support
+
+## using CUDA
+## using AMDGPU
+## using Metal
+
+# ## Model Definition
 
 struct MLP{T} <: FluxModule
     net::T
@@ -19,9 +28,7 @@ function MLP()
     return MLP(net)
 end
 
-function (m::MLP)(x)
-    m.net(x)
-end
+(m::MLP)(x) = m.net(x)
 
 function Tsunami.train_step(m::MLP, trainer, batch)
     x, y = batch
@@ -55,6 +62,9 @@ function Tsunami.configure_optimisers(m::MLP, trainer)
     return opt, lr_scheduler
 end
 
+
+# ## Data Preparation
+
 train_data = mapobs(batch -> (batch[1], Flux.onehotbatch(batch[2], 0:9)), MNIST(:train))
 train_data, val_data = splitobs(train_data, at = 0.9)
 test_data = mapobs(batch -> (batch[1], Flux.onehotbatch(batch[2], 0:9)), MNIST(:test))
@@ -63,16 +73,17 @@ train_loader = DataLoader(train_data, batchsize=128, shuffle=true)
 val_loader = DataLoader(val_data, batchsize=128, shuffle=true)
 test_loader = DataLoader(test_data, batchsize=128)
 
-# CREATE MODEL
+# ## Training
+# First, we create the model:
 
 model = MLP()
 
-# DRY RUN FOR DEBUGGING
+# Now we do a fast dev run to make sure everything is working:
 
 trainer = Trainer(fast_dev_run=true, accelerator=:auto)
 Tsunami.fit!(model, trainer, train_loader, val_loader)
 
-# TRAIN FROM SCRATCH
+# We then train the model for real:
 
 Tsunami.seed!(17)
 trainer = Trainer(max_epochs = 3,
@@ -84,7 +95,8 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 @assert trainer.fit_state.step == 1266
 run_dir= trainer.fit_state.run_dir
 
-# RESUME TRAINING
+# We can also resume the training from the last checkpoint:
+
 trainer = Trainer(max_epochs = 5,
                  default_root_dir = @__DIR__,
                  accelerator = :auto,
@@ -97,5 +109,6 @@ model = MLP()
 Tsunami.fit!(model, trainer, train_loader, val_loader; ckpt_path)
 @assert trainer.fit_state.step == 2110
 
-# TEST
+# ## Testing
+
 test_results = Tsunami.test(model, trainer, test_loader)
