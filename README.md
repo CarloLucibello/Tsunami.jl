@@ -99,7 +99,7 @@ Tsunami.fit!(model, trainer, train_loader, test_loader)
 
 What follows is the final output of the script. The script will train the model on GPU if available and will also write tensorboard logs and and model checkpoints to disk.
 
-![]("https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/readme_training.gif")
+![](docs/src/assets/readme_training.gif)
 
 See the [documentation](https://carlolucibello.github.io/Tsunami.jl/dev/) and check the [examples](https://github.com/CarloLucibello/Tsunami.jl/tree/main/examples) folder to learn more.
 
