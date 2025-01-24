@@ -17,3 +17,4 @@ MNIST/
 tsunami_logs/
 LocalPreferences.toml
 /test.jl
+/pytorch-lightning
