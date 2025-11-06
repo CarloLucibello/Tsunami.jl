@@ -1,7 +1,7 @@
 name = "Tsunami"
 uuid = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
-authors = "Carlo Lucibello"
 version = "0.3.0"
+authors = "Carlo Lucibello"
 
 [deps]
 BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
@@ -31,7 +31,7 @@ Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 TsunamiEnzymeExt = "Enzyme"
 
 [compat]
-BFloat16s = "0.5.0"
+BFloat16s = "0.5.0, 0.6"
 BSON = "0.3.6"
 ChainRulesCore = "1"
 Compat = "4.16"
