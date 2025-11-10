@@ -1,7 +1,7 @@
 name = "Tsunami"
 uuid = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
-authors = "Carlo Lucibello"
 version = "0.3.0"
+authors = "Carlo Lucibello"
 
 [deps]
 BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
@@ -44,6 +44,7 @@ JLD2 = "0.5.10"
 MLDataDevices = "1.6"
 MLUtils = "0.4"
 Optimisers = "0.4"
+Statistics = "1"
 TensorBoardLogger = "0.1"
 UnPack = "1"
 Zygote = "0.6, 0.7"
