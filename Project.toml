@@ -1,7 +1,7 @@
 name = "Tsunami"
 uuid = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
-authors = "Carlo Lucibello"
 version = "0.3.0"
+authors = "Carlo Lucibello"
 
 [deps]
 BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
@@ -40,7 +40,7 @@ Enzyme = "0.13.27"
 EnzymeCore = "0.8.8"
 Flux = "0.16"
 Functors = "0.5.2"
-JLD2 = "0.5.10"
+JLD2 = "0.5.10, 0.6"
 MLDataDevices = "1.6"
 MLUtils = "0.4"
 Optimisers = "0.4"
