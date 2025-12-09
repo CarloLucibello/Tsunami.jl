@@ -22,8 +22,8 @@ end
 function MLP()
     net = Chain(
             flatten,
-            Dense(28^2 => 256, relu), 
-            Dense(256 => 10))
+            Dense(28^2 => 1024, relu), 
+            Dense(1024 => 10))
 
     return MLP(net)
 end

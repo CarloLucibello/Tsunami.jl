@@ -46,9 +46,9 @@ end
 
 function FlowModel(; input_dim::Int = 2, time_dim::Int = 1, hidden_dim::Int = 128, lr = 0.001)
     net = Chain(
-        Dense(input_dim + time_dim, hidden_dim, elu),
-        Dense(hidden_dim, hidden_dim, elu),
-        Dense(hidden_dim, hidden_dim, elu),
+        Dense(input_dim + time_dim, hidden_dim, swish),
+        Dense(hidden_dim, hidden_dim, swish),
+        Dense(hidden_dim, hidden_dim, swish),
         Dense(hidden_dim, input_dim)
     )
     hparams = (; lr)
@@ -58,10 +58,11 @@ end
 (m::FlowModel)(x::AbstractMatrix, t::Number) = m(x, fill_like(x, t, size(x, 2)))
 (m::FlowModel)(x::AbstractMatrix, t::AbstractVector) = m(x, reshape(t, 1, :))
 (m::FlowModel)(x::AbstractMatrix, t::AbstractMatrix) = m.net(vcat(x, t))
+# (m::FlowModel)(x::AbstractMatrix, t::AbstractMatrix) = m.net(x)
 
 function Tsunami.configure_optimisers(m::FlowModel, trainer)
-    opt = Optimisers.setup(Optimisers.Adam(m.hparams.lr), m)
-    return opt
+    opt_state = Optimisers.setup(Optimisers.Adam(m.hparams.lr), m)
+    return opt_state
 end
 
 function Tsunami.train_step(m::FlowModel, trainer, batch, batch_idx)
@@ -72,6 +73,7 @@ function Tsunami.train_step(m::FlowModel, trainer, batch, batch_idx)
     xt = @. (1 - t) * x0 + t * x1
     v = x1 .- x0
     v̂ = m(xt, t)
+    # loss = Flux.mse(zeros_like(v), x1)
     loss = Flux.mse(v̂, v)
     Tsunami.log(trainer, "loss/train", loss)
     return loss
@@ -83,16 +85,18 @@ function train(; lr = 1e-4, batch_size = 256, iterations = 50000, hidden_dim = 5
     
     model = FlowModel(; input_dim=2, hidden_dim, lr)
     trainer = Trainer(max_epochs=1, log_every_n_steps=50, 
-               accelerator=:auto, autodiff=:enzyme)
+               accelerator=:auto, autodiff=:zygote)
     Tsunami.fit!(model, trainer, train_loader)
     return model
 end
 
 # Let's train the model.
 
-model = train(lr=1e-3, hidden_dim=512, batch_size=4096, iterations=20000)
+model = train(lr=1e-3, hidden_dim=512, batch_size=4096, iterations=20_000)
 
 # ## Sampling
+
+# We sample using midpoint-method integration of the learned flow field.
 
 function step(m::FlowModel, x_t::AbstractMatrix, t_start::Number, t_end::Number)
     vt = m(x_t, t_start)
@@ -110,5 +114,6 @@ function sample(m::FlowModel; n::Int , steps::Int)
     return x
 end
 
-samples = sample(m, n=1000, steps=10)
+samples = sample(model, n=1000, steps=20)
 plot_checkboard(samples)
+savefig("chessboard_samples.png")
