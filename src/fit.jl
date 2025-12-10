@@ -80,12 +80,20 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         return nothing
     end
 
-    val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
+    try 
+        val_loop(model, trainer, val_dataloader; progbar_keep=false, progbar_print_epoch=true)
 
-    for epoch in start_epoch:trainer.max_epochs # TODO turn into while loop
-        fit_state.epoch = epoch
-        train_loop(model, trainer, train_dataloader, val_dataloader)
-        fit_state.should_stop && break
+        for epoch in start_epoch:trainer.max_epochs # TODO turn into while loop
+            fit_state.epoch = epoch
+            train_loop(model, trainer, train_dataloader, val_dataloader)
+            fit_state.should_stop && break
+        end
+    catch e
+        if e isa InterruptException
+            @info "Training interrupted by user."
+        else
+            rethrow(e)
+        end
     end
 
     GPUArrays.unsafe_free!(trainer.cache) # Clear the allocation cache after training to free up GPU memory
