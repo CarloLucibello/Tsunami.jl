@@ -12,16 +12,11 @@ assets = ["assets/flux.css"]
 readme_path = joinpath(@__DIR__, "..", "README.md")
 index_path = joinpath(@__DIR__, "src", "index.md")
 readme_content = read(readme_path, String)
-# Replace 
-# <img align="right" width="200px" src="https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg">
-# with
-# ![Great Wave](src/assets/the_great_wave.jpg)
 readme_content = replace(
     readme_content,
     "<img align=\"right\" width=\"200px\" src=\"https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg\">" =>
     "![Great Wave](https://raw.githubusercontent.com/CarloLucibello/Tsunami.jl/main/docs/src/assets/the_great_wave.jpg)"
 )
-
 write(index_path, readme_content)
 
 makedocs(;
