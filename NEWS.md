@@ -1,6 +1,8 @@
 # Tsunami Release Notes
 
+## v0.3.1 
 
+- Implement caching strategy from [GPUArrays.jl](https://juliagpu.github.io/GPUArrays.jl/dev/interface/#Caching-Allocator) to reduce memory allocations on GPU during training, validation, and testing.
 
 ## v0.3.0 
 

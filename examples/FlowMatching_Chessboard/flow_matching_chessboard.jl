@@ -80,13 +80,13 @@ function Tsunami.train_step(m::FlowModel, trainer, batch, batch_idx)
     return loss
 end
 
-function train(; lr = 1e-4, batch_size = 256, iterations = 50000, hidden_dim = 512)
+function train(; lr = 1e-4, batch_size = 256, iterations = 20_000, hidden_dim = 512)
     train_loader = (inf_train_gen(batch_size) for _ in 1:iterations)
     # train_loader = (make_moons(batch_size, 0.05)[1] for _ in 1:iterations)
     
     model = FlowModel(; input_dim=2, hidden_dim, lr)
     trainer = Trainer(max_epochs=1, log_every_n_steps=50, 
-               accelerator=:auto, autodiff=:zygote)
+               accelerator=:auto, autodiff=:zygote, devices=[2])
     Tsunami.fit!(model, trainer, train_loader)
     return model
 end
