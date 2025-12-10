@@ -118,6 +118,7 @@ mutable struct Trainer
     foil::Foil
     lr_schedulers
     optimisers
+    cache
 end
 
 function Trainer(;
@@ -170,11 +171,14 @@ function Trainer(;
         loggers = []
         metalogger = MetaLogger(loggers)
     end
+
+    cache = GPUArrays.AllocCache() # Caching allocator to reduce GPU memory allocations during training
+                                   # https://juliagpu.github.io/GPUArrays.jl/dev/interface/#Caching-Allocator
     
     return Trainer(autodiff, callbacks, default_root_dir, fast_dev_run, 
                     log_every_n_steps, loggers, metalogger, 
                     max_epochs, max_steps, progress_bar, val_every_n_epochs, 
-                    fit_state, foil, lr_schedulers, optimisers)
+                    fit_state, foil, lr_schedulers, optimisers, cache)
 end
 
 Base.show(io::IO, ::MIME"text/plain", trainer::Trainer) = 

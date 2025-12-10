@@ -1,9 +1,11 @@
 hook(f, model::EnzymeCore.Duplicated, args...) = hook(f, model.val, args...)
 
 function hook(f, model::FluxModule, trainer::Trainer, args...)
-    f(model, trainer, args...)
-    for callback in trainer.callbacks
-        f(callback, model, trainer, args...)
+    GPUArrays.@cached trainer.cache begin
+        f(model, trainer, args...)
+        for callback in trainer.callbacks
+            f(callback, model, trainer, args...)
+        end
     end
 end
 

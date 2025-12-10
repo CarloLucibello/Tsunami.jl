@@ -88,7 +88,10 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         fit_state.should_stop && break
     end
 
-    Flux.loadmodel!(model_orig, Flux.state(model))
+    GPUArrays.unsafe_free!(trainer.cache) # Clear the allocation cache after training to free up GPU memory
+    
+    Flux.loadmodel!(model_orig, Flux.state(model)) # change the original model parameters to the trained ones
+
     return nothing
 end
 
@@ -109,7 +112,10 @@ function val_loop(model::FluxModule, trainer::Trainer, val_dataloader; progbar_o
         fit_state.batchsize = MLUtils.numobs(batch)       
         hook(on_val_batch_start, model, trainer, batch, batch_idx)
 
-        out = val_step(model, trainer, batch, batch_idx)
+        GPUArrays.@cached trainer.cache begin
+            out = val_step(model, trainer, batch, batch_idx)
+        end
+
         ProgressMeter.next!(valprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
                 valuecolor = :green)
@@ -147,15 +153,21 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
 
         hook(on_train_batch_start, model, trainer, batch, batch_idx)
         
-        out, grad = gradient_train_step(model, trainer, batch, batch_idx)
+        GPUArrays.@cached trainer.cache begin
+            out, grad = gradient_train_step(model, trainer, batch, batch_idx)
+        end
         
         hook(on_before_update, model, trainer, out, grad)
-
-        update!(trainer.optimisers, model, grad)
+        
+        GPUArrays.@cached trainer.cache begin 
+            update!(trainer.optimisers, model, grad)
+        end
 
         if fit_state.step == trainer.max_steps
             fit_state.should_stop = true
         end
+
+        hook(on_train_batch_end, model, trainer, out, batch, batch_idx)
         
         ProgressMeter.next!(train_progbar,
             showvalues = values_for_train_progbar(trainer.metalogger),
@@ -164,10 +176,9 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
             keep = fit_state.should_stop || fit_state.epoch == trainer.max_epochs
         )
 
-        hook(on_train_batch_end, model, trainer, out, batch, batch_idx)
-        
         fit_state.should_stop && break
     end
+
     if fit_state.epoch == trainer.max_epochs
         fit_state.should_stop = true
     end
@@ -273,7 +284,9 @@ Dict{String, Float64} with 1 entry:
 function test(model::FluxModule, trainer::Trainer, dataloader)
     model = setup(trainer.foil, model)
     dataloader = setup_iterator(trainer.foil, dataloader)
-    return test_loop(model, trainer, dataloader; progbar_keep=true)
+    res = test_loop(model, trainer, dataloader; progbar_keep=true)
+    GPUArrays.unsafe_free!(trainer.cache)
+    return res
 end
 
 function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep = true)
@@ -291,7 +304,9 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
 
         hook(on_test_batch_start, model, trainer, batch, batch_idx)
 
-        out = test_step(model, trainer, batch, batch_idx)
+        GPUArrays.@cached trainer.cache begin
+            out = test_step(model, trainer, batch, batch_idx)
+        end
 
         ProgressMeter.next!(testprogressbar, 
                 showvalues = values_for_val_progressbar(trainer.metalogger),
@@ -299,7 +314,7 @@ function test_loop(model, trainer, dataloader; progbar_offset = 0, progbar_keep 
 
         hook(on_test_batch_end, model, trainer, out, batch, batch_idx)
     end
-
+    
     fit_state.stage = :test_epoch_end
     hook(on_test_epoch_end, model, trainer)
     test_results = log_epoch(trainer.metalogger, fit_state)
@@ -316,5 +331,7 @@ See also [`Tsunami.test`](@ref) and [`Tsunami.fit!`](@ref).
 """
 function validate(model::FluxModule, trainer::Trainer, dataloader)
     model = setup(trainer.foil, model)
-    return val_loop(model, trainer, dataloader; progbar_keep=true)
+    res = val_loop(model, trainer, dataloader; progbar_keep=true)
+    GPUArrays.unsafe_free!(trainer.cache)
+    return res
 end

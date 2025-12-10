@@ -18,8 +18,9 @@ Tsunami  is built on top of [Flux.jl](https://github.com/FluxML/Flux.jl) and it 
 - Checkpoints (save and resume training).
 - Hyperparameters' schedulers.
 - CUDA, AMDGPU, and Metal GPU support.
+- Use GPUArrays.jl's caching allocator to reduce GPU memory occupation.
 - Progress bars.
-- Nice organization of your code.
+- Clean organization of your code.
 - Automatic Differentiation through Zygote or Enzyme.
 
 ## Installation 

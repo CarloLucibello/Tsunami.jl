@@ -11,6 +11,7 @@ using Flux
 using Flux: onecold, onehotbatch, DataLoader
 using Functors: Functors
 # import ImageMagick # for image logging
+using GPUArrays: GPUArrays
 using JLD2: JLD2
 using MLUtils
 using MLDataDevices: get_device, gpu_device, cpu_device, 
