@@ -13,8 +13,7 @@ using Statistics, Random
 using Tsunami, Flux, Optimisers
 using Plots, ConcreteStructs
 using MLUtils
-using Enzyme
-using CUDA, cuDNN
+using CUDA
 
 # ## Data Generation
 
