@@ -95,7 +95,7 @@ function train(; lr = 1e-4, batch_size = 256, iterations = 20_000, hidden_dim = 
 
     trainer = Trainer(max_epochs=1, log_every_n_steps=50, 
                accelerator=:auto, autodiff=:zygote, 
-               devices=[0], # change this to train on specific GPU
+               devices=[1], # change this to train on specific GPU
                callbacks=[ShowCudaAllocCallback()])
     
     Tsunami.fit!(model, trainer, train_loader)
