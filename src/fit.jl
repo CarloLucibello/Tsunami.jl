@@ -159,9 +159,9 @@ function train_loop(model, trainer::Trainer, train_dataloader, val_dataloader)
         
         hook(on_before_update, model, trainer, out, grad)
         
-        GPUArrays.@cached trainer.cache begin 
+        # GPUArrays.@cached trainer.cache begin 
             update!(trainer.optimisers, model, grad)
-        end
+        # end
 
         if fit_state.step == trainer.max_steps
             fit_state.should_stop = true
