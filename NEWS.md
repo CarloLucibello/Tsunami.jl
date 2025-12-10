@@ -3,6 +3,7 @@
 ## v0.3.1 
 
 - Implement caching strategy from [GPUArrays.jl](https://juliagpu.github.io/GPUArrays.jl/dev/interface/#Caching-Allocator) to reduce memory allocations on GPU during training, validation, and testing.
+- Handle gracefully an interrupt (Ctrl+C) during `fit!`.
 
 ## v0.3.0 
 
