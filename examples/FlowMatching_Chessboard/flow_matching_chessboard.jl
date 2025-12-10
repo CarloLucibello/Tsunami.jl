@@ -2,6 +2,8 @@
 
 # This example is ported the pytorch notebook at 
 # https://github.com/facebookresearch/flow_matching/blob/main/examples/2d_flow_matching.ipynb
+# See also 
+# https://github.com/keishihara/flow-matching
 
 # We train and evaluate a simple 2D FM model with a linear scheduler.
 
@@ -25,13 +27,13 @@ function inf_train_gen(batch_size::Int = 200)
     x2 = x2 .+ floor.(x1) .% 2 
     data = vcat(x1', x2')
     data .-= n / 2    
-    return data
+    return data .* 2 # scale to [-4,4]
 end
 
 # Let's visualize a data sample.
 
 function plot_checkboard(points)
-    scatter(points[1,:], points[2,:], xlim=(-2,2), ylim=(-2,2),
+    scatter(points[1,:], points[2,:], xlim=(-4,4), ylim=(-4,4),
         markersize=3, legend=false, widen=false, framestyle=:box)
 end
 
@@ -105,15 +107,26 @@ function step(m::FlowModel, x_t::AbstractMatrix, t_start::Number, t_end::Number)
     return @. x_t + vhalf * (t_end - t_start)
 end
 
-function sample(m::FlowModel; n::Int , steps::Int)
+function sample(m::FlowModel; n::Int , steps::Int, return_history::Bool = true)
     x = randn(Float32, 2, n)
     ts = Float32.(range(0, 1, length=steps+1))
+    history = [x]
     for i in 1:steps
         x = step(m, x, ts[i], ts[i+1])
+        push!(history, x)
     end
-    return x
+    if return_history
+        return history
+    else
+        return x
+    end
 end
 
-samples = sample(model, n=1000, steps=20)
-plot_checkboard(samples)
-savefig("chessboard_samples.png")
+history = sample(model, n=1000, steps=20, return_history=true)
+anim = @animate for xt in history
+    plot_checkboard(xt)
+end
+gif(anim, "chessboard_sampling_animation.gif", fps=5)
+
+plot_checkboard(history[end])
+savefig("chessboard_final_samples.png")
