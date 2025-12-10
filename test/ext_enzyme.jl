@@ -3,7 +3,7 @@
     using .TsunamiTest
     N = 1000
     α = 0.5
-    λ = 1f-5 / round(Int, N * α)
+    λ = 1f-4 / round(Int, N * α)
 
     M = round(Int, N * α)
     teacher = LinearModel(N)
@@ -11,7 +11,7 @@
     y = teacher(X)
 
     model = LinearModel(N; λ)
-    trainer = SilentTrainer(max_epochs=1000, autodiff=:enzyme, accelerator=:cpu)
+    trainer = SilentTrainer(max_epochs=100, autodiff=:enzyme, accelerator=:cpu)
     @test trainer.foil.device isa CPUDevice
     Tsunami.fit!(model, trainer, [(X, y)])
     @test model.W isa Matrix{Float32}

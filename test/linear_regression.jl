@@ -3,7 +3,7 @@
     using .TsunamiTest
     N = 1000
     α = 0.5
-    λ = 1f-5 / round(Int, N * α)
+    λ = 1f-4 / round(Int, N * α)
 
     M = round(Int, N * α)
     teacher = LinearModel(N)
@@ -13,7 +13,7 @@
     model = LinearModel(N; λ)
     @test model.W isa Matrix{Float32}
     @test size(model.W) == (1, N)
-    trainer = SilentTrainer(max_epochs=1000)
+    trainer = SilentTrainer(max_epochs=100)
     Tsunami.fit!(model, trainer, [(X, y)])
     @test model.W isa Matrix{Float32} # by default precision is Float32
     @test Flux.mse(model(X), y) < 1e-1
@@ -23,7 +23,7 @@ end
     using .TsunamiTest
     N = 1000
     α = 0.5
-    λ = 1f-5 / round(Int, N * α)
+    λ = 1f-4 / round(Int, N * α)
 
     M = round(Int, N * α)
     teacher = LinearModel(N)
