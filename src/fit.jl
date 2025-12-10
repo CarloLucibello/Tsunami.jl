@@ -92,7 +92,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         if e isa InterruptException
             @info "Training interrupted by user."
         else
-            rethrow(e)
+            rethrow()
         end
     end
 
