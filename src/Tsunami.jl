@@ -85,6 +85,10 @@ include("fit.jl")
 include("log.jl")
 @compat(public, (log,))
 
+include("mixed_precision.jl")
+# export GradScaler
+# @compat(public, (scale, update!)
+
 include("deprecated.jl")
 
 end # module
