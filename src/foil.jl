@@ -36,6 +36,7 @@ struct Foil{D,F}
     fprec::F           # Function to convert model and data to the desired floating point precision
     precision::Symbol
     is_mixed_precision::Bool
+    grad_scaler::Union{GradScaler, Nothing}
 end
 
 function Foil(;
@@ -60,7 +61,8 @@ function Foil(;
                 throw(ArgumentError("precision must be one of :bf16, :f16, :f32, :f64"))
             end
     is_mixed_precision = precision ∈ (:f16mix, :bf16mix)
-    return Foil(device, fprec, precision, is_mixed_precision) 
+    grad_scaler = is_mixed_precision ? GradScaler() : nothing
+    return Foil(device, fprec, precision, is_mixed_precision, grad_scaler) 
 end
 
 function Base.show(io::IO, foil::Foil)

@@ -222,6 +222,9 @@ function gradient_train_step(model::FluxModule, trainer::Trainer, batch, batch_i
     loss, z_grad = Zygote.withgradient(model) do model
         out = train_step(model, trainer, batch, batch_idx)
         loss = process_out_step(out)
+        if trainer.foil.is_mixed_precision
+            loss = trainer.foil.grad_scaler.scaled_loss(loss)
+        end
         return loss
     end
     return out, unref(z_grad[1])

@@ -9,10 +9,9 @@ Dynamically scales the loss to prevent gradient underflow when using lower preci
 in the gradients.
 
 # Features
-- `scale(loss)`: Scale the loss by the current scale factor
-- `unscale!(model)`: Unscale gradients in the model
-- `update!()`: Update the scale based on overflow detection
-- Dynamic loss scale with growth/backoff
+- `scale_loss(grad_scaler, loss)`: Scale the loss by the current scale factor
+- `update!(grad_scaler, opt_state, model, grads)`: Unscale gradients, check for inf/nan,
+  and update the optimizer state and model parameters accordingly. Also updates the scale factor.
 
 # Arguments
 - `init_scale`: Initial scale factor (default: 2^16)
@@ -23,23 +22,13 @@ in the gradients.
 
 # Example
 ```julia
-using Zygote
-
-scaler = GradScaler()
+grad_scaler = GradScaler()
 for batch in dataloader
     loss, grads = Zygote.withgradient(model) do m
         out = compute_loss(m, batch)
-        scaler.scale(out)  # Scale the loss
+        scale_loss(grad_scaler, out)  # Scale the loss
     end
-    
-    if !unscale!(scaler, grads[1])
-        # Skip this step due to inf/nan
-        scaler.update!()
-        continue
-    end
-    
-    Optimisers.update!(opt, model, grads[1])
-    scaler.update!()
+    Optimisers.update!(grad_scaler, opt, model, grads[1])
 end
 ```
 """
@@ -55,11 +44,11 @@ end
 end
 
 """ 
-    scale(scaler::GradScaler, loss)
+    scale_loss(scaler::GradScaler, loss)
 
 Scale the loss by the current scale factor.
 """
-function scale(scaler::GradScaler, loss::AbstractFloat)
+function scale_loss(scaler::GradScaler, loss::AbstractFloat)
     if loss isa Float16
         @warn """Scaling Float16 loss. When using mixed precision training, it's recommended \
         to compute the loss in Float32 precision since reductions like sum or mean can cause \
