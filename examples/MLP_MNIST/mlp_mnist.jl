@@ -75,7 +75,7 @@ test_loader = DataLoader(test_data, batchsize=128)
 
 # ## Training
 # First, we create the model:
-
+Tsunami.seed!(17)
 model = MLP()
 
 # Now we do a fast dev run to make sure everything is working:
@@ -85,11 +85,11 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 
 # We then train the model for real:
 
-Tsunami.seed!(17)
 trainer = Trainer(max_epochs = 3,
                  max_steps = -1,
                  default_root_dir = @__DIR__,
-                 accelerator = :auto)
+                 accelerator = :auto, 
+                 precision = :f16mix)
 
 Tsunami.fit!(model, trainer, train_loader, val_loader)
 @assert trainer.fit_state.step == 1266
