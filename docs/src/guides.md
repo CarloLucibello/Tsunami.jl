@@ -85,8 +85,7 @@ end
 
 ## Freezing model parameters
 
-Tsunami allows you to freeze specific parameters of your model during training, preventing them from being updated. This is useful for transfer learning or fine-tuning pre-trained models. To freeze parameters, use the `freeze` keyword argument in the `Trainer` constructor. The `freeze` argument takes a vector of [`KeyPath`](@ref)s that specify the parameters to freeze.
-
+Tsunami allows you to freeze specific parameters of your model during training, preventing them from being updated. This is useful for transfer learning or fine-tuning pre-trained models. To freeze parameters, use the `freeze` keyword argument in the `Trainer` constructor. The `freeze` argument takes a vector of `KeyPath`s that specify the parameters to freeze.
 
 For instance, assming you have a model (inheriting from `FluxModule`) with layers stored in a field called `layers`, you can freeze all the parameters in the first layer and only the bias of the second layer as follows:
 
@@ -95,3 +94,5 @@ using Tsunami
 trainer = Trainer(freeze = [KeyPath(:layers, 1), KeyPath(:layers, 2, :bias)])
 Tsunami.fit!(model, trainer, train_loader, val_loader)
 ```
+
+Read more about `KeyPath`s in the [Functors.jl documentation](https://fluxml.ai/Functors.jl/stable/api/#KeyPath).

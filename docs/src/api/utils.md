@@ -12,4 +12,3 @@ Tsunami.seed!
 Tsunami.foreach_trainable
 ```
 
-# From Other Packages

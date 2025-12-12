@@ -48,7 +48,7 @@ the fit state during the execution of `fit!`.
 - **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
-- **freeze**: A list of [`KeyPath`](@ref)s in the model to freeze during training.
+- **freeze**: A list of `KeyPath`s in the model to freeze during training.
                Default: `[]`.
 - **log\\_every\\_n\\_steps**: How often to log within steps. See also `logger`.
              Default: `50`.
