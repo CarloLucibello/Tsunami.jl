@@ -58,7 +58,7 @@ end
 function Tsunami.configure_optimisers(m::MLP, trainer)
     # initial lr, decay factor, and decay intervals (corresponding to epochs 2 and 4)
     lr_scheduler = ParameterSchedulers.Step(1f-2, 0.1f0, [2, 2])
-    opt = Optimisers.setup(Optimisers.Adam(1f-5), m)
+    opt = Optimisers.Adam(1f-5)
     return opt, lr_scheduler
 end
 

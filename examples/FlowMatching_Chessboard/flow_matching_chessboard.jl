@@ -62,8 +62,7 @@ end
 # (m::FlowModel)(x::AbstractMatrix, t::AbstractMatrix) = m.net(x)
 
 function Tsunami.configure_optimisers(m::FlowModel, trainer)
-    opt_state = Optimisers.setup(Optimisers.Adam(m.hparams.lr), m)
-    return opt_state
+    return Optimisers.Adam(m.hparams.lr)
 end
 
 function Tsunami.train_step(m::FlowModel, trainer, batch, batch_idx)

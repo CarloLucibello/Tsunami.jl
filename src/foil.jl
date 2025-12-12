@@ -104,8 +104,8 @@ to_precision(foil::Foil, x) = x |> foil.fprec
 is_using_gpu(foil::Foil) = !(foil.device isa CPUDevice)
 
 """
-    setup(foil::Foil, model, optimisers)
-
+    setup(foil::Foil, model, [optimisers])
+    
 Setup the model and optimisers for training sending them to the device and setting the precision.
 This function is called internally by [`Tsunami.fit!`](@ref).
 
@@ -113,8 +113,16 @@ See also [`Foil`](@ref).
 """
 function setup(foil::Foil, model, optimisers)
     model = setup(foil, model)
-    optimisers = optimisers |> to_precision(foil) |> to_device(foil)
-    return model, optimisers
+    if !(optimisers isa Optimisers.AbstractRule)
+        # Assume it is an opt_state. This can happen for two reasons:
+        # 1. In previous version of Tsunami, configure_optimisers returned an opt_state
+        # 2. When loadding a checkpoint, the optimisers state is restored directly
+        opt_state = optimisers
+    else
+        opt_state = Optimisers.setup(optimisers, model)
+    end
+    opt_state = opt_state |> to_precision(foil) |> to_device(foil)
+    return model, opt_state
 end
 
 function setup(foil::Foil, model)

@@ -27,10 +27,10 @@ for (backend, deps) in deps_dict
 end
 
 using Reexport: @reexport
-using Test
 using DataFrames: DataFrames, DataFrame
 using Enzyme: Enzyme
 using MLUtils: MLUtils
+@reexport using Test
 @reexport using Tsunami
 @reexport using Flux
 @reexport using Optimisers
@@ -90,7 +90,7 @@ function Tsunami.train_step(m::TestModule1, trainer, batch, batch_idx)
 end
 
 function Tsunami.configure_optimisers(m::TestModule1, trainer)
-    return Optimisers.setup(Optimisers.Adam(1f-3), m)
+    return Optimisers.Adam(1f-3)
 end
 
 # utility returning input and output sizes
@@ -126,7 +126,7 @@ function Tsunami.train_step(model::LinearModel, trainer, batch, batch_idx)
 end
 
 function Tsunami.configure_optimisers(model::LinearModel, trainer)
-    return Optimisers.setup(Optimisers.Adam(1f-1), model)
+    return Optimisers.Adam(1f-1)
 end
 
 ###### MLP ######
@@ -163,8 +163,7 @@ function Tsunami.train_step(model::MLP, trainer, batch)
     return loss
 end
 
-Tsunami.configure_optimisers(model::MLP, trainer) = 
-    Optimisers.setup(Optimisers.AdamW(1e-3), model)
+Tsunami.configure_optimisers(model::MLP, trainer) = Optimisers.AdamW(1e-3)
 
 ###### TBLoggingModuel ######
 
@@ -203,7 +202,7 @@ function Tsunami.val_step(m::TBLoggingModule, trainer, batch, batch_idx)
 end
 
 function Tsunami.configure_optimisers(m::TBLoggingModule, trainer)
-    return Optimisers.setup(Optimisers.Adam(1f-3), m)
+    return Optimisers.Adam(1f-3)
 end
 
 end # TsunamiTest

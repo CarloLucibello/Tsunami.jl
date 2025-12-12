@@ -9,7 +9,7 @@ using Crayons
 using EnzymeCore: EnzymeCore
 using Flux
 using Flux: onecold, onehotbatch, DataLoader
-using Functors: Functors
+using Functors: Functors, KeyPath
 # import ImageMagick # for image logging
 using GPUArrays: GPUArrays
 using JLD2: JLD2
@@ -27,6 +27,8 @@ import TensorBoardLogger as TensorBoardLoggers
 using UnPack: @unpack
 using Zygote
 
+# exports from other packages
+export KeyPath # from Functors
 
 include("ProgressMeter/ProgressMeter.jl")
 using .ProgressMeter
