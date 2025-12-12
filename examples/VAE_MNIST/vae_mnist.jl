@@ -108,7 +108,7 @@ end
 
 function Tsunami.configure_optimisers(model::VAE, trainer)
     lr_scheduler = ParameterSchedulers.Step(model.η, 0.1, fill(trainer.max_epochs ÷ 4, 4))
-    opt = Optimisers.setup(Optimisers.AdamW(lambda=model.λ), model)
+    opt = Optimisers.AdamW(lambda=model.λ)
     return opt, lr_scheduler
 end
 

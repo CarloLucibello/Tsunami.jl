@@ -113,8 +113,15 @@ See also [`Foil`](@ref).
 """
 function setup(foil::Foil, model, optimisers)
     model = setup(foil, model)
-    optimisers = optimisers |> to_precision(foil) |> to_device(foil)
-    return model, optimisers
+    if !(optimisers isa Optimisers.AbstractRule)
+        # assume it is an opt_state for retrocompatibility
+        @warn "Returning an optimiser state from `configure_optimisers` is deprecated. \
+        Please return an optimiser instead, i.e. don't call `Optimisers.setup` yourself."
+    else
+        opt_state = Optimisers.setup(optimisers, model)
+    end
+    opt_state = opt_state |> to_precision(foil) |> to_device(foil)
+    return model, opt_state
 end
 
 function setup(foil::Foil, model)

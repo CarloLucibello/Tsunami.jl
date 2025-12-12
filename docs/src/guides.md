@@ -51,9 +51,7 @@ AccumGrad can be easily integrated into Tsunami's `configure_optimisers`:
 using Optimisers
 
 function Tsunami.configure_optimisers(model::Model, trainer)
-    opt = OptimiserChain(AccumGrad(5), AdamW(1e-3))
-    opt_state = Optimiser.setup(opt, model)
-    return opt_state
+    return OptimiserChain(AccumGrad(5), AdamW(1e-3))
 end
 ```
 
@@ -81,8 +79,8 @@ Gradient clipping can be easily integrated into Tsunami's `configure_optimisers`
 using Optimisers
 
 function Tsunami.configure_optimisers(model::Model, trainer)
-    opt = OptimiserChain(ClipGrad(0.1), AdamW(1e-3))
-    opt_state = Optimiser.setup(opt, model)
-    return opt_state
+    return OptimiserChain(ClipGrad(0.1), AdamW(1e-3))
 end
 ```
+
+## Freezing model parameters
