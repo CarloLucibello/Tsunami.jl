@@ -72,7 +72,7 @@ function Tsunami.val_step(model::MLP, trainer, batch)
     Tsunami.log(trainer, "accuracy/val", acc)
 end
 
-Tsunami.configure_optimisers(model::MLP, trainer) = Optimisers.AdamW(1e-3)
+Tsunami.configure_optimisers(model::MLP, trainer) = AdamW(1e-3)
 
 ## Prepare the data
 
