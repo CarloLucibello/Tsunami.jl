@@ -150,7 +150,6 @@ end
     @test res["b"] == 2.0
 end
 
-using Sys
 if !Sys.isapple() # sometimes hangs on mac
 @testset "precision bf16" begin
     using .TsunamiTest
