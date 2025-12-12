@@ -1,5 +1,5 @@
 
-@testitem "linear regression enzyme" setup=[TsunamiTest] tags=[:enzyme]begin
+@testset "linear regression enzyme" begin
     using .TsunamiTest
     N = 1000
     α = 0.5
@@ -18,7 +18,7 @@
     @test Flux.mse(model(X), y) < 1e-1
 end
 
-@testitem "mlp classification enzyme" setup=[TsunamiTest] tags=[:enzyme]begin
+@testset "mlp classification enzyme" begin
     using .TsunamiTest
     using MLUtils: DataLoader
     using Flux: onehotbatch
@@ -31,7 +31,7 @@ end
     Tsunami.fit!(model, trainer, train_loader)
 end
 
-@testitem "mlp fashion mnist enzyme" setup=[TsunamiTest] tags=[:enzyme] begin
+@testset "mlp fashion mnist enzyme" begin
     using .TsunamiTest
     using MLUtils: DataLoader, mapobs, getobs
     using MLDatasets

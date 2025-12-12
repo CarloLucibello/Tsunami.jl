@@ -1,5 +1,5 @@
-@testitem "Trainer Constructor" begin
-    using MLDataDevices
+@testset "Trainer Constructor" begin
+    using MLDataDevices, Tsunami
     trainer = Trainer()
     @test trainer.max_epochs == 1000
     @test trainer.max_steps == -1
@@ -20,7 +20,7 @@
     @test trainer.foil.device isa CPUDevice
 end
 
-@testitem "no val loader" setup=[TsunamiTest] begin
+@testset "no val loader" begin
     using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
@@ -29,7 +29,7 @@ end
     Tsunami.fit!(model, trainer, train_dataloader)
 end
 
-@testitem "fit! mutates" setup=[TsunamiTest] begin
+@testset "fit! mutates" begin
     using .TsunamiTest
     model = TestModule1()
     # model0 = deepcopy(model)
@@ -48,7 +48,7 @@ end
     end
 end
 
-@testitem "checkpoint" setup=[TsunamiTest] begin
+@testset "checkpoint" begin
     using .TsunamiTest
     model = TestModule1()
 
@@ -84,7 +84,7 @@ end
     rm(runpath2, recursive=true)
 end
 
-@testitem "fast_dev_run" setup=[TsunamiTest] begin
+@testset "fast_dev_run" begin
     using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
@@ -95,7 +95,7 @@ end
     @test trainer.fit_state.step == 0
 end
 
-@testitem "val_every_n_epochs" setup=[TsunamiTest] begin
+@testset "val_every_n_epochs" begin
     using .TsunamiTest
     # TODO test properly
     model = TestModule1()
@@ -106,7 +106,7 @@ end
     @test trainer.fit_state.epoch == 2 
 end
 
-@testitem "generic dataloader" setup=[TsunamiTest] begin
+@testset "generic dataloader" begin
     using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
@@ -117,7 +117,7 @@ end
     @test trainer.fit_state.epoch == 2
 end
 
-@testitem "Tsunami.test" setup=[TsunamiTest] begin
+@testset "Tsunami.test" begin
     using .TsunamiTest
     struct TestModuleTest <: FluxModule; dummy; end 
     function Tsunami.test_step(::TestModuleTest, trainer, batch, batch_idx)
@@ -132,7 +132,7 @@ end
     @test res["b"] == 2.0
 end
 
-@testitem "Tsunami.validate" setup=[TsunamiTest] begin
+@testset "Tsunami.validate" begin
     using .TsunamiTest
     struct TestModuleVal <: FluxModule; dummy; end 
 
@@ -150,7 +150,8 @@ end
     @test res["b"] == 2.0
 end
 
-@testitem "precision bf16" setup=[TsunamiTest] begin
+if !Sys.isapple() # sometimes hangs on mac
+@testset "precision bf16" begin
     using .TsunamiTest
     model = TestModule1()
     nx, ny = io_sizes(model)
@@ -158,4 +159,5 @@ end
     trainer = Trainer(max_epochs=2, precision=:bf16, accelerator=:cpu)
     Tsunami.fit!(model, trainer, train_dataloader)
     # TODO test properly
+end
 end

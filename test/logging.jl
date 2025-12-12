@@ -1,4 +1,4 @@
-@testitem "TensorBoard logging" setup=[TsunamiTest] begin
+@testset "TensorBoard logging" begin
     using .TsunamiTest
     batch_sizes = [3, 2]
     max_epochs = 4

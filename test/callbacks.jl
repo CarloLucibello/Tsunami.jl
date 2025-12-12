@@ -1,4 +1,4 @@
-@testitem "custom callbacks" setup=[TsunamiTest] begin
+@testset "custom callbacks" begin
     using .TsunamiTest
 
     Base.@kwdef mutable struct CounterCbk
