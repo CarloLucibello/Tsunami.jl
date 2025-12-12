@@ -123,8 +123,13 @@ function setup(foil::Foil, model, optimisers)
         # 2. When loadding a checkpoint, the optimisers state is restored directly
         opt_state = optimisers
     else
+        @assert !(optimisers isa Optimisers.MixedPrecision) "To not use Optimisers.MixedPrecision directly. Use foil precision=:f16mix or :bf16mix for mixed precision training."
+        if foil.is_mixed_precision
+            optimisers = Optimisers.MixedPrecision(Float32, optimisers)
+        end
         opt_state = Optimisers.setup(optimisers, model)
     end
+    # TODO deal with resumed training where mixed precision is added/removed
     opt_state = opt_state |> to_precision(foil) |> to_device(foil)
     return model, opt_state
 end
