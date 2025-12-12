@@ -49,7 +49,10 @@ the fit state during the execution of `fit!`.
              Default: `false`.
 
 - **freeze**: A list of `KeyPath`s in the model to freeze during training.
-               Default: `[]`.
+              For training continued from a checkpoint, the frozen parameters are unfreezed automatically,
+              unless the `freeze` list is specified again.
+              Default: `[]`.
+
 - **log\\_every\\_n\\_steps**: How often to log within steps. See also `logger`.
              Default: `50`.
 
