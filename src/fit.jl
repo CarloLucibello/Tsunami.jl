@@ -40,6 +40,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
         fit_state = ckpt.fit_state
         lr_schedulers = ckpt.lr_schedulers
         optimisers = ckpt.optimisers
+        Optimisers.thaw!(optimisers) # unfreeze parameters if they were frozen
         start_epoch = fit_state.epoch + 1
     else # train from scratch
         fit_state = FitState()
@@ -63,6 +64,11 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
     model, optimisers = setup(trainer.foil, model, optimisers)
     if trainer.autodiff == :enzyme
         model = EnzymeCore.Duplicated(model)
+    end
+
+    # freeze parameters if requested
+    for kp in trainer.freeze
+        Optimisers.freeze!(model, kp)
     end
     
     # setup loaders 

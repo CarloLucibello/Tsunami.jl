@@ -48,6 +48,8 @@ the fit state during the execution of `fit!`.
 - **fast\\_dev\\_run**: If set to `true` runs a single batch for train and validation to find any bugs. 
              Default: `false`.
 
+- **freeze**: A list of [`KeyPath`](@ref)s in the model to freeze during training.
+               Default: `[]`.
 - **log\\_every\\_n\\_steps**: How often to log within steps. See also `logger`.
              Default: `50`.
 
@@ -106,6 +108,7 @@ mutable struct Trainer
     callbacks::Vector
     default_root_dir::AbstractString
     fast_dev_run::Bool
+    freeze::Vector{KeyPath}
     log_every_n_steps::Int
     loggers::Vector
     metalogger::MetaLogger
@@ -127,6 +130,7 @@ function Trainer(;
             checkpointer = true,
             default_root_dir = pwd(),
             fast_dev_run = false,
+            freeze = KeyPath[],
             log_every_n_steps = 50,
             logger = true,
             loggers = [],
@@ -175,7 +179,7 @@ function Trainer(;
     cache = GPUArrays.AllocCache() # Caching allocator to reduce GPU memory allocations during training
                                    # https://juliagpu.github.io/GPUArrays.jl/dev/interface/#Caching-Allocator
     
-    return Trainer(autodiff, callbacks, default_root_dir, fast_dev_run, 
+    return Trainer(autodiff, callbacks, default_root_dir, fast_dev_run, freeze,
                     log_every_n_steps, loggers, metalogger, 
                     max_epochs, max_steps, progress_bar, val_every_n_epochs, 
                     fit_state, foil, lr_schedulers, optimisers, cache)
