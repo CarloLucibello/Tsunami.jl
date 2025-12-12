@@ -15,8 +15,10 @@ FOIL_CONSTRUCTOR_ARGS ="""
     (see `MLDataDevices.gpu_device` documentation). 
     Default: `nothing`.
 
-- **precision**: Supports passing different precision types `(:bf16, :f16, :f32, :f64)`, 
-    where `:bf16` is BFloat16, `:f16` is Float16, `:f32` is Float32, and `:f64` is Float64.
+- **precision**: Supports passing different precision types: `:bf16`, `:f16`, `:f32`, `:f64`, `:f16mix`, `:bf16mix`. 
+    The symbols `:fX` are for training using FloatX numbers, `:bf16` is for training using BFloat16 numbers.
+    The symbol `:f16mix` and `:bf16mix` are for mixed precision training using Float16 and BFloat16 numbers respectively,
+    with automatic loss scaling and Float32 master weights.
     Default: `:f32`.
 """
 
@@ -31,8 +33,9 @@ $FOIL_CONSTRUCTOR_ARGS
 """
 struct Foil{D,F}
     device::D
-    fprec::F
+    fprec::F           # Function to convert model and data to the desired floating point precision
     precision::Symbol
+    is_mixed_precision::Bool
 end
 
 function Foil(;
@@ -43,10 +46,11 @@ function Foil(;
     
     device = select_device(accelerator, devices)
 
+    @assert precision ∈ (:bf16, :f16, :f32, :f64, :f16mix, :bf16mix) "precision must be one of :bf16, :f16, :f32, :f64, :f16mix, :bf16mix."
     # These functions convert floating point arrays but preserve integer arrays
-    fprec = if precision == :f16
+    fprec = if precision == :f16 || precision == :f16mix
                 f16
-            elseif precision == :bf16
+            elseif precision == :bf16 || precision == :bf16mix
                 bf16
             elseif precision == :f32
                 f32
@@ -55,8 +59,8 @@ function Foil(;
             else
                 throw(ArgumentError("precision must be one of :bf16, :f16, :f32, :f64"))
             end
-
-    return Foil(device, fprec, precision) 
+    is_mixed_precision = precision ∈ (:f16mix, :bf16mix)
+    return Foil(device, fprec, precision, is_mixed_precision) 
 end
 
 function Base.show(io::IO, foil::Foil)

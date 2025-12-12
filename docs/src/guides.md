@@ -99,3 +99,6 @@ Read more about `KeyPath`s in the [Functors.jl documentation](https://fluxml.ai/
 
 When resuming training from a checkpoint, Tsunami will automatically unfreeze the parameters before applying the freeze settings specified in the `Trainer`.
 
+## Mixed precision training
+
+TODO
