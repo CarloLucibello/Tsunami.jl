@@ -1,4 +1,4 @@
-@testset "GPU Tsunami.seed!" tags=[:gpu] begin
+@testset "GPU Tsunami.seed!" begin
     using Random
     using MLDataDevices
     dev = gpu_device(force=true)
@@ -10,7 +10,7 @@
     @test x ≈ y
 end
 
-@testset "GPU loadmodel! can load state on gpu" tags=[:gpu] begin
+@testset "GPU loadmodel! can load state on gpu" begin
     using Flux
     model_orig = Chain(Dense(10, 5, relu), Dense(5, 2))
     dev = gpu_device(force=true)
