@@ -3,6 +3,9 @@ uuid = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
 version = "0.3.1"
 authors = "Carlo Lucibello"
 
+[workspace]
+projects = ["test", "docs"]
+
 [deps]
 BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"

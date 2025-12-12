@@ -1,4 +1,4 @@
-@testitem "on_before_update" setup=[TsunamiTest] begin
+@testset "on_before_update" begin
     using .TsunamiTest
     
     Base.@kwdef struct OnBeforeUpdateCbk 
@@ -20,7 +20,7 @@
     @test size(cb.res[1].net.layers[1].weight) == (3, 4)
 end
 
-@testitem "on_train_epoch_start and on_train_epoch_end" setup=[TsunamiTest] begin
+@testset "on_train_epoch_start and on_train_epoch_end" begin
     using .TsunamiTest
     out = []
 
@@ -41,7 +41,7 @@ end
 end
 
 
-@testitem "on_val_epoch_start and on_val_epoch_end" setup=[TsunamiTest] begin
+@testset "on_val_epoch_start and on_val_epoch_end" begin
     using .TsunamiTest
     out = []
 
@@ -64,7 +64,7 @@ end
     @test out == [1, 2, 1, 2, 1, 2, 1, 2]
 end
 
-@testitem "on_test_epoch_start and on_test_epoch_end" setup=[TsunamiTest] begin
+@testset "on_test_epoch_start and on_test_epoch_end" begin
     using .TsunamiTest
 
     out = []
@@ -85,7 +85,7 @@ end
     @test out == [1, 2]
 end
 
-@testitem "on_train_batch_start and on_train_batch_end" setup=[TsunamiTest] begin
+@testset "on_train_batch_start and on_train_batch_end" begin
     using .TsunamiTest
     
     Base.@kwdef struct OnBatchCbk 

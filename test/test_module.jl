@@ -1,4 +1,4 @@
-@testmodule TsunamiTest begin
+module TsunamiTest
 
 using Pkg
 

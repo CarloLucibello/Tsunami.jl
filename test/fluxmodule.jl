@@ -1,8 +1,9 @@
-@testitem "abstract type FluxModule" begin
+@testset "abstract type FluxModule" begin
+    using Tsunami
     @test isabstracttype(FluxModule)
 end
 
-@testitem "FluxModule functor" setup=[TsunamiTest] begin
+@testset "FluxModule functor" begin
     using .TsunamiTest
     using Functors: Functors
     m = TestModule1()

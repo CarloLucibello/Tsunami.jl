@@ -1,11 +1,11 @@
-@testitem "Foil constructor" begin
-    using MLDataDevices
+@testset "Foil constructor" begin
+    using Tsunami, MLDataDevices
     foil = Foil(accelerator=:cpu, precision=:f32, devices=nothing)
     @test foil.device isa CPUDevice
     @test foil isa Foil
 end
 
-@testitem "Tsunami.setup" setup=[TsunamiTest] begin
+@testset "Tsunami.setup" begin
     using .TsunamiTest
     foil = Foil(accelerator=:cpu, precision=:f32, devices=nothing)
     model = Chain(Dense(28^2 => 512, relu), Dense(512 => 10))
