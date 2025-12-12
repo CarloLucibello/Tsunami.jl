@@ -96,3 +96,6 @@ Tsunami.fit!(model, trainer, train_loader, val_loader)
 ```
 
 Read more about `KeyPath`s in the [Functors.jl documentation](https://fluxml.ai/Functors.jl/stable/api/#KeyPath).
+
+When resuming training from a checkpoint, Tsunami will automatically unfreeze the parameters before applying the freeze settings specified in the `Trainer`.
+

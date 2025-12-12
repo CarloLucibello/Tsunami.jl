@@ -27,10 +27,10 @@ for (backend, deps) in deps_dict
 end
 
 using Reexport: @reexport
-using Test
 using DataFrames: DataFrames, DataFrame
 using Enzyme: Enzyme
 using MLUtils: MLUtils
+@reexport using Test
 @reexport using Tsunami
 @reexport using Flux
 @reexport using Optimisers

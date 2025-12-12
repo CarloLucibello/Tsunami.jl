@@ -84,6 +84,79 @@ end
     rm(runpath2, recursive=true)
 end
 
+@testset "freeze parameters" begin
+    using .TsunamiTest
+    model = TestModule1()
+    nx, ny = io_sizes(model)
+    train_dataloader = make_dataloader(nx, ny)
+    
+    # Test 1: Train with frozen parameters
+    frozen_kp = KeyPath(:net, :layers, 1, :bias)
+    trainer = Trainer(max_epochs=1, logger=false, checkpointer=false, progress_bar=false, freeze=[frozen_kp])
+    
+    # Get initial parameters
+    initial_w1 = copy(model.net[1].weight)
+    initial_b1 = copy(model.net[1].bias)
+    
+    Tsunami.fit!(model, trainer, train_dataloader)
+    
+    # Weight should change (not frozen)
+    @test !all(model.net[1].weight .≈ initial_w1)
+    # Bias should not change (frozen)
+    @test all(model.net[1].bias .≈ initial_b1)
+end
+
+@testset "freeze parameters with checkpoint" begin
+    using .TsunamiTest
+    model = TestModule1()
+    nx, ny = io_sizes(model)
+    train_dataloader = make_dataloader(nx, ny)
+    
+    frozen_kp = KeyPath(:net, :layers, 1, :bias)
+    # # Train first epoch with freeze
+    trainer = Trainer(max_epochs=1, logger=false, checkpointer=true, progress_bar=false, freeze=[frozen_kp])
+    Tsunami.fit!(model, trainer, train_dataloader)
+    runpath1 = trainer.fit_state.run_dir
+    ckptpath = joinpath(runpath1, "checkpoints", "ckpt_last.jld2")
+    
+    # # Get parameters after first epoch
+    params_after_first = Dict(
+        :w1 => copy(model.net[1].weight),
+        :b1 => copy(model.net[1].bias),
+        :w2 => copy(model.net[2].weight),
+    )
+    
+    # Continue training without freeze - all params should update
+    trainer2 = Trainer(max_epochs=2, logger=false, checkpointer=false, progress_bar=false)
+    Tsunami.fit!(model, trainer2, train_dataloader, ckpt_path=ckptpath)
+    
+    params_after_continue = Dict(
+        :w1 => model.net[1].weight,
+        :b1 => model.net[1].bias,
+        :w2 => model.net[2].weight,
+    )
+    
+    # # Parameters should have changed, since freeze was removed
+    @test !all(params_after_continue[:w1] .≈ params_after_first[:w1])
+    @test !all(params_after_continue[:b1] .≈ params_after_first[:b1])
+    @test !all(params_after_continue[:w2] .≈ params_after_first[:w2])
+
+    # Now test checkpoint loading with freeze again
+    model = TestModule1()
+    trainer2bis = Trainer(max_epochs=2, logger=false, checkpointer=false, progress_bar=false, freeze=[frozen_kp])
+    Tsunami.fit!(model, trainer2bis, train_dataloader, ckpt_path=ckptpath)
+    
+    params_after_continue_bis = Dict(
+        :w1 => model.net[1].weight,
+        :b1 => model.net[1].bias,
+        :w2 => model.net[2].weight,
+    )
+    # Bias should not have changed, weights should have changed
+    @test all(params_after_continue_bis[:b1] .≈ params_after_first[:b1])
+    @test !all(params_after_continue_bis[:w1] .≈ params_after_first[:w1])
+    @test !all(params_after_continue_bis[:w2] .≈ params_after_first[:w2])
+end
+
 @testset "fast_dev_run" begin
     using .TsunamiTest
     model = TestModule1()

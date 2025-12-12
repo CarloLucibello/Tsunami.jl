@@ -68,7 +68,7 @@ function fit!(model::FluxModule, trainer::Trainer, train_dataloader, val_dataloa
 
     # freeze parameters if requested
     for kp in trainer.freeze
-        Optimisers.freeze!(model, kp)
+        Optimisers.freeze!(Functors.getkeypath(optimisers, kp))
     end
     
     # setup loaders 
