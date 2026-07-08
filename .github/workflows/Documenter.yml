@@ -7,6 +7,17 @@ on:
     tags: '*'
   pull_request:
 
+concurrency:
+  # Cancel in-progress runs for the same PR/branch, but not on main.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  actions: write        # needed to allow julia-actions/cache to delete old caches
+  contents: write       # needed to push to gh-pages
+  pull-requests: read   # needed for julia-actions/julia-docdeploy previews
+  statuses: write       # needed to report the documentation build status
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,10 +26,9 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
-      - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-      - name: Build and deploy
+      - uses: julia-actions/cache@v3
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
-        run: julia --project=docs/ docs/make.jl
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # authenticating with GitHub Actions token
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # authenticating with SSH deploy key

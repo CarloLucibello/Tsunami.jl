@@ -68,6 +68,17 @@ julia> unstack(df, :step, :name, :value)
 """
 function read_tensorboard_logs(logdir)
     events = Tuple{String,Int, Any}[]
-    TensorBoardLoggers.map_summaries((x...) -> push!(events, x), logdir)
+    # `map_summaries` (via `TBEventFileCollectionIterator`) calls `open` on every
+    # entry of `logdir`, including subdirectories such as `checkpoints/`. Opening a
+    # directory throws `SystemError: Permission denied` on Windows, so we point the
+    # reader at a temporary directory containing only the event files.
+    mktempdir() do tmp
+        for fname in readdir(logdir)
+            src = joinpath(logdir, fname)
+            isfile(src) || continue
+            cp(src, joinpath(tmp, fname))
+        end
+        TensorBoardLoggers.map_summaries((x...) -> push!(events, x), tmp)
+    end
     return events
 end

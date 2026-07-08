@@ -6,6 +6,12 @@ on:
   push:
     branches:
       - main
+concurrency:
+  # Cancel in-progress runs for the same PR/branch, but not on main.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+permissions:
+  contents: read
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }}
@@ -14,15 +20,14 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.10' # Replace this with the minimum Julia version that your package supports.
+          - '1.10' # Minimum Julia version that the package supports.
           - '1' # Leave this line unchanged. '1' will automatically expand to the latest stable 1.x release of Julia.
+          # - 'pre' # Upcoming release (release candidate / beta).
           # - 'nightly'
         os:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-        arch:
-          - x64
     env:              # Don't use system Python (needed by PyCall)
       PYTHON: ""
     steps:
@@ -30,7 +35,6 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
@@ -38,3 +42,5 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
