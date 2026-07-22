@@ -21,3 +21,5 @@ Tsunami = {path = ".."}
 
 [compat]
 Reexport = "1.2.2"
+MLDatasets = "0.7.21"
+Optimisers = "0.4.7"
