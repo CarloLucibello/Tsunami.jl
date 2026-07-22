@@ -1,6 +1,6 @@
 name = "Tsunami"
 uuid = "36e41bbe-399b-4a86-8623-faa02b4c2ac8"
-version = "0.3.1"
+version = "0.3.2"
 authors = "Carlo Lucibello"
 
 [workspace]
