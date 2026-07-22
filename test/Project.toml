@@ -21,3 +21,4 @@ Tsunami = {path = ".."}
 
 [compat]
 MLDatasets = "0.7.21"
+Optimisers = "0.4.7"
